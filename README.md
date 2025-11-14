@@ -16,7 +16,7 @@ A playful, privacy-first Chrome extension that helps you track your focus-switch
 ### Installation
 
 ```bash
-# Install dependencies
+# Install dependencies (also sets up pre-commit hooks)
 npm install
 
 # Development mode
@@ -34,6 +34,24 @@ npm run format
 # Run tests
 npm run test
 ```
+
+### Code Quality & CI/CD
+
+This project uses automated quality checks to maintain code standards:
+
+**Pre-commit Hooks** (via Husky + lint-staged):
+- Automatically runs on `git commit`
+- Lints and formats staged files
+- Runs tests for changed files
+- Validates build succeeds
+
+**GitHub Actions CI**:
+- Runs on every push and pull request
+- Tests on Node.js 18.x and 20.x
+- Checks: ESLint, Prettier, Jest tests, build validation
+- Generates code coverage reports
+
+See [.github/README.md](.github/README.md) for detailed CI/CD documentation.
 
 ### Loading the Extension in Chrome
 
@@ -88,6 +106,7 @@ focus-bear/
 - **Backend:** Chrome Extension APIs (tabs, storage, webRequest, notifications)
 - **Build:** Node.js scripts, ESLint, Prettier
 - **Testing:** Jest
+- **CI/CD:** GitHub Actions, Husky, lint-staged
 
 ## Privacy
 

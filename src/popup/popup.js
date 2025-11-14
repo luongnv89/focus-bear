@@ -167,7 +167,9 @@ async function renderVisualization(range = 'today') {
  */
 function renderSimpleList(todayVisits, domainListEl) {
   // Sort domains by count (descending)
-  const sortedDomains = Object.keys(todayVisits).sort((a, b) => todayVisits[b].count - todayVisits[a].count);
+  const sortedDomains = Object.keys(todayVisits).sort(
+    (a, b) => todayVisits[b].count - todayVisits[a].count
+  );
 
   // Clear existing list
   domainListEl.innerHTML = '';
