@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusBear</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>FocusBear</h1>
+        <button id="settings-btn" aria-label="Settings">⚙️</button>
+      </header>
+
+      <main id="main-view">
+        <div id="loading">Loading...</div>
+
+        <div id="empty-state" style="display: none">
+          <div class="empty-illustration">🐻</div>
+          <p>Welcome to FocusBear!</p>
+          <p>Start browsing and we'll track your attention.</p>
+        </div>
+
+        <div id="content" style="display: none">
+          <div class="stats-header">
+            <h2 id="stats-title">Today's Focus Switches</h2>
+            <button id="refresh-btn" aria-label="Refresh data" title="Refresh">🔄</button>
+          </div>
+
+          <div class="time-filter" role="tablist" aria-label="Time range filter">
+            <button
+              class="time-filter-btn active"
+              data-range="today"
+              role="tab"
+              aria-selected="true"
+              aria-controls="graph-container"
+            >
+              Today
+            </button>
+            <button
+              class="time-filter-btn"
+              data-range="week"
+              role="tab"
+              aria-selected="false"
+              aria-controls="graph-container"
+            >
+              Week
+            </button>
+            <button
+              class="time-filter-btn"
+              data-range="month"
+              role="tab"
+              aria-selected="false"
+              aria-controls="graph-container"
+            >
+              Month
+            </button>
+          </div>
+
+          <div id="graph-container" class="graph-container" role="tabpanel">
+            <!-- D3.js graph will be rendered here -->
+          </div>
+
+          <div id="domain-list" class="domain-list" style="display: none">
+            <!-- Fallback domain list (if graph disabled) -->
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
