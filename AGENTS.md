@@ -1,0 +1,87 @@
+# AGENTS.md – Coding Instructions for FocusBear AI Agent
+
+- **Code Improvement**
+  - Always inspect existing code and modules before adding new functions; prefer refactoring and reuse over duplication.
+  - Remove or consolidate repeated logic into shared utilities (e.g., storage helpers, time-range aggregators, graph rendering helpers).
+  - When modifying behavior, prefer small, focused changes with clear diffs rather than large rewrites.
+  - After every change, re-scan the codebase for similar patterns that can be unified.
+
+- **Coding Practices**
+  - For JavaScript:
+    - Use modern ES modules, `const` / `let`, and arrow functions where appropriate.
+    - Follow widely used style guides (e.g., Airbnb/Standard JS conventions) for naming, indentation, and structure.
+    - Keep functions small and single-responsibility: one clear purpose per function.
+    - Separate concerns: background/service worker logic, popup UI logic, content scripts, and shared utilities must live in clear, distinct modules.
+  - For Python or other scripts (e.g., tooling/automation):
+    - Follow PEP 8 style for Python; use type hints where helpful.
+    - Before running any Python script, **activate the appropriate virtual environment** and document its usage.
+  - Prefer readability over cleverness; optimize for maintainability for a solo/early-stage team.
+
+- **Best Practices (Testing, Documentation, CI/CD)**
+  - Implement tests for core logic:
+    - Data aggregation (time ranges, per-domain counts).
+    - Limit enforcement and block-page triggering.
+    - Streak and average computations.
+  - Add at least a smoke test/integration check for popup load and background event handling.
+  - Always create and maintain **GitHub Actions** CI workflows:
+    - At minimum: install dependencies, run linting, run tests, and build the extension.
+    - Ensure CI fails on lint/test/build errors.
+  - Use **pre-commit** hooks to enforce:
+    - Linting (ESLint for JS, appropriate tools for other languages).
+    - Formatting (e.g., Prettier).
+    - Basic security checks (e.g., detect secrets, obvious vulnerabilities).
+  - Keep internal documentation up to date:
+    - Briefly document any new module, major function, or architectural decision in code comments or a short markdown note.
+    - When adding/removing features, update `tasks.md` status and ensure behavior stays aligned with `prd.md`.
+
+- **Security Considerations**
+  - Respect FocusBear’s **local-only, privacy-first** design:
+    - Never introduce external telemetry, tracking, or remote API calls without explicit instruction.
+    - Do not store or transmit sensitive data (full URL logs, user identifiers) outside `chrome.storage.local`.
+  - Use **least-privilege permissions** in `manifest.json`:
+    - Request only the APIs and host permissions strictly required for current features.
+    - Regularly review and remove unused permissions.
+  - Avoid introducing XSS or injection risks:
+    - Never use `innerHTML` with untrusted content for popup/block pages; prefer safe DOM APIs.
+  - Handle errors safely:
+    - Fail gracefully without leaking stack traces to the UI.
+    - Avoid exposing internal details in user-facing error messages.
+  - Never commit or log secrets:
+    - **Never commit key files** (`.pem`, tokens, `.env` with secrets) or embed secrets in code.
+    - Ensure GitHub Actions and tooling use repository/CI secrets, not hard-coded values.
+
+- **Safe Operation & Autonomy Limits**
+  - **Stop and Ask When Uncertain**: If you (as an agent) lack required information (e.g., file paths, environment details, deployment targets), **stop and request clarification** rather than making assumptions.
+  - **No Speculative File Operations**:
+    - Do not create, delete, or modify files unless their location and necessity are clearly specified.
+    - If a file or directory is referenced but not confirmed to exist, ask the user to confirm or provide the correct path.
+  - **Fail Fast on Errors**:
+    - If a command, script, or build step fails, stop immediately, report the error, and wait for explicit user guidance before retrying alternative approaches.
+  - **Validate Before Acting**:
+    - Before any deployment, packaging, or production-facing change, verify configuration, environment, and assumptions with the user.
+  - **Explicit Confirmation for High-Risk Actions**:
+    - For operations like production releases, destructive file changes, or significant behavior shifts, describe the plan and wait for user confirmation before executing.
+  - **Limited Autonomy Scope**:
+    - Only take actions that directly serve the user’s stated request using the provided documents and project context; do not broaden scope without approval.
+
+- **Document & Keep Artifacts in Sync**
+  - After implementing or modifying features, **update relevant documents** to reflect the current state:
+    - `prd.md`: Adjust feature descriptions, scope, or acceptance criteria if actual implementation differs.
+    - `tad.md`: Reflect architectural or technical changes (e.g., new modules, storage patterns, APIs used).
+    - `ux_design.md`: Update flows, states, or UI descriptions if UX behavior changed.
+    - `brand_kit.md`: Note any updates to visuals, typography, colors, or component styles used in the extension.
+    - `tasks.md`: Mark tasks as done, split tasks if needed, and add new follow-up tasks for technical debt or discovered work.
+  - Keep inline code comments consistent with documentation: if behavior changes, **update comments and docs in the same change**.
+  - When adding new capabilities, briefly summarize them in a changelog or release note to support future Chrome Web Store updates.
+
+- **Post-Implementation Review**
+  - After completing a coding task, always perform a self-review focusing on:
+    - **Code quality & best practices**: clarity, structure, naming, adherence to style.
+    - **Potential bugs & edge cases**: unexpected inputs, large data sets, permission failures.
+    - **Performance**: popup load time, graph rendering speed, background event load.
+    - **Security & privacy**: no unnecessary data exposure; permissions minimal; no secrets or external tracking.
+  - Only consider the task complete when the code passes:
+    - Local tests.
+    - Linting and formatting.
+    - GitHub Actions CI checks.
+    - Basic manual verification against `prd.md` acceptance criteria.
