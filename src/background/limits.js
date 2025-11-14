@@ -53,52 +53,92 @@ export function getBlockedPageUrl(domain, count, limit) {
 }
 
 /**
- * Initialize limit enforcement via webRequest
+ * Update declarativeNetRequest rules based on current limits and visit counts
+ * This replaces the blocking webRequest API which is deprecated in MV3
+ */
+export async function updateBlockingRules() {
+  try {
+    const data = await chrome.storage.local.get(['visits', 'limits']);
+    const visits = data.visits || {};
+    const limits = data.limits || {};
+    const todayKey = getTodayKey();
+    const todayVisits = visits[todayKey] || {};
+
+    // Get all currently blocked domains
+    const blockedDomains = [];
+    for (const domain in limits) {
+      const limit = limits[domain];
+      const domainVisits = todayVisits[domain];
+      const count = domainVisits ? domainVisits.count : 0;
+
+      if (count >= limit) {
+        blockedDomains.push({ domain, count, limit });
+      }
+    }
+
+    // Get existing rule IDs to remove them
+    const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const ruleIdsToRemove = existingRules.map(rule => rule.id);
+
+    // Create new rules for blocked domains
+    const newRules = blockedDomains.map((item, index) => {
+      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit);
+
+      return {
+        id: index + 1, // Rule IDs must be positive integers
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { url: blockedPageUrl }
+        },
+        condition: {
+          urlFilter: `*://${item.domain}/*`,
+          resourceTypes: ['main_frame'],
+          // Exclude our blocked page from being blocked
+          excludedInitiatorDomains: [chrome.runtime.id]
+        }
+      };
+    });
+
+    // Also add rules for www. versions
+    const wwwRules = blockedDomains.map((item, index) => {
+      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit);
+
+      return {
+        id: index + 1 + 1000, // Offset to avoid ID collision
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: { url: blockedPageUrl }
+        },
+        condition: {
+          urlFilter: `*://www.${item.domain}/*`,
+          resourceTypes: ['main_frame'],
+          excludedInitiatorDomains: [chrome.runtime.id]
+        }
+      };
+    });
+
+    const allNewRules = [...newRules, ...wwwRules];
+
+    // Update dynamic rules
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: ruleIdsToRemove,
+      addRules: allNewRules
+    });
+
+    console.log(`Updated blocking rules: ${blockedDomains.length} domains blocked`);
+  } catch (error) {
+    console.error('Error updating blocking rules:', error);
+  }
+}
+
+/**
+ * Initialize limit enforcement via declarativeNetRequest
  */
 export function initializeLimitEnforcement() {
-  // Listen for navigation requests
-  chrome.webRequest.onBeforeRequest.addListener(
-    async (details) => {
-      // Only intercept main frame navigations (not iframes, images, etc.)
-      if (details.type !== 'main_frame') {
-        return {};
-      }
+  // Update blocking rules on startup
+  updateBlockingRules();
 
-      // Don't block our own blocked page
-      if (details.url.includes('blocked.html')) {
-        return {};
-      }
-
-      // Parse URL to get domain
-      try {
-        const url = new URL(details.url);
-        let domain = url.hostname;
-
-        // Remove www. prefix
-        if (domain.startsWith('www.')) {
-          domain = domain.substring(4);
-        }
-
-        // Check limit
-        const { exceeded, count, limit } = await checkLimit(domain);
-
-        if (exceeded) {
-          console.log(`Blocking ${domain} - limit exceeded (${count}/${limit})`);
-
-          // Redirect to blocked page
-          return {
-            redirectUrl: getBlockedPageUrl(domain, count, limit),
-          };
-        }
-      } catch (error) {
-        console.error('Error checking limit:', error);
-      }
-
-      return {};
-    },
-    { urls: ['<all_urls>'] },
-    ['blocking']
-  );
-
-  console.log('Limit enforcement initialized');
+  console.log('Limit enforcement initialized (using declarativeNetRequest)');
 }

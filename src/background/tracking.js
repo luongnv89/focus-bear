@@ -4,6 +4,7 @@
  */
 
 import { incrementVisit } from './storage.js';
+import { updateBlockingRules } from './limits.js';
 
 /**
  * Extract domain and subpath from URL
@@ -56,6 +57,9 @@ async function trackTabFocus(tabId) {
     const newCount = await incrementVisit(domain, subpath);
 
     console.log(`Focus switch recorded: ${domain}${subpath} (count: ${newCount})`);
+
+    // Update blocking rules in case a limit was just exceeded
+    await updateBlockingRules();
   } catch (error) {
     // Tab might have been closed or URL inaccessible
     console.debug('Could not track tab:', error.message);
