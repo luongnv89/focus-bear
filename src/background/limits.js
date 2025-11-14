@@ -97,7 +97,7 @@ export function initializeLimitEnforcement() {
       return {};
     },
     { urls: ['<all_urls>'] },
-    ['blocking'],
+    ['blocking']
   );
 
   console.log('Limit enforcement initialized');

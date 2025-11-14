@@ -27,10 +27,10 @@ document.getElementById('settings-btn').addEventListener('click', () => {
   // Open extension popup in new tab isn't directly possible
   // Instead, we can provide instructions or open the extension page
   alert(
-    'To adjust limits:\n\n'
-      + '1. Click the FocusBear icon in your toolbar\n'
-      + '2. Click the ⚙️ settings button\n'
-      + '3. Configure your limits\n\n'
-      + 'Or right-click the FocusBear icon and select "Options"',
+    'To adjust limits:\n\n' +
+      '1. Click the FocusBear icon in your toolbar\n' +
+      '2. Click the ⚙️ settings button\n' +
+      '3. Configure your limits\n\n' +
+      'Or right-click the FocusBear icon and select "Options"'
   );
 });

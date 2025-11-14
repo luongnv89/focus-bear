@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged (lint, format, and test changed files)
+npm run pre-commit
+
+# Run full build to ensure everything compiles
+echo "Running build..."
+npm run build

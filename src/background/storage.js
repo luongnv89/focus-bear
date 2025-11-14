@@ -190,7 +190,7 @@ export async function getSettings() {
         data.settings || {
           highContrastMode: false,
           onboardingComplete: false,
-        },
+        }
       );
     });
   });

@@ -84,13 +84,13 @@ export function renderRadialGraph(container, data, options = {}) {
         .forceLink(links)
         .id((d) => d.id)
         .distance(100)
-        .strength(0.5),
+        .strength(0.5)
     )
     .force('charge', d3.forceManyBody().strength(-200))
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force(
       'collision',
-      d3.forceCollide().radius((d) => (d.isCenter ? 40 : sizeScale(d.count) + 5)),
+      d3.forceCollide().radius((d) => (d.isCenter ? 40 : sizeScale(d.count) + 5))
     );
 
   // Create link elements
