@@ -2,24 +2,24 @@
 
 ## Phase 0: Proof of Concept (POC)
 
-- [ ] Task 0.1 – Initialize Chrome Extension Project (MV3 Skeleton)
-- [ ] Task 0.2 – Define Local Data Model for Focus Visits
-- [ ] Task 0.3 – Implement Focus-Switch Tracking (POC)
-- [ ] Task 0.4 – Simple Popup UI for Domain Visit Counts (POC)
-- [ ] Task 0.5 – Basic POC Testing & Bugfixing
+- [x] Task 0.1 – Initialize Chrome Extension Project (MV3 Skeleton)
+- [x] Task 0.2 – Define Local Data Model for Focus Visits
+- [x] Task 0.3 – Implement Focus-Switch Tracking (POC)
+- [x] Task 0.4 – Simple Popup UI for Domain Visit Counts (POC)
+- [x] Task 0.5 – Basic POC Testing & Bugfixing
 
 ---
 
-## Sprint 1: MVP Core – “The Guilt Bear”
+## Sprint 1: MVP Core – "The Guilt Bear"
 
-- [ ] Task 1.1 – Finalize MVP Scope & Feature Flags
-- [ ] Task 1.2 – Implement Time-Bucketed Storage (Day / 24h / Week / Month)
-- [ ] Task 1.3 – Build Domain-Level Radial Graph in Popup (D3.js)
-- [ ] Task 1.4 – Add Time Range Filter Controls in Popup
-- [ ] Task 1.5 – Domain Search & Highlight in Graph
-- [ ] Task 1.6 – Settings Panel UI (Popup → Settings View)
-- [ ] Task 1.7 – Per-Site Daily Limit Configuration
-- [ ] Task 1.8 – Enforce Limits via Block Page (Blocked.html + webRequest)
+- [x] Task 1.1 – Finalize MVP Scope & Feature Flags
+- [x] Task 1.2 – Implement Time-Bucketed Storage (Day / 24h / Week / Month)
+- [x] Task 1.3 – Build Domain-Level Radial Graph in Popup (D3.js)
+- [x] Task 1.4 – Add Time Range Filter Controls in Popup
+- [ ] Task 1.5 – Domain Search & Highlight in Graph (Deferred)
+- [ ] Task 1.6 – Settings Panel UI (Popup → Settings View) (Partial - needs full UI)
+- [ ] Task 1.7 – Per-Site Daily Limit Configuration (Backend complete, UI needed)
+- [x] Task 1.8 – Enforce Limits via Block Page (Blocked.html + webRequest)
 - [ ] Task 1.9 – Basic Countdown Bubble (Toast Notification)
 - [ ] Task 1.10 – MVP Accessibility & Performance Pass
 
