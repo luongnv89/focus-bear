@@ -3,7 +3,7 @@
  * Monitors tab activation and updates to track focus switches
  */
 
-import { incrementVisit } from './storage.js';
+import { incrementVisit, getLimits, getTodayKey } from './storage.js';
 import { updateBlockingRules } from './limits.js';
 
 /**
@@ -58,11 +58,45 @@ async function trackTabFocus(tabId) {
 
     console.log(`Focus switch recorded: ${domain}${subpath} (count: ${newCount})`);
 
+    // Check if this domain has a limit and show countdown toast
+    await showCountdownToastIfNeeded(tabId, domain, newCount);
+
     // Update blocking rules in case a limit was just exceeded
     await updateBlockingRules();
   } catch (error) {
     // Tab might have been closed or URL inaccessible
     console.debug('Could not track tab:', error.message);
+  }
+}
+
+/**
+ * Show countdown toast if domain has a limit
+ * @param {number} tabId - Chrome tab ID
+ * @param {string} domain - Domain name
+ * @param {number} currentCount - Current visit count
+ */
+async function showCountdownToastIfNeeded(tabId, domain, currentCount) {
+  try {
+    const limits = await getLimits();
+    const limit = limits[domain];
+
+    // Only show toast if domain has a limit
+    if (!limit) {
+      return;
+    }
+
+    const remaining = Math.max(0, limit - currentCount);
+
+    // Send message to content script to show toast
+    await chrome.tabs.sendMessage(tabId, {
+      type: 'SHOW_COUNTDOWN_TOAST',
+      domain,
+      remaining,
+      limit,
+    });
+  } catch (error) {
+    // Content script might not be injected yet or tab doesn't support it
+    console.debug('Could not show countdown toast:', error.message);
   }
 }
 

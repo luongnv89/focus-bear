@@ -14,11 +14,11 @@
         <button id="settings-btn" aria-label="Settings">⚙️</button>
       </header>
 
-      <main id="main-view">
-        <div id="loading">Loading...</div>
+      <main id="main-view" role="main">
+        <div id="loading" role="status" aria-live="polite">Loading...</div>
 
-        <div id="empty-state" style="display: none">
-          <div class="empty-illustration">🐻</div>
+        <div id="empty-state" style="display: none" role="status">
+          <div class="empty-illustration" role="img" aria-label="Bear mascot">🐻</div>
           <p>Welcome to FocusBear!</p>
           <p>Start browsing and we'll track your attention.</p>
         </div>

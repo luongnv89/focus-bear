@@ -29,6 +29,15 @@
     "48": "assets/icon-48.png",
     "128": "assets/icon-128.png"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/countdown-toast.js"],
+      "css": ["src/content/countdown-toast.css"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }

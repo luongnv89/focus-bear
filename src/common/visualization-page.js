@@ -181,6 +181,7 @@ export async function setupVisualizationPage(options = {}) {
       removeBtn.className = 'pill-button pill-button-secondary';
       removeBtn.dataset.domain = domain;
       removeBtn.textContent = 'Remove';
+      removeBtn.setAttribute('aria-label', `Remove limit for ${domain}`);
 
       item.append(info, removeBtn);
       limitList.appendChild(item);
@@ -442,11 +443,22 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
+  // Performance monitoring
+  const perfStart = performance.now();
+
   try {
     await loadHighContrastPreference();
     await renderVisualization(currentRange);
     if (loading) {
       loading.style.display = 'none';
+    }
+
+    // Log performance metrics
+    const perfEnd = performance.now();
+    const loadTime = Math.round(perfEnd - perfStart);
+    console.log(`[FocusBear Performance] Page load time: ${loadTime}ms`);
+    if (loadTime > 300) {
+      console.warn(`[FocusBear Performance] Load time exceeds target of 300ms`);
     }
   } catch (error) {
     console.error('Error initializing visualization page:', error);

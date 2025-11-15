@@ -525,3 +525,26 @@ main {
 .settings-toast.visible {
   display: block;
 }
+
+/* Accessibility: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #refresh-btn:hover {
+    transform: none;
+  }
+
+  #settings-btn:hover {
+    transform: none;
+  }
+
+  .pill-button-primary:hover {
+    transform: none;
+  }
+}

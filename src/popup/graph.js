@@ -12,6 +12,9 @@
 export function renderRadialGraph(container, data, options = {}) {
   const { width = 400, height = 450, highlightedDomain = null } = options;
 
+  // Performance monitoring
+  const graphPerfStart = performance.now();
+
   // Clear existing content
   container.innerHTML = '';
 
@@ -222,6 +225,15 @@ export function renderRadialGraph(container, data, options = {}) {
       d.fx = null;
       d.fy = null;
     }
+  }
+
+  // Log performance metrics
+  const graphPerfEnd = performance.now();
+  const graphRenderTime = Math.round(graphPerfEnd - graphPerfStart);
+  const nodeCount = nodes.length;
+  console.log(`[FocusBear Performance] Graph render time: ${graphRenderTime}ms for ${nodeCount} nodes`);
+  if (graphRenderTime > 1000) {
+    console.warn(`[FocusBear Performance] Graph render time exceeds target of 1000ms`);
   }
 
   // Return cleanup function
