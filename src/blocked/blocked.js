@@ -26,7 +26,7 @@ const messages = [
   },
   {
     heading: 'Your limit, your rules! 📏',
-    subtext: 'You decided this boundary. Stick with it—you'll thank yourself later.',
+    subtext: "You decided this boundary. Stick with it—you'll thank yourself later.",
   },
 ];
 
