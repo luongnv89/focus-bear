@@ -443,6 +443,80 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
+  // Export data handlers
+  const exportJsonBtn = document.getElementById('export-json-btn');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
+
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', async () => {
+      try {
+        const data = await chrome.storage.local.get(['visits', 'limits', 'settings']);
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `focusbear-data-${timestamp}.json`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        showSettingsToast(`Exported data as ${filename}`);
+      } catch (error) {
+        console.error('Export JSON error:', error);
+        showSettingsToast('Unable to export JSON. Try again.');
+      }
+    });
+  }
+
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', async () => {
+      try {
+        const data = await chrome.storage.local.get(['visits', 'limits']);
+        const visits = data.visits || {};
+        const limits = data.limits || {};
+
+        // Build CSV content
+        let csv = 'Date,Domain,Path,Visit Count,Daily Limit\n';
+
+        Object.entries(visits).forEach(([date, dateVisits]) => {
+          Object.entries(dateVisits).forEach(([domain, domainData]) => {
+            const limit = limits[domain] || 'No limit';
+            const count = domainData.count || 0;
+
+            // Main domain row
+            csv += `"${date}","${domain}","/",${count},"${limit}"\n`;
+
+            // Subpath rows
+            if (domainData.subpaths) {
+              Object.entries(domainData.subpaths).forEach(([subpath, subpathData]) => {
+                csv += `"${date}","${domain}","${subpath}",${subpathData.count},"${limit}"\n`;
+              });
+            }
+          });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `focusbear-data-${timestamp}.csv`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        showSettingsToast(`Exported data as ${filename}`);
+      } catch (error) {
+        console.error('Export CSV error:', error);
+        showSettingsToast('Unable to export CSV. Try again.');
+      }
+    });
+  }
+
   // Performance monitoring
   const perfStart = performance.now();
 

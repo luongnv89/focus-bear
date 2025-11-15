@@ -602,6 +602,19 @@ main {
   display: block;
 }
 
+/* Export buttons */
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.export-buttons .pill-button {
+  flex: 1;
+  min-width: 140px;
+}
+
 /* Accessibility: Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,
