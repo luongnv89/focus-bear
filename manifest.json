@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "FocusBear",
   "version": "0.1.0",
-  "version_name": "0.1.0-f7fae19",
+  "version_name": "0.1.0-2234043",
   "description": "Track your focus-switching habits with playful, privacy-first visualizations",
   "permissions": [
     "tabs",
