@@ -115,6 +115,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .enter()
     .append('g')
     .attr('class', 'node')
+    .style('cursor', 'pointer')
     .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
 
   // Add circles for nodes
@@ -168,12 +169,48 @@ export function renderRadialGraph(container, data, options = {}) {
     .style('z-index', '1000')
     .style('box-shadow', '0 8px 30px rgba(15,23,42,0.25)');
 
+  // Track focused node
+  let focusedNode = null;
+
   nodeGroup
+    .on('click', function (event, d) {
+      if (d.isCenter) {
+        // Clicking center resets focus
+        focusedNode = null;
+        nodeGroup.selectAll('circle').attr('opacity', 0.9);
+        link.attr('stroke-opacity', 0.6);
+        return;
+      }
+
+      // Toggle focus on clicked node
+      if (focusedNode === d.id) {
+        // Unfocus if clicking the same node
+        focusedNode = null;
+        nodeGroup.selectAll('circle').attr('opacity', 0.9);
+        link.attr('stroke-opacity', 0.6);
+      } else {
+        // Focus on the clicked node
+        focusedNode = d.id;
+
+        // Dim all nodes
+        nodeGroup.selectAll('circle').attr('opacity', (n) => {
+          if (n.isCenter) return 0.9;
+          return n.id === focusedNode ? 1 : 0.3;
+        });
+
+        // Dim unrelated links
+        link.attr('stroke-opacity', (l) => {
+          return l.target.id === focusedNode ? 1 : 0.15;
+        });
+      }
+    })
     .on('mouseenter', function (event, d) {
       if (d.isCenter) return;
 
-      // Highlight node
-      d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
+      // Highlight node (unless focused on a different node)
+      if (!focusedNode || focusedNode === d.id) {
+        d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
+      }
 
       // Show tooltip
       const subpathCount = Object.keys(d.subpaths).length;
@@ -190,8 +227,12 @@ export function renderRadialGraph(container, data, options = {}) {
     .on('mousemove', (event) => {
       tooltip.style('top', `${event.pageY - 60}px`).style('left', `${event.pageX + 10}px`);
     })
-    .on('mouseleave', function () {
-      d3.select(this).select('circle').attr('opacity', 0.9).attr('stroke-width', 2);
+    .on('mouseleave', function (event, d) {
+      // Only reset opacity if not focused on this node
+      if (!focusedNode || focusedNode === d.id) {
+        const targetOpacity = focusedNode === d.id ? 1 : 0.9;
+        d3.select(this).select('circle').attr('opacity', targetOpacity).attr('stroke-width', 2);
+      }
       tooltip.style('visibility', 'hidden');
     });
 

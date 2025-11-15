@@ -20,10 +20,22 @@
       <main id="main-view">
         <div id="loading">Loading...</div>
 
-        <div id="empty-state" style="display: none">
-          <div class="empty-illustration">🐻</div>
-          <p>Welcome to FocusBear!</p>
-          <p>Start browsing and we'll track your attention.</p>
+        <div id="empty-state" style="display: none" class="empty-state">
+          <div class="empty-illustration" role="img" aria-label="Bear mascot waving">🐻 👋</div>
+          <h2 class="empty-title">Hey there, focus explorer!</h2>
+          <p class="empty-message">
+            FocusBear is ready to map your browsing habits—but first, you need to browse a bit!
+          </p>
+          <div class="empty-instructions">
+            <p class="empty-eyebrow">How it works:</p>
+            <ul class="empty-steps">
+              <li>📍 Every time you switch tabs, we track which site gets your attention</li>
+              <li>📊 Your data becomes a beautiful radial graph (like planets orbiting you!)</li>
+              <li>🎯 Set limits on distracting sites to stay focused</li>
+              <li>🔒 Everything stays private—on your device, forever</li>
+            </ul>
+          </div>
+          <p class="empty-cta">Go ahead, open some tabs! We'll be here when you get back.</p>
         </div>
 
         <div id="content" style="display: none">

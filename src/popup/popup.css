@@ -154,12 +154,88 @@ main {
 .empty-illustration {
   font-size: 60px;
   margin-bottom: 20px;
+  animation: wave 2s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
 }
 
 #empty-state p {
   margin: 10px 0;
   line-height: 1.6;
   color: var(--color-text-muted);
+}
+
+/* Enhanced empty state styling */
+.empty-state {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.empty-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 12px;
+}
+
+.empty-message {
+  font-size: 16px;
+  color: var(--color-text-dark);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.empty-instructions {
+  background: var(--color-primary-lighter);
+  border: 1px solid var(--color-primary-light);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.empty-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-secondary);
+  margin-bottom: 12px;
+}
+
+.empty-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.empty-steps li {
+  padding: 8px 0;
+  color: var(--color-text-dark);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.empty-cta {
+  font-size: 15px;
+  color: var(--color-secondary-dark);
+  font-weight: 600;
+  margin-top: 20px;
+  font-style: italic;
 }
 
 #content {
@@ -546,5 +622,9 @@ main {
 
   .pill-button-primary:hover {
     transform: none;
+  }
+
+  .empty-illustration {
+    animation: none;
   }
 }

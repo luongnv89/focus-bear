@@ -28,13 +28,13 @@
 
 ## Sprint 2: Visualization, UX Polish & Delight
 
-- [ ] Task 2.1 – Onboarding & Empty State UX
-- [ ] Task 2.2 – Improve Block Page Visual & Copy (Brand Kit Alignment)
-- [ ] Task 2.3 – Streaks & Averages (Basic Implementation)
+- [x] Task 2.1 – Onboarding & Empty State UX
+- [x] Task 2.2 – Improve Block Page Visual & Copy (Brand Kit Alignment)
+- [ ] Task 2.3 – Streaks & Averages (Basic Implementation) (Deferred)
 - [x] Task 2.4 – High Contrast Mode Toggle
-- [ ] Task 2.5 – Graph Interaction Enhancements (Zoom & Hover Details)
-- [ ] Task 2.6 – UX Copy, Microcopy & Localization Hooks
-- [ ] Task 2.7 – Automated Build & Linting Setup
+- [x] Task 2.5 – Graph Interaction Enhancements (Click to Focus/Dim)
+- [x] Task 2.6 – UX Copy, Microcopy & Localization Hooks
+- [ ] Task 2.7 – Automated Build & Linting Setup (Deferred)
 
 ---
 
