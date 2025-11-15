@@ -255,6 +255,12 @@ main {
   color: var(--color-text-dark);
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .eyebrow {
   font-size: 12px;
   text-transform: uppercase;

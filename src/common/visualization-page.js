@@ -443,6 +443,89 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
+  // Export graph as PNG
+  const exportGraphBtn = document.getElementById('export-graph-btn');
+
+  if (exportGraphBtn) {
+    exportGraphBtn.addEventListener('click', async () => {
+      try {
+        const graphContainer = document.getElementById('graph-container');
+        const svg = graphContainer.querySelector('svg');
+
+        if (!svg) {
+          showSettingsToast('No graph to export. Generate a graph first.');
+          return;
+        }
+
+        // Get SVG dimensions
+        const svgRect = svg.getBoundingClientRect();
+        const svgWidth = svgRect.width;
+        const svgHeight = svgRect.height;
+
+        // Serialize SVG to string
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(svg);
+
+        // Add XML namespace if not present
+        if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+          svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+
+        // Create a blob from SVG string
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+
+        // Create an image element
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          canvas.width = svgWidth * 2; // 2x for better quality
+          canvas.height = svgHeight * 2;
+
+          const ctx = canvas.getContext('2d');
+          // Scale for higher quality
+          ctx.scale(2, 2);
+
+          // Fill white background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, svgWidth, svgHeight);
+
+          // Draw image
+          ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+
+          // Convert to PNG blob
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const timeRange = currentRange || 'today';
+            const filename = `focusbear-graph-${timeRange}-${timestamp}.png`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+
+            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(svgUrl);
+            showSettingsToast(`Exported graph as ${filename}`);
+          }, 'image/png');
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(svgUrl);
+          console.error('Failed to load SVG image');
+          showSettingsToast('Unable to export graph. Try again.');
+        };
+
+        img.src = svgUrl;
+      } catch (error) {
+        console.error('Export PNG error:', error);
+        showSettingsToast('Unable to export PNG. Try again.');
+      }
+    });
+  }
+
   // Export data handlers
   const exportJsonBtn = document.getElementById('export-json-btn');
   const exportCsvBtn = document.getElementById('export-csv-btn');
