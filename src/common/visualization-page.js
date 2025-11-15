@@ -1,0 +1,457 @@
+/**
+ * Shared visualization controller used by both the popup and dashboard views
+ */
+
+import { renderRadialGraph } from '../popup/graph.js';
+import { isFeatureEnabled } from './feature-flags.js';
+import {
+  getSettings,
+  updateSettings,
+  getLimits,
+  setLimitForDomain,
+  clearAllData,
+} from '../background/storage.js';
+
+/**
+ * Load aggregated stats for a given time range
+ * Recreates the getAggregatedStats function from storage.js for use in the UI
+ * @param {string} range
+ * @returns {Promise<Object>}
+ */
+async function loadAggregatedStats(range = 'today') {
+  const now = new Date();
+  let startDate;
+
+  switch (range) {
+    case 'hour':
+      startDate = new Date(now.getTime() - 60 * 60 * 1000);
+      break;
+    case 'today': {
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+      startDate = today;
+      break;
+    }
+    case 'week':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case 'month':
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    default: {
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
+      startDate = today;
+      break;
+    }
+  }
+
+  const data = await chrome.storage.local.get(['visits']);
+  const visits = data.visits || {};
+  const aggregated = {};
+
+  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
+    const visitDate = new Date(dateKey);
+    if (visitDate >= startDate && visitDate <= now) {
+      Object.entries(dateVisits).forEach(([domain, domainData]) => {
+        if (!aggregated[domain]) {
+          aggregated[domain] = {
+            count: 0,
+            lastVisit: domainData.lastVisit,
+            subpaths: {},
+          };
+        }
+        aggregated[domain].count += domainData.count;
+        if (domainData.lastVisit > aggregated[domain].lastVisit) {
+          aggregated[domain].lastVisit = domainData.lastVisit;
+        }
+
+        Object.entries(domainData.subpaths || {}).forEach(([subpath, subpathData]) => {
+          if (!aggregated[domain].subpaths[subpath]) {
+            aggregated[domain].subpaths[subpath] = {
+              count: 0,
+              lastVisit: subpathData.lastVisit,
+            };
+          }
+          aggregated[domain].subpaths[subpath].count += subpathData.count;
+          if (subpathData.lastVisit > aggregated[domain].subpaths[subpath].lastVisit) {
+            aggregated[domain].subpaths[subpath].lastVisit = subpathData.lastVisit;
+          }
+        });
+      });
+    }
+  });
+
+  return aggregated;
+}
+
+function getTitleForRange(range) {
+  const titles = {
+    hour: "Last Hour's Focus Switches",
+    today: "Today's Focus Switches",
+    week: "This Week's Focus Switches",
+    month: "This Month's Focus Switches",
+  };
+  return titles[range] || "Today's Focus Switches";
+}
+
+/**
+ * Wire up the visualization UI
+ * @param {Object} options
+ */
+export async function setupVisualizationPage(options = {}) {
+  const {
+    defaultRange = 'today',
+    graphDimensions = {},
+    listLimit = 10,
+    fullPage = false,
+  } = options;
+
+  const graphWidth = graphDimensions.width || 400;
+  const graphHeight = graphDimensions.height || 450;
+
+  if (fullPage) {
+    document.body.classList.add('dashboard-view');
+  }
+
+  let currentRange = defaultRange;
+  let cleanupGraph = null;
+  let toastTimeout = null;
+
+  const loading = document.getElementById('loading');
+  const mainView = document.getElementById('main-view');
+  const settingsView = document.getElementById('settings-view');
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsBackBtn = document.getElementById('settings-back-btn');
+  const highContrastToggle = document.getElementById('high-contrast-toggle');
+  const limitForm = document.getElementById('limit-form');
+  const limitErrorEl = document.getElementById('limit-error');
+  const limitList = document.getElementById('limit-list');
+  const limitsEmpty = document.getElementById('limits-empty');
+  const settingsToast = document.getElementById('settings-toast');
+  const resetDataBtn = document.getElementById('reset-data-btn');
+
+  const showSettingsToast = (message) => {
+    if (!settingsToast) return;
+    settingsToast.textContent = message;
+    settingsToast.classList.add('visible');
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+    }
+    toastTimeout = setTimeout(() => {
+      settingsToast.classList.remove('visible');
+    }, 3500);
+  };
+
+  const applyHighContrast = (enabled) => {
+    document.body.classList.toggle('high-contrast', enabled);
+    if (highContrastToggle) {
+      highContrastToggle.checked = enabled;
+    }
+  };
+
+  const loadHighContrastPreference = async () => {
+    try {
+      const settings = await getSettings();
+      applyHighContrast(Boolean(settings.highContrastMode));
+    } catch (error) {
+      console.error('Unable to load settings:', error);
+    }
+  };
+
+  const refreshLimitList = async () => {
+    if (!limitList) return;
+    const limits = await getLimits();
+    const entries = Object.entries(limits);
+    limitList.innerHTML = '';
+    if (limitsEmpty) {
+      limitsEmpty.hidden = entries.length > 0;
+    }
+    if (entries.length === 0) {
+      return;
+    }
+
+    entries.forEach(([domain, limit]) => {
+      const item = document.createElement('li');
+      const info = document.createElement('div');
+      info.innerHTML = `<strong>${domain}</strong><br/><span>${limit} visits/day</span>`;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'pill-button pill-button-secondary';
+      removeBtn.dataset.domain = domain;
+      removeBtn.textContent = 'Remove';
+
+      item.append(info, removeBtn);
+      limitList.appendChild(item);
+    });
+  };
+
+  const showSettingsView = async () => {
+    if (!settingsView || !mainView) return;
+    mainView.style.display = 'none';
+    settingsView.hidden = false;
+    settingsView.setAttribute('aria-hidden', 'false');
+    settingsView.focus();
+    await refreshLimitList();
+  };
+
+  const showMainView = () => {
+    if (!settingsView || !mainView) return;
+    settingsView.hidden = true;
+    settingsView.setAttribute('aria-hidden', 'true');
+    mainView.style.display = 'block';
+  };
+
+  const renderSimpleList = (aggregatedVisits, domainListEl) => {
+    const sortedDomains = Object.keys(aggregatedVisits).sort(
+      (a, b) => aggregatedVisits[b].count - aggregatedVisits[a].count,
+    );
+
+    domainListEl.innerHTML = '';
+
+    const topDomains = sortedDomains.slice(0, listLimit);
+    topDomains.forEach((domain) => {
+      const domainData = aggregatedVisits[domain];
+
+      const item = document.createElement('div');
+      item.className = 'domain-item';
+
+      const info = document.createElement('div');
+      info.className = 'domain-info';
+
+      const name = document.createElement('div');
+      name.className = 'domain-name';
+      name.textContent = domain;
+      info.appendChild(name);
+
+      if (domainData.subpaths && Object.keys(domainData.subpaths).length > 0) {
+        const subpaths = Object.entries(domainData.subpaths);
+        const topSubpath = subpaths.sort((a, b) => b[1].count - a[1].count)[0];
+
+        const subpathEl = document.createElement('div');
+        subpathEl.className = 'domain-subpath';
+        subpathEl.textContent = `Top: ${topSubpath[0]} (${topSubpath[1].count})`;
+        info.appendChild(subpathEl);
+      }
+
+      const count = document.createElement('div');
+      count.className = 'domain-count';
+      count.textContent = domainData.count;
+      count.setAttribute('aria-label', `${domainData.count} visits`);
+
+      item.append(info, count);
+      domainListEl.appendChild(item);
+    });
+  };
+
+  const renderVisualization = async (range = currentRange) => {
+    const graphContainer = document.getElementById('graph-container');
+    const domainListEl = document.getElementById('domain-list');
+    const emptyState = document.getElementById('empty-state');
+    const content = document.getElementById('content');
+    const title = document.getElementById('stats-title');
+
+    try {
+      if (title) {
+        title.textContent = getTitleForRange(range);
+      }
+
+      const aggregatedVisits = await loadAggregatedStats(range);
+
+      const domains = Object.keys(aggregatedVisits);
+      if (domains.length === 0) {
+        emptyState.style.display = 'block';
+        content.style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      content.style.display = 'block';
+
+      if (cleanupGraph) {
+        cleanupGraph();
+        cleanupGraph = null;
+      }
+
+      if (isFeatureEnabled('RADIAL_GRAPH')) {
+        graphContainer.style.display = 'block';
+        domainListEl.style.display = 'none';
+
+        cleanupGraph = renderRadialGraph(graphContainer, aggregatedVisits, {
+          width: graphWidth,
+          height: graphHeight,
+        });
+      } else {
+        graphContainer.style.display = 'none';
+        domainListEl.style.display = 'block';
+        renderSimpleList(aggregatedVisits, domainListEl);
+      }
+    } catch (error) {
+      console.error('Error rendering visualization:', error);
+      if (graphContainer) {
+        graphContainer.innerHTML = '<div class="graph-error">Error loading visualization</div>';
+      }
+    }
+  };
+
+  const timeFilterBtns = document.querySelectorAll('.time-filter-btn');
+  timeFilterBtns.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const { range } = btn.dataset;
+      currentRange = range;
+
+      timeFilterBtns.forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+
+      await renderVisualization(range);
+    });
+  });
+
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      await renderVisualization(currentRange);
+    });
+  }
+
+  if (settingsBtn && settingsView && mainView) {
+    settingsBtn.addEventListener('click', async () => {
+      await showSettingsView();
+    });
+  }
+
+  if (settingsBackBtn) {
+    settingsBackBtn.addEventListener('click', () => {
+      showMainView();
+    });
+  }
+
+  if (highContrastToggle) {
+    highContrastToggle.addEventListener('change', async (event) => {
+      const enabled = event.target.checked;
+      try {
+        await updateSettings({ highContrastMode: enabled });
+        applyHighContrast(enabled);
+        showSettingsToast(enabled ? 'High contrast mode enabled' : 'High contrast mode disabled');
+      } catch (error) {
+        console.error('Unable to update settings:', error);
+        event.target.checked = !enabled;
+        showSettingsToast('Unable to update accessibility setting.');
+      }
+    });
+  }
+
+  if (limitList) {
+    limitList.addEventListener('click', async (event) => {
+      const { domain } = event.target.dataset || {};
+      if (!domain) return;
+      try {
+        await setLimitForDomain(domain, null);
+        await refreshLimitList();
+        showSettingsToast(`Removed limit for ${domain}`);
+      } catch (error) {
+        console.error('Unable to remove limit:', error);
+        showSettingsToast('Unable to remove that limit.');
+      }
+    });
+  }
+
+  if (limitForm) {
+    limitForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const domainInput = limitForm.elements.domain;
+      const limitInput = limitForm.elements.limit;
+      const rawDomain = domainInput.value.trim();
+      const normalizedDomain = rawDomain
+        .replace(/^https?:\/\//i, '')
+        .split('/')[0]
+        .toLowerCase();
+      const limitValue = Number(limitInput.value);
+
+      if (!normalizedDomain || !/^[a-z0-9.-]+$/.test(normalizedDomain)) {
+        if (limitErrorEl) {
+          limitErrorEl.textContent = 'Enter a valid domain like example.com';
+        }
+        return;
+      }
+
+      if (!Number.isInteger(limitValue) || limitValue <= 0) {
+        if (limitErrorEl) {
+          limitErrorEl.textContent = 'Enter a positive visit limit.';
+        }
+        return;
+      }
+
+      if (limitErrorEl) {
+        limitErrorEl.textContent = '';
+      }
+
+      try {
+        await setLimitForDomain(normalizedDomain, limitValue);
+        limitForm.reset();
+        await refreshLimitList();
+        showSettingsToast(`Limit saved for ${normalizedDomain}`);
+      } catch (error) {
+        console.error('Unable to save limit:', error);
+        showSettingsToast('Unable to save that limit.');
+      }
+    });
+  }
+
+  if (resetDataBtn) {
+    const defaultResetLabel = resetDataBtn.textContent;
+    let resetConfirmTimeout = null;
+    resetDataBtn.addEventListener('click', async () => {
+      if (resetDataBtn.dataset.confirming === 'true') {
+        resetDataBtn.dataset.confirming = 'false';
+        resetDataBtn.textContent = defaultResetLabel;
+        if (resetConfirmTimeout) {
+          clearTimeout(resetConfirmTimeout);
+        }
+        try {
+          await clearAllData();
+          await updateSettings({
+            highContrastMode: false,
+            onboardingComplete: false,
+            defaultTimeRange: 'today',
+          });
+          await loadHighContrastPreference();
+          await refreshLimitList();
+          await renderVisualization(currentRange);
+          showSettingsToast('All focus data cleared.');
+        } catch (error) {
+          console.error('Unable to reset data:', error);
+          showSettingsToast('Unable to reset data. Try again.');
+        }
+        return;
+      }
+
+      resetDataBtn.dataset.confirming = 'true';
+      resetDataBtn.textContent = 'Tap again to confirm reset';
+      showSettingsToast('Tap again to confirm reset.');
+      resetConfirmTimeout = setTimeout(() => {
+        resetDataBtn.dataset.confirming = 'false';
+        resetDataBtn.textContent = defaultResetLabel;
+      }, 4000);
+    });
+  }
+
+  try {
+    await loadHighContrastPreference();
+    await renderVisualization(currentRange);
+    if (loading) {
+      loading.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error initializing visualization page:', error);
+    if (loading) {
+      loading.textContent = 'Error loading FocusBear';
+    }
+  }
+}

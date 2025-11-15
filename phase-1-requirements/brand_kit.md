@@ -24,20 +24,20 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 
 ### Primary Colors
 
-**Primary Color – Bear Blue**
-- **Hex:** `#0E75B6`
-- **RGB:** `rgb(14, 117, 182)`
-- **HSL:** `hsl(203, 86%, 38%)`
-- **Usage:** Primary buttons, key CTAs, headers, active graph nodes, focus rings
+**Primary Color – Sky Blue**
+- **Hex:** `#87CEEB`
+- **RGB:** `rgb(135, 206, 235)`
+- **HSL:** `hsl(197, 71%, 73%)`
+- **Usage:** Primary buttons, key CTAs, headers, active graph nodes, focus rings, backgrounds
 - **Rationale:**
-  - Blue is widely associated with trust, calm, and focus.
-  - The slightly saturated tone feels energetic but not aggressive.
-  - Differentiates from typical productivity apps that lean into very dark blues or harsh neons.
+  - Sky blue evokes openness, clarity, and mental space—perfect for a focus tool.
+  - The lighter, airy tone feels calm and approachable rather than corporate.
+  - Creates a distinctive, friendly visual identity that stands out from darker productivity apps.
 
 **Primary Variants**
-- **Primary Lighter:** `#E0F2FF` – Very subtle backgrounds, info highlights, empty states
-- **Primary Light:** `#4FA6DF` – Hover states for buttons and graph hover states
-- **Primary Dark:** `#0A5584` – Pressed states, emphasis outlines, high-contrast headers
+- **Primary Lighter:** `#E0F4FF` – Very subtle backgrounds, info highlights, empty states
+- **Primary Light:** `#B3E0F7` – Hover states for buttons and graph hover states
+- **Primary Dark:** `#5DADE2` – Pressed states, emphasis outlines, high-contrast accents
 
 ---
 
@@ -98,8 +98,8 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 
 ### Accessibility Guidelines
 
-- **Text on Primary (`#0E75B6`):**
-  - Use white text (`#FFFFFF`) for buttons and high-emphasis labels.
+- **Text on Primary (`#87CEEB`):**
+  - Use dark text (Gray 900 `#111827`) for buttons and high-emphasis labels.
   - This pairing meets WCAG 2.1 AA contrast for normal text.
 
 - **Text on Secondary (`#6C5CE7`):**
@@ -174,14 +174,14 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 ### Logo Variations
 
 - **Primary Logo:**
-  - Wordmark “FocusBear” with a simple bear head icon to the left.
-  - Colors: Bear Blue (`#0E75B6`) for icon, Gray 900 (`#111827`) for wordmark.
+  - Wordmark "FocusBear" with a simple bear head icon to the left.
+  - Colors: Sky Blue (`#87CEEB`) for icon, Gray 900 (`#111827`) for wordmark.
 
 - **Secondary Logo:**
   - Horizontal lockup with bear icon + wordmark in single color (White or Gray 900) for small headers or narrow spaces.
 
 - **Icon / Symbol:**
-  - Simplified bear head in a circle using Bear Blue background and White icon.
+  - Simplified bear head in a circle using Sky Blue background and Gray 900 icon.
   - Used for Chrome extension icon, favicon, avatars.
 
 ### Logo Usage
@@ -193,8 +193,8 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 
 - **Color Variations:**
   - Full-color logo on white / light backgrounds.
-  - White logo on Bear Blue or dark backgrounds.
-  - Do not use gradients in the logo.
+  - White logo on dark backgrounds.
+  - Do not use gradients anywhere in the design system.
 
 ### Logo Don’ts
 
@@ -295,27 +295,27 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 ### Buttons
 
 **Primary Button**
-- Background: `#0E75B6` (Bear Blue)
-- Text: `#FFFFFF`
+- Background: `#87CEEB` (Sky Blue)
+- Text: `#111827` (Gray 900)
 - Border Radius: 9999px or 8px (pill-like)
 - Padding: 10px 20px
 - Font: Inter, 14px, 500
-- Hover: `#0A5584`
-- Active: Slight scale-down + darker shade
+- Hover: `#B3E0F7`
+- Active: Slight scale-down + background `#5DADE2`
 - Disabled: Background `#D1D5DB`, text `#9CA3AF`
 
 **Secondary Button**
 - Background: Transparent
-- Border: 1px solid `#0E75B6`
-- Text: `#0E75B6`
-- Hover: Light background `#E0F2FF`
-- Active: Border `#0A5584`
+- Border: 1px solid `#87CEEB`
+- Text: `#87CEEB`
+- Hover: Light background `#E0F4FF`
+- Active: Border `#5DADE2`
 
 **Text Button**
 - Background: Transparent
-- Text: `#0E75B6`
-- Hover: Underline or slight color change
-- Used for lightweight actions like “Learn more”.
+- Text: `#5DADE2`
+- Hover: Underline or slight color change to `#87CEEB`
+- Used for lightweight actions like "Learn more".
 
 ---
 
@@ -326,7 +326,7 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 - Border Radius: 6px
 - Padding: 8px 12px
 - Placeholder: `#9CA3AF` (Gray 500)
-- Focus: Border `#0E75B6`, outer focus ring with slight glow
+- Focus: Border `#87CEEB`, outer focus ring (no glow, solid color only)
 
 **Error State:**
 - Border: `#D63031`
@@ -398,11 +398,11 @@ Cards are used for:
 
 ### Example 1: Landing Page Hero Section
 
-- **Background:** White or a subtle gradient from `#E0F2FF` to `#FFFFFF`.
-- **Heading (H1):** “Tame your tabs with a friendly bear.” in Gray 900.
-- **Subheading (Body Large):** “FocusBear tracks your tab hopping—locally—and nudges you back to deep work.”
-- **Primary CTA:** “Add to Chrome” (primary button, Bear Blue).
-- **Secondary CTA:** “View the graph demo” (secondary text button).
+- **Background:** White or Sky Blue (`#E0F4FF`) solid color (no gradients).
+- **Heading (H1):** "Tame your tabs with a friendly bear." in Gray 900.
+- **Subheading (Body Large):** "FocusBear tracks your tab hopping—locally—and nudges you back to deep work."
+- **Primary CTA:** "Add to Chrome" (primary button, Sky Blue).
+- **Secondary CTA:** "View the graph demo" (secondary text button).
 - **Illustration:** Bear sitting at a desk, radial graph behind them.
 
 ---
@@ -433,7 +433,7 @@ Cards are used for:
 - **Center Card:** White card with bear illustration.
 - **Title (H2):** “You’ve hit your [Site] limit.”
 - **Body:** “Let’s give your brain a break. Try again tomorrow or change your limit in FocusBear settings.”
-- **Primary Button:** “Back to work” (Bear Blue).
+- **Primary Button:** "Back to work" (Sky Blue).
 - **Secondary Text:** Soft, playful line such as “We’ll be here if you need another nudge.”
 
 ---
@@ -444,7 +444,7 @@ Cards are used for:
 
 **Research Round 1 – Color Psychology & Industry Trends**
 - Blues and purples dominate productivity and SaaS tools for trust + creativity.
-- Many competitors use very sterile, corporate blues; FocusBear differentiates with a slightly more playful blue and warm supporting colors (orange and yellow).
+- Many competitors use very sterile, corporate blues; FocusBear differentiates with a light, airy sky blue that evokes openness and mental clarity, paired with warm supporting colors (orange and yellow).
 
 **Research Round 2 – Typography**
 - Inter is widely used in modern web apps; proven readable at small sizes and optimized for screen.
@@ -455,8 +455,9 @@ Cards are used for:
 - Playful mascots (e.g., owls, robots, bears) help make “productivity” feel less intimidating and more approachable.
 
 **Research Round 4 – Accessibility Validation**
-- Bright blues and purples need careful selection to pass AA contrast; Bear Blue and Focus Purple variants were chosen with adequate contrast in mind.
+- Bright blues and purples need careful selection to pass AA contrast; Sky Blue uses dark text (Gray 900) for sufficient contrast, and Focus Purple variants were chosen with adequate contrast in mind.
 - Clear color roles (primary, semantics) reduce the risk of inconsistent or inaccessible combinations.
+- No gradients are used to ensure consistent contrast ratios across all UI elements.
 
 **Research Round 5 – Holistic Review**
 - Brand language, visuals, and component styles are consistent with the privacy-first, fun-but-serious-about-focus mission.
@@ -468,7 +469,9 @@ Cards are used for:
 
 - **Design Tool:** Figma file: `/FocusBear/BrandSystem` (structure suggestion)
 - **CSS / Tailwind Tokens:**
-  - `--color-primary: #0E75B6;`
+  - `--color-primary: #87CEEB;`
+  - `--color-primary-light: #B3E0F7;`
+  - `--color-primary-dark: #5DADE2;`
   - `--color-secondary: #6C5CE7;`
   - `--color-success: #55EFC4;`
   - `--color-warning: #FF9F43;`

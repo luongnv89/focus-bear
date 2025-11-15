@@ -6,6 +6,12 @@ A playful, privacy-first Chrome extension that helps you track your focus-switch
 
 **Phase 0 (POC)** - In Development
 
+## Using FocusBear
+
+- Click the FocusBear toolbar icon to open the full FocusBear Dashboard in a new tab.
+- Interact with the radial graph, switch the time filters, and refresh data directly from that page—no cramped popup required.
+- The extension still runs entirely locally; the dashboard is just another extension page with more breathing room for D3.
+
 ## Development Setup
 
 ### Prerequisites
@@ -66,7 +72,8 @@ See [.github/README.md](.github/README.md) for detailed CI/CD documentation.
 focus-bear/
 ├── src/
 │   ├── background/     # Service worker scripts
-│   ├── popup/          # Popup UI (HTML, CSS, JS)
+│   ├── popup/          # Shared popup styles/components (still used by dashboard)
+│   ├── dashboard/      # Full-page dashboard UI
 │   ├── blocked/        # Block page
 │   └── content/        # Content scripts
 ├── assets/             # Icons and images

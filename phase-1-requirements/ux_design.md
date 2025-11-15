@@ -18,6 +18,8 @@
   - **GTM:** Designed for instant “wow” moments to encourage sharing (graph, block pages).
   - **Lean Canvas:** Supports the UVP: *“Fun, private, visual focus tracking—zero setup.”*
 
+> **Dashboard Update:** The implemented MVP now opens a full-width FocusBear Dashboard tab from the browser action. The interaction patterns and controls described below remain valid, but spacing/typography specs should accommodate a desktop canvas (≈1200px) in addition to the legacy popup layout.
+
 ---
 
 ## User Personas
@@ -55,7 +57,7 @@
 
 1. **Simplicity:**
    - Minimize required actions. No unnecessary controls.
-   - Present only what’s essential in a 400×600 popup.
+   - Present only what’s essential in either the 400×600 popup (legacy) or the spacious dashboard canvas (primary).
 
 2. **Delightful Micro-interactions:**
    - Friendly animations
@@ -74,6 +76,14 @@
    - WCAG 2.1 AA
    - High-contrast theme
    - Fully keyboard navigable
+
+---
+
+### Dashboard Layout Considerations
+- Use generous gutters (24–48px) on desktop to create a “website” feel while keeping the existing card hierarchy.
+- Keep primary content centered with a max width of ~1200px and retain responsive behavior down to 400px for popup parity/testing.
+- Reuse the same components, typography, and color tokens between the popup and dashboard for maintainability.
+- Ensure the radial graph can expand to at least 900×600 within the dashboard to prevent node overlap.
 
 ---
 

@@ -15,6 +15,8 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 - Build a memorable, shareable product with viral potential
 - Establish FocusBear as the leading “fun guilt + visualization” attention tool
 
+> **Implementation Update – Dashboard View:** The MVP now opens a dedicated FocusBear Dashboard tab from the browser action instead of relying solely on the constrained Chrome popup. The flows and visuals described below still apply, but the layout assumes a spacious 1200px canvas so the D3 graph can breathe.
+
 **Success Metrics**
 - **Acquisition:** 10k installs within 3 months
 - **Engagement:** ≥ 60% DAU/MAU
@@ -68,7 +70,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 
 ### 1. First-Time User Experience (FTUE)
 1. User clicks extension icon
-2. Popup shows onboarding: “Start browsing—FocusBear will track your attention.”
+2. Dashboard tab shows onboarding: “Start browsing—FocusBear will track your attention.”
 3. Visits Facebook → node appears
 4. Switches away then back → count increments
 5. Graph updates in real-time
@@ -76,7 +78,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 **Error State:** Missing permissions → prompts to grant tab access
 
 ### 2. Setting a Daily Limit
-1. Open popup → gear icon → settings
+1. Open dashboard → gear icon → settings
 2. Enable Facebook limit: 15/day
 3. Node shows “15 max”
 4. At 14 visits → bubble: “1 visit left”
@@ -95,7 +97,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 ## Non-Functional Requirements
 
 ### Performance
-- Popup load: < 300ms
+- Dashboard load: < 500ms
 - Graph render: < 1s for 100 nodes
 - Instant update on tab switch
 
@@ -106,7 +108,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 
 ### Compatibility
 - Desktop only (Chrome 100+)
-- Popup optimized for ~400×600
+- Dashboard responsive up to 1200px while remaining legible down to 400px (for auxiliary popup views)
 
 ### Accessibility (WCAG 2.1 AA)
 - Keyboard navigation
@@ -121,7 +123,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 ### Frontend
 - Vanilla JS, D3.js v7, CSS3, HTML5
 - Bear-themed playful UI
-- Popup fixed layout; internal graph responsive
+- Dashboard layout with responsive internal graph
 
 ### Backend
 - 100% client-side
@@ -136,7 +138,7 @@ FocusBear is a playful, privacy-first Chrome extension that helps users *see, un
 ```mermaid
 graph TD
     A[Manifest V3] --> B[Service Worker]
-    A --> C[Popup UI - D3 Graph]
+    A --> C[Dashboard UI - D3 Graph]
     A --> D[Optional Content Script]
 
     B --> E[tabs.onActivated]

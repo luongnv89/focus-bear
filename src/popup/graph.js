@@ -84,13 +84,13 @@ export function renderRadialGraph(container, data, options = {}) {
         .forceLink(links)
         .id((d) => d.id)
         .distance(100)
-        .strength(0.5)
+        .strength(0.5),
     )
     .force('charge', d3.forceManyBody().strength(-200))
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force(
       'collision',
-      d3.forceCollide().radius((d) => (d.isCenter ? 40 : sizeScale(d.count) + 5))
+      d3.forceCollide().radius((d) => (d.isCenter ? 40 : sizeScale(d.count) + 5)),
     );
 
   // Create link elements
@@ -100,7 +100,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .data(links)
     .enter()
     .append('line')
-    .attr('stroke', '#e1e8ed')
+    .attr('stroke', '#d1d5db')
     .attr('stroke-width', 1.5)
     .attr('stroke-opacity', 0.6);
 
@@ -121,11 +121,11 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('fill', (d) => {
       if (d.isCenter) return '#6C5CE7'; // Focus Purple for center
       if (highlightedDomain && d.id === highlightedDomain) return '#FF9F43'; // Warning Orange
-      return '#0E75B6'; // Bear Blue
+      return '#5DADE2'; // Brand Primary dark
     })
     .attr('stroke', (d) => {
       if (highlightedDomain && d.id === highlightedDomain) return '#D63031';
-      return 'white';
+      return '#E0F4FF';
     })
     .attr('stroke-width', 2)
     .attr('opacity', 0.9);
@@ -135,7 +135,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => (d.isCenter ? 5 : 4))
-    .attr('fill', 'white')
+    .attr('fill', (d) => (d.isCenter ? 'white' : '#111827'))
     .attr('font-size', (d) => (d.isCenter ? '14px' : '10px'))
     .attr('font-weight', 600)
     .attr('pointer-events', 'none')
@@ -156,14 +156,14 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('class', 'graph-tooltip')
     .style('position', 'absolute')
     .style('visibility', 'hidden')
-    .style('background', 'rgba(47, 54, 64, 0.95)')
-    .style('color', 'white')
+    .style('background', '#111827')
+    .style('color', '#f9fafb')
     .style('padding', '8px 12px')
     .style('border-radius', '6px')
     .style('font-size', '12px')
     .style('pointer-events', 'none')
     .style('z-index', '1000')
-    .style('box-shadow', '0 2px 8px rgba(0,0,0,0.2)');
+    .style('box-shadow', '0 8px 30px rgba(15,23,42,0.25)');
 
   nodeGroup
     .on('mouseenter', function (event, d) {

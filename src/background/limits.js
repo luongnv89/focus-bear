@@ -65,20 +65,20 @@ export async function updateBlockingRules() {
     const todayVisits = visits[todayKey] || {};
 
     // Get all currently blocked domains
-    const blockedDomains = [];
-    for (const domain in limits) {
-      const limit = limits[domain];
+    const blockedDomains = Object.entries(limits).reduce((acc, [domain, limit]) => {
       const domainVisits = todayVisits[domain];
       const count = domainVisits ? domainVisits.count : 0;
 
       if (count >= limit) {
-        blockedDomains.push({ domain, count, limit });
+        acc.push({ domain, count, limit });
       }
-    }
+
+      return acc;
+    }, []);
 
     // Get existing rule IDs to remove them
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-    const ruleIdsToRemove = existingRules.map(rule => rule.id);
+    const ruleIdsToRemove = existingRules.map((rule) => rule.id);
 
     // Create new rules for blocked domains
     const newRules = blockedDomains.map((item, index) => {
@@ -89,14 +89,14 @@ export async function updateBlockingRules() {
         priority: 1,
         action: {
           type: 'redirect',
-          redirect: { url: blockedPageUrl }
+          redirect: { url: blockedPageUrl },
         },
         condition: {
           urlFilter: `*://${item.domain}/*`,
           resourceTypes: ['main_frame'],
           // Exclude our blocked page from being blocked
-          excludedInitiatorDomains: [chrome.runtime.id]
-        }
+          excludedInitiatorDomains: [chrome.runtime.id],
+        },
       };
     });
 
@@ -109,13 +109,13 @@ export async function updateBlockingRules() {
         priority: 1,
         action: {
           type: 'redirect',
-          redirect: { url: blockedPageUrl }
+          redirect: { url: blockedPageUrl },
         },
         condition: {
           urlFilter: `*://www.${item.domain}/*`,
           resourceTypes: ['main_frame'],
-          excludedInitiatorDomains: [chrome.runtime.id]
-        }
+          excludedInitiatorDomains: [chrome.runtime.id],
+        },
       };
     });
 
@@ -124,7 +124,7 @@ export async function updateBlockingRules() {
     // Update dynamic rules
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: ruleIdsToRemove,
-      addRules: allNewRules
+      addRules: allNewRules,
     });
 
     console.log(`Updated blocking rules: ${blockedDomains.length} domains blocked`);

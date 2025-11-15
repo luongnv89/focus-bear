@@ -3,14 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FocusBear</title>
-    <link rel="stylesheet" href="popup.css" />
+    <title>FocusBear Dashboard</title>
+    <link rel="stylesheet" href="../popup/popup.css" />
     <script src="../vendor/d3.min.js"></script>
   </head>
-  <body>
+  <body class="dashboard-view">
     <div class="container">
       <header>
-        <h1>FocusBear</h1>
+        <div>
+          <p class="tagline">Your attention, mapped with empathy.</p>
+          <h1>FocusBear Dashboard</h1>
+        </div>
         <button id="settings-btn" aria-label="Settings">⚙️</button>
       </header>
 
@@ -25,7 +28,10 @@
 
         <div id="content" style="display: none">
           <div class="stats-header">
-            <h2 id="stats-title">Today's Focus Switches</h2>
+            <div>
+              <p class="eyebrow">Interactive attention map</p>
+              <h2 id="stats-title">Today's Focus Switches</h2>
+            </div>
             <button id="refresh-btn" aria-label="Refresh data" title="Refresh">🔄</button>
           </div>
 
@@ -59,13 +65,9 @@
             </button>
           </div>
 
-          <div id="graph-container" class="graph-container" role="tabpanel">
-            <!-- D3.js graph will be rendered here -->
-          </div>
+          <div id="graph-container" class="graph-container" role="tabpanel"></div>
 
-          <div id="domain-list" class="domain-list" style="display: none">
-            <!-- Fallback domain list (if graph disabled) -->
-          </div>
+          <div id="domain-list" class="domain-list" style="display: none"></div>
         </div>
       </main>
 
@@ -157,6 +159,6 @@
       </section>
     </div>
 
-    <script type="module" src="popup.js"></script>
+    <script type="module" src="./dashboard.js"></script>
   </body>
 </html>

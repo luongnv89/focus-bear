@@ -1,13 +1,17 @@
 /* FocusBear Blocked Page Styles */
 :root {
-  --bear-blue: #0e75b6;
-  --focus-purple: #6c5ce7;
-  --alert-red: #d63031;
-  --warning-orange: #ff9f43;
-  --success-green: #55efc4;
-  --bg-light: #f5f6fa;
-  --text-dark: #2f3640;
-  --text-gray: #636e72;
+  --color-primary: #87ceeb;
+  --color-primary-light: #b3e0f7;
+  --color-primary-lighter: #e0f4ff;
+  --color-secondary: #6c5ce7;
+  --color-secondary-dark: #4b3ac9;
+  --color-warning: #ff9f43;
+  --color-success: #55efc4;
+  --color-error: #d63031;
+  --color-text-dark: #111827;
+  --color-text-muted: #4b5563;
+  --color-card: #ffffff;
+  --color-border: #e5e7eb;
 }
 
 * {
@@ -23,7 +27,7 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  background: linear-gradient(135deg, var(--bear-blue) 0%, var(--focus-purple) 100%);
+  background: var(--color-primary-lighter);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -33,11 +37,12 @@ body {
 
 .container {
   max-width: 500px;
-  background: white;
-  border-radius: 16px;
-  padding: 48px 32px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  padding: 48px 40px;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.15);
 }
 
 .bear {
@@ -58,26 +63,26 @@ body {
 
 h1 {
   font-size: 32px;
-  color: var(--text-dark);
+  color: var(--color-text-dark);
   margin-bottom: 16px;
   font-weight: 700;
 }
 
 .message {
   font-size: 18px;
-  color: var(--text-dark);
+  color: var(--color-text-dark);
   margin-bottom: 12px;
   line-height: 1.6;
 }
 
 .message strong {
-  color: var(--alert-red);
+  color: var(--color-error);
   font-weight: 600;
 }
 
 .subtext {
   font-size: 16px;
-  color: var(--text-gray);
+  color: var(--color-text-muted);
   margin-bottom: 32px;
 }
 
@@ -87,7 +92,7 @@ h1 {
   justify-content: center;
   margin-bottom: 32px;
   padding: 20px;
-  background: var(--bg-light);
+  background: var(--color-primary-lighter);
   border-radius: 12px;
 }
 
@@ -101,14 +106,14 @@ h1 {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--text-gray);
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
 .stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--bear-blue);
+  color: var(--color-secondary);
 }
 
 .actions {
@@ -122,43 +127,71 @@ h1 {
   padding: 14px 28px;
   font-size: 16px;
   font-weight: 600;
-  border: none;
-  border-radius: 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: var(--bear-blue);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-dark);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover {
-  background: #0a5a8a;
+  background: var(--color-primary-light);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(14, 117, 182, 0.3);
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
 }
 
 .btn-secondary {
   background: transparent;
-  color: var(--bear-blue);
-  border: 2px solid var(--bear-blue);
+  color: var(--color-secondary-dark);
+  border: 1px solid var(--color-secondary-dark);
 }
 
 .btn-secondary:hover {
-  background: var(--bear-blue);
+  background: var(--color-secondary);
   color: white;
+  border-color: var(--color-secondary);
 }
 
 .btn:focus {
-  outline: 3px solid var(--warning-orange);
+  outline: 3px solid var(--color-secondary);
   outline-offset: 2px;
 }
 
 .footer {
   font-size: 14px;
-  color: var(--text-gray);
+  color: var(--color-text-muted);
   font-style: italic;
+}
+
+.settings-help {
+  margin-top: 16px;
+  padding: 16px;
+  text-align: left;
+  background: var(--color-primary-lighter);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  color: var(--color-text-dark);
+}
+
+.settings-help-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.settings-help ol {
+  margin-left: 20px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.settings-help-alt {
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

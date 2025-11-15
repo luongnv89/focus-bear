@@ -13,6 +13,36 @@ document.getElementById('domain-name').textContent = domain;
 document.getElementById('visit-count').textContent = count;
 document.getElementById('limit-value').textContent = limit;
 
+const container = document.querySelector('.container');
+const settingsHelp = document.createElement('section');
+settingsHelp.id = 'settings-help';
+settingsHelp.className = 'settings-help';
+settingsHelp.setAttribute('role', 'status');
+settingsHelp.hidden = true;
+settingsHelp.tabIndex = -1;
+
+const helpTitle = document.createElement('p');
+helpTitle.className = 'settings-help-title';
+helpTitle.textContent = 'To adjust limits:';
+
+const instructionsList = document.createElement('ol');
+[
+  'Click the FocusBear icon in your toolbar',
+  'Click the ⚙️ settings button',
+  'Configure your limits',
+].forEach((instruction) => {
+  const listItem = document.createElement('li');
+  listItem.textContent = instruction;
+  instructionsList.appendChild(listItem);
+});
+
+const alternateInstruction = document.createElement('p');
+alternateInstruction.className = 'settings-help-alt';
+alternateInstruction.textContent = 'Or right-click the FocusBear icon and select "Options".';
+
+settingsHelp.append(helpTitle, instructionsList, alternateInstruction);
+container.appendChild(settingsHelp);
+
 // Back button - close tab or go to new tab page
 document.getElementById('back-btn').addEventListener('click', () => {
   window.close();
@@ -22,15 +52,10 @@ document.getElementById('back-btn').addEventListener('click', () => {
   }, 100);
 });
 
-// Settings button - open extension popup (if possible) or show message
 document.getElementById('settings-btn').addEventListener('click', () => {
-  // Open extension popup in new tab isn't directly possible
-  // Instead, we can provide instructions or open the extension page
-  alert(
-    'To adjust limits:\n\n' +
-      '1. Click the FocusBear icon in your toolbar\n' +
-      '2. Click the ⚙️ settings button\n' +
-      '3. Configure your limits\n\n' +
-      'Or right-click the FocusBear icon and select "Options"'
-  );
+  if (settingsHelp.hidden) {
+    settingsHelp.hidden = false;
+    settingsHelp.focus();
+    settingsHelp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 });

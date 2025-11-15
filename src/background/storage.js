@@ -32,6 +32,11 @@
  * }
  */
 
+const defaultSettings = {
+  highContrastMode: false,
+  onboardingComplete: false,
+};
+
 /**
  * Get today's date in YYYY-MM-DD format
  * @returns {string} Date string
@@ -186,12 +191,7 @@ export async function setLimitForDomain(domain, limit) {
 export async function getSettings() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['settings'], (data) => {
-      resolve(
-        data.settings || {
-          highContrastMode: false,
-          onboardingComplete: false,
-        }
-      );
+      resolve(data.settings || defaultSettings);
     });
   });
 }

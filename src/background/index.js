@@ -6,6 +6,20 @@
 import { initializeTracking, trackCurrentTab } from './tracking.js';
 import { initializeLimitEnforcement } from './limits.js';
 
+async function openDashboardTab() {
+  const dashboardUrl = chrome.runtime.getURL('src/dashboard/index.html');
+  try {
+    const existingTabs = await chrome.tabs.query({ url: `${dashboardUrl}*` });
+    if (existingTabs.length > 0) {
+      await chrome.tabs.update(existingTabs[0].id, { active: true });
+      return;
+    }
+    await chrome.tabs.create({ url: dashboardUrl });
+  } catch (error) {
+    console.error('Error opening FocusBear dashboard:', error);
+  }
+}
+
 console.log('FocusBear service worker initialized');
 
 // Listen for extension installation
@@ -47,6 +61,10 @@ initializeLimitEnforcement();
 // Track current tab on startup
 trackCurrentTab().catch((error) => {
   console.error('Error tracking current tab on startup:', error);
+});
+
+chrome.action.onClicked.addListener(() => {
+  openDashboardTab();
 });
 
 console.log('FocusBear background service worker ready');

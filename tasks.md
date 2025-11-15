@@ -168,6 +168,22 @@ Render an interactive radial graph visualizing the user node and domains as orbi
 
 ---
 
+### Task 1.3a – Full-Page Dashboard View
+
+**Description**
+Provide an alternate full-tab dashboard entry point for the visualization so users can explore the D3 graph without popup size restrictions.
+
+**Acceptance Criteria**
+- Clicking the extension icon opens a new tab that loads the FocusBear dashboard.
+- Dashboard reuses the same visualization logic and feature flags as the popup.
+- Layout scales to desktop breakpoints (≥ 1200px) and keeps content centered.
+- Documentation updated to reflect the dashboard-first flow.
+
+**Dependencies**
+- Task 1.3.
+
+---
+
 ### Task 1.4 – Add Time Range Filter Controls in Popup
 
 **Description**

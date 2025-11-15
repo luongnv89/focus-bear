@@ -4,8 +4,8 @@
   "description": "FocusBear - Privacy-first Chrome extension for tracking focus-switching habits",
   "type": "module",
   "scripts": {
-    "lint": "eslint src/**/*.js",
-    "lint:fix": "eslint src/**/*.js --fix",
+    "lint": "npm run format:check && eslint \"src/**/*.js\"",
+    "lint:fix": "prettier --write \"src/**/*.{js,html,css}\" && eslint \"src/**/*.js\" --fix",
     "format": "prettier --write \"src/**/*.{js,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{js,html,css}\"",
     "test": "jest",
