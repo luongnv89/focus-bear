@@ -10,7 +10,7 @@
  * @param {Object} options - Visualization options
  */
 export function renderRadialGraph(container, data, options = {}) {
-  const { width = 400, height = 450, highlightedDomain = null } = options;
+  const { width = 400, height = 450, highlightedDomain = null, badges = {} } = options;
 
   // Performance monitoring
   const graphPerfStart = performance.now();
@@ -157,6 +157,19 @@ export function renderRadialGraph(container, data, options = {}) {
       return d.count;
     });
 
+  // Add Focus Hero badges
+  nodeGroup
+    .filter((d) => !d.isCenter && badges[d.id])
+    .append('text')
+    .attr('class', 'badge-icon')
+    .attr('text-anchor', 'middle')
+    .attr('dy', (d) => -sizeScale(d.count) - 8)
+    .attr('font-size', '16px')
+    .attr('pointer-events', 'none')
+    .text('🏆')
+    .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
+    .style('animation', 'badge-pulse 2s ease-in-out infinite');
+
   // Add tooltips
   const tooltip = d3
     .select(container)
@@ -242,12 +255,15 @@ export function renderRadialGraph(container, data, options = {}) {
       const lastVisitDate = new Date(d.lastVisit).toLocaleString();
 
       const drilldownHint = subpathCount > 0 ? '<br/><em>Double-click to explore subpaths</em>' : '';
+      const badgeInfo = badges[d.id]
+        ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
+        : '';
 
       tooltip.html(`
         <strong>${d.id}</strong><br/>
         Visits: ${d.count}<br/>
         Subpaths: ${subpathCount}<br/>
-        Last visit: ${lastVisitDate}${drilldownHint}
+        Last visit: ${lastVisitDate}${badgeInfo}${drilldownHint}
       `);
       tooltip.style('visibility', 'visible');
     })

@@ -43,7 +43,7 @@
 - [x] Task 3.1 – Subpath Drilldown for Radial Graph
 - [x] Task 3.2 – Export Graph View as PNG
 - [x] Task 3.3 – Data Export (JSON / CSV)
-- [ ] Task 3.4 – "Focus Hero" Badge & Gamification Hooks
+- [x] Task 3.4 – "Focus Hero" Badge & Gamification Hooks
 - [ ] Task 3.5 – Automated Tests (Unit + Integration Smoke)
 - [ ] Task 3.6 – Performance & Memory Profiling
 

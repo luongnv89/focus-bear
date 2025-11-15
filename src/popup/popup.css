@@ -621,6 +621,23 @@ main {
   min-width: 140px;
 }
 
+/* Badge animations */
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+.badge-icon {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
 /* Accessibility: Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   *,

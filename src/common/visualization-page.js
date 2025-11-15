@@ -10,6 +10,7 @@ import {
   getLimits,
   setLimitForDomain,
   clearAllData,
+  calculateFocusHeroBadges,
 } from '../background/storage.js';
 
 /**
@@ -279,9 +280,13 @@ export async function setupVisualizationPage(options = {}) {
         graphContainer.style.display = 'block';
         domainListEl.style.display = 'none';
 
+        // Calculate Focus Hero badges
+        const badges = await calculateFocusHeroBadges();
+
         cleanupGraph = renderRadialGraph(graphContainer, aggregatedVisits, {
           width: graphWidth,
           height: graphHeight,
+          badges,
         });
       } else {
         graphContainer.style.display = 'none';

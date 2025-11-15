@@ -244,6 +244,54 @@ export async function getVisitsInRange(startDate, endDate) {
 }
 
 /**
+ * Calculate "Focus Hero" badges for domains
+ * A domain earns a badge if user stayed under limit for 3+ consecutive days
+ * @returns {Promise<Object>} Object with domain names as keys and badge status
+ */
+export async function calculateFocusHeroBadges() {
+  const visits = await getVisits();
+  const limits = await getLimits();
+  const badges = {};
+
+  // Check last 7 days for each domain with a limit
+  const today = new Date();
+  const dateKeys = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    dateKeys.push(date.toISOString().split('T')[0]);
+  }
+
+  Object.keys(limits).forEach((domain) => {
+    const limit = limits[domain];
+    let consecutiveDaysUnderLimit = 0;
+
+    // Check days in reverse chronological order
+    for (const dateKey of dateKeys) {
+      const dayVisits = visits[dateKey]?.[domain];
+      const count = dayVisits ? dayVisits.count : 0;
+
+      if (count <= limit) {
+        consecutiveDaysUnderLimit++;
+      } else {
+        break; // Streak broken
+      }
+    }
+
+    // Award badge if 3+ consecutive days under limit
+    if (consecutiveDaysUnderLimit >= 3) {
+      badges[domain] = {
+        earned: true,
+        streak: consecutiveDaysUnderLimit,
+        earnedDate: getTodayKey(),
+      };
+    }
+  });
+
+  return badges;
+}
+
+/**
  * Get aggregated domain stats for a time range
  * @param {string} range - "hour" | "today" | "week" | "month"
  * @returns {Promise<Object>} Aggregated domain counts
