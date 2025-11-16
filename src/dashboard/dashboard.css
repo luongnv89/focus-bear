@@ -334,7 +334,8 @@ body.high-contrast .dashboard-header .header-logo {
 }
 
 .table-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: auto;
 }
@@ -477,6 +478,7 @@ body.high-contrast .dashboard-header .header-logo {
   background: var(--color-surface);
   gap: 16px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .pagination-info {
