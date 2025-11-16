@@ -589,16 +589,49 @@ main {
   border-radius: 12px;
   border: 1px solid var(--color-border);
   background: var(--color-primary-lighter);
+  gap: 12px;
 }
 
-.limit-list strong {
+.limit-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.limit-item-info strong {
   font-size: 14px;
   color: var(--color-text-dark);
 }
 
-.limit-list span {
+.limit-item-info span {
   font-size: 13px;
   color: var(--color-text-muted);
+}
+
+.limit-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.limit-item-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.limit-item-toggle input[type='checkbox'] {
+  width: 42px;
+  height: 22px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.pill-button-small {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .toggle-row {

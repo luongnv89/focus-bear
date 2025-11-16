@@ -178,6 +178,7 @@ export async function setupVisualizationPage(options = {}) {
       const normalized = normalizeLimitConfig(limitConfig);
       const item = document.createElement('li');
       const info = document.createElement('div');
+      info.className = 'limit-item-info';
 
       let limitText = '';
       if (!normalized.enabled) {
@@ -195,9 +196,22 @@ export async function setupVisualizationPage(options = {}) {
 
       info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
 
+      // Quick toggle switch
+      const toggleWrapper = document.createElement('label');
+      toggleWrapper.className = 'limit-item-toggle';
+      toggleWrapper.setAttribute('aria-label', `Toggle limit for ${domain}`);
+
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.checked = normalized.enabled;
+      toggleInput.dataset.domain = domain;
+      toggleInput.dataset.action = 'toggle';
+
+      toggleWrapper.appendChild(toggleInput);
+
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = 'pill-button pill-button-secondary';
+      editBtn.className = 'pill-button pill-button-secondary pill-button-small';
       editBtn.dataset.domain = domain;
       editBtn.dataset.action = 'edit';
       editBtn.textContent = 'Edit';
@@ -205,16 +219,15 @@ export async function setupVisualizationPage(options = {}) {
 
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
-      removeBtn.className = 'pill-button pill-button-secondary';
+      removeBtn.className = 'pill-button pill-button-secondary pill-button-small';
       removeBtn.dataset.domain = domain;
       removeBtn.dataset.action = 'remove';
       removeBtn.textContent = 'Remove';
       removeBtn.setAttribute('aria-label', `Remove limit for ${domain}`);
 
       const btnGroup = document.createElement('div');
-      btnGroup.style.display = 'flex';
-      btnGroup.style.gap = '8px';
-      btnGroup.append(editBtn, removeBtn);
+      btnGroup.className = 'limit-item-actions';
+      btnGroup.append(toggleWrapper, editBtn, removeBtn);
 
       item.append(info, btnGroup);
       limitList.appendChild(item);
@@ -414,7 +427,27 @@ export async function setupVisualizationPage(options = {}) {
       const { domain, action } = event.target.dataset || {};
       if (!domain || !action) return;
 
-      if (action === 'remove') {
+      if (action === 'toggle') {
+        // Quick toggle to enable/disable limits
+        try {
+          const limits = await getLimits();
+          const { normalizeLimitConfig } = await import('../background/storage.js');
+          const limitConfig = normalizeLimitConfig(limits[domain]);
+
+          // Toggle the enabled state
+          const newEnabled = event.target.checked;
+          limitConfig.enabled = newEnabled;
+
+          await setLimitForDomain(domain, limitConfig);
+          await refreshLimitList();
+          showSettingsToast(`${domain} limits ${newEnabled ? 'enabled' : 'disabled'}`);
+        } catch (error) {
+          console.error('Unable to toggle limit:', error);
+          // Revert checkbox state
+          event.target.checked = !event.target.checked;
+          showSettingsToast('Unable to toggle that limit.');
+        }
+      } else if (action === 'remove') {
         try {
           await setLimitForDomain(domain, null);
           await refreshLimitList();
