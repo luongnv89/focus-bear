@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FocusBear • Domain Detail</title>
+    <link rel="stylesheet" href="../popup/popup.css" />
+    <link rel="stylesheet" href="./dashboard.css" />
+    <link rel="stylesheet" href="./domain.css" />
+  </head>
+  <body class="dashboard-view domain-detail-view">
+    <div class="domain-detail-container">
+      <header class="domain-detail-header">
+        <button
+          id="back-btn"
+          class="pill-button pill-button-secondary"
+          aria-label="Back to dashboard"
+        >
+          ← Back to dashboard
+        </button>
+        <div>
+          <p class="eyebrow">Domain detail</p>
+          <h1 id="domain-title">example.com</h1>
+        </div>
+      </header>
+
+      <main>
+        <section class="domain-stats-grid">
+          <article class="stat-card">
+            <p class="stat-label">Visits today</p>
+            <p id="stat-today" class="stat-value">0</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Last 7 days</p>
+            <p id="stat-week" class="stat-value">0</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Total visits</p>
+            <p id="stat-total" class="stat-value">0</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Last visit</p>
+            <p id="stat-last-visit" class="stat-value">—</p>
+          </article>
+        </section>
+
+        <section class="domain-limit-card">
+          <div class="card-header">
+            <h2>Limit configuration</h2>
+            <p class="card-subtitle">
+              Tweak or disable the per-site limits without leaving this view.
+            </p>
+          </div>
+
+          <form id="domain-limit-form" class="settings-form">
+            <label class="toggle-row" for="detail-limit-enabled">
+              <div>
+                <span>Enable limits</span>
+              </div>
+              <input type="checkbox" id="detail-limit-enabled" name="enabled" checked />
+            </label>
+
+            <div id="detail-limit-config-section">
+              <div class="limit-type-section">
+                <label class="toggle-row" for="detail-five-hour-enabled">
+                  <div>
+                    <span>5-hour window limit</span>
+                    <p class="muted-copy">Max visits in any rolling 5-hour period</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="detail-five-hour-enabled"
+                    name="fiveHourEnabled"
+                    checked
+                  />
+                </label>
+
+                <div id="detail-five-hour-config" class="limit-input-group">
+                  <label for="detail-five-hour-limit">Visits per 5 hours</label>
+                  <input
+                    id="detail-five-hour-limit"
+                    name="fiveHourLimit"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="10"
+                  />
+                </div>
+              </div>
+
+              <div class="limit-type-section">
+                <label class="toggle-row" for="detail-daily-enabled">
+                  <div>
+                    <span>Daily limit</span>
+                    <p class="muted-copy">Max visits per day</p>
+                  </div>
+                  <input type="checkbox" id="detail-daily-enabled" name="dailyEnabled" checked />
+                </label>
+
+                <div id="detail-daily-config" class="limit-input-group">
+                  <label for="detail-daily-limit">Visits per day</label>
+                  <input
+                    id="detail-daily-limit"
+                    name="dailyLimit"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p id="domain-limit-error" class="form-error" role="alert"></p>
+            <button type="submit" class="pill-button pill-button-primary">Save limit</button>
+          </form>
+        </section>
+
+        <section class="domain-history-card">
+          <div class="history-header">
+            <div>
+              <h2>Recent activity</h2>
+              <p class="card-subtitle">Last 7 sessions for this domain</p>
+            </div>
+            <button id="delete-domain-data" class="pill-button pill-button-danger">
+              Delete domain data
+            </button>
+          </div>
+          <ul id="history-list" class="history-list">
+            <li class="history-empty">No activity yet.</li>
+          </ul>
+        </section>
+      </main>
+
+      <div id="domain-toast" class="settings-toast" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="domain.js"></script>
+  </body>
+</html>

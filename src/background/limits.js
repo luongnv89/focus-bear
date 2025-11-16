@@ -1,14 +1,65 @@
 /**
  * FocusBear Limits Enforcement Module
- * Handles per-site daily limits and blocking
+ * Handles per-site time-based limits (5-hour and daily) and blocking
  */
 
-import { getTodayKey } from './storage.js';
+import { getTodayKey, normalizeLimitConfig } from './storage.js';
+
+function getNextActiveLimit(normalizedConfig, fiveHourCount, dailyCount) {
+  const candidates = [];
+  if (normalizedConfig.fiveHour.enabled) {
+    candidates.push({
+      type: 'fiveHour',
+      limit: normalizedConfig.fiveHour.limit,
+      count: fiveHourCount,
+      remaining: normalizedConfig.fiveHour.limit - fiveHourCount,
+    });
+  }
+  if (normalizedConfig.daily.enabled) {
+    candidates.push({
+      type: 'daily',
+      limit: normalizedConfig.daily.limit,
+      count: dailyCount,
+      remaining: normalizedConfig.daily.limit - dailyCount,
+    });
+  }
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  candidates.sort((a, b) => a.remaining - b.remaining);
+  return candidates[0];
+}
 
 /**
- * Check if domain has exceeded its daily limit
+ * Count visits within a time window
+ * @param {Array<number>} timestamps - Array of visit timestamps
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {number} Number of visits within the window
+ */
+function countVisitsInWindow(timestamps, windowMs) {
+  if (!timestamps || !Array.isArray(timestamps)) {
+    return 0;
+  }
+
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  return timestamps.filter((ts) => ts >= windowStart).length;
+}
+
+/**
+ * Check if domain has exceeded its limits (5-hour or daily)
  * @param {string} domain - Domain name
- * @returns {Promise<{exceeded: boolean, count: number, limit: number|null}>}
+ * @returns {Promise<{
+ *   exceeded: boolean,
+ *   count: number,
+ *   limit: number|null,
+ *   limitType: string|null,
+ *   fiveHourCount: number,
+ *   dailyCount: number,
+ * }>}
  */
 export async function checkLimit(domain) {
   return new Promise((resolve) => {
@@ -19,18 +70,80 @@ export async function checkLimit(domain) {
       const todayKey = getTodayKey();
       const todayVisits = visits[todayKey] || {};
       const domainVisits = todayVisits[domain];
-      const count = domainVisits ? domainVisits.count : 0;
-      const limit = limits[domain];
+      const dailyCount = domainVisits ? domainVisits.count : 0;
+      const timestamps = domainVisits ? domainVisits.timestamps || [] : [];
+
+      let limitConfig = limits[domain];
 
       // No limit set = unlimited
-      if (!limit) {
-        resolve({ exceeded: false, count, limit: null });
+      if (!limitConfig) {
+        resolve({
+          exceeded: false,
+          count: dailyCount,
+          limit: null,
+          limitType: null,
+          fiveHourCount: 0,
+          dailyCount,
+        });
         return;
       }
 
-      // Check if exceeded
-      const exceeded = count >= limit;
-      resolve({ exceeded, count, limit });
+      // Normalize legacy format
+      limitConfig = normalizeLimitConfig(limitConfig);
+
+      // If limits are globally disabled for this domain
+      if (!limitConfig.enabled) {
+        resolve({
+          exceeded: false,
+          count: dailyCount,
+          limit: null,
+          limitType: null,
+          fiveHourCount: 0,
+          dailyCount,
+        });
+        return;
+      }
+
+      // Check 5-hour window limit
+      const fiveHourMs = 5 * 60 * 60 * 1000;
+      const fiveHourCount = countVisitsInWindow(timestamps, fiveHourMs);
+
+      if (limitConfig.fiveHour.enabled && fiveHourCount >= limitConfig.fiveHour.limit) {
+        resolve({
+          exceeded: true,
+          count: fiveHourCount,
+          limit: limitConfig.fiveHour.limit,
+          limitType: 'fiveHour',
+          fiveHourCount,
+          dailyCount,
+        });
+        return;
+      }
+
+      // Check daily limit
+      if (limitConfig.daily.enabled && dailyCount >= limitConfig.daily.limit) {
+        resolve({
+          exceeded: true,
+          count: dailyCount,
+          limit: limitConfig.daily.limit,
+          limitType: 'daily',
+          fiveHourCount,
+          dailyCount,
+        });
+        return;
+      }
+
+      const nextLimit = getNextActiveLimit(limitConfig, fiveHourCount, dailyCount);
+
+      // No limits exceeded
+      resolve({
+        exceeded: false,
+        count: nextLimit ? nextLimit.count : dailyCount,
+        limit: nextLimit ? nextLimit.limit : null,
+        limitType: nextLimit ? nextLimit.type : null,
+        fiveHourCount,
+        dailyCount,
+      });
     });
   });
 }
@@ -40,14 +153,16 @@ export async function checkLimit(domain) {
  * @param {string} domain - Domain name
  * @param {number} count - Current visit count
  * @param {number} limit - Visit limit
+ * @param {string} limitType - Type of limit exceeded ('fiveHour' or 'daily')
  * @returns {string} Blocked page URL
  */
-export function getBlockedPageUrl(domain, count, limit) {
+export function getBlockedPageUrl(domain, count, limit, limitType = 'daily') {
   const blockedPageUrl = chrome.runtime.getURL('src/blocked/blocked.html');
   const params = new URLSearchParams({
     domain,
     count: count.toString(),
     limit: limit.toString(),
+    limitType,
   });
   return `${blockedPageUrl}?${params.toString()}`;
 }
@@ -65,16 +180,45 @@ export async function updateBlockingRules() {
     const todayVisits = visits[todayKey] || {};
 
     // Get all currently blocked domains
-    const blockedDomains = Object.entries(limits).reduce((acc, [domain, limit]) => {
-      const domainVisits = todayVisits[domain];
-      const count = domainVisits ? domainVisits.count : 0;
+    const blockedDomains = [];
 
-      if (count >= limit) {
-        acc.push({ domain, count, limit });
+    Object.entries(limits).forEach(([domain, limitConfig]) => {
+      const domainVisits = todayVisits[domain];
+      const dailyCount = domainVisits ? domainVisits.count : 0;
+      const timestamps = domainVisits ? domainVisits.timestamps || [] : [];
+
+      // Normalize legacy format
+      const normalizedConfig = normalizeLimitConfig(limitConfig);
+
+      // Skip if limits are disabled
+      if (!normalizedConfig.enabled) {
+        return;
       }
 
-      return acc;
-    }, []);
+      // Check 5-hour window
+      const fiveHourMs = 5 * 60 * 60 * 1000;
+      const fiveHourCount = countVisitsInWindow(timestamps, fiveHourMs);
+
+      if (normalizedConfig.fiveHour.enabled && fiveHourCount >= normalizedConfig.fiveHour.limit) {
+        blockedDomains.push({
+          domain,
+          count: fiveHourCount,
+          limit: normalizedConfig.fiveHour.limit,
+          limitType: 'fiveHour',
+        });
+        return;
+      }
+
+      // Check daily limit
+      if (normalizedConfig.daily.enabled && dailyCount >= normalizedConfig.daily.limit) {
+        blockedDomains.push({
+          domain,
+          count: dailyCount,
+          limit: normalizedConfig.daily.limit,
+          limitType: 'daily',
+        });
+      }
+    });
 
     // Store blocked domains info in storage for the blocked page to access
     // This is a fallback in case URL parameters don't work properly
@@ -83,6 +227,7 @@ export async function updateBlockingRules() {
       blockedDomainsMap[item.domain] = {
         count: item.count,
         limit: item.limit,
+        limitType: item.limitType,
         blockedAt: Date.now(),
       };
     });
@@ -94,7 +239,7 @@ export async function updateBlockingRules() {
 
     // Create new rules for blocked domains
     const newRules = blockedDomains.map((item, index) => {
-      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit);
+      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit, item.limitType);
 
       return {
         id: index + 1, // Rule IDs must be positive integers
@@ -114,7 +259,7 @@ export async function updateBlockingRules() {
 
     // Also add rules for www. versions
     const wwwRules = blockedDomains.map((item, index) => {
-      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit);
+      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit, item.limitType);
 
       return {
         id: index + 1 + 1000, // Offset to avoid ID collision

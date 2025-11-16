@@ -69,6 +69,14 @@
           <div id="domain-list" class="domain-list" style="display: none">
             <!-- Fallback domain list (if graph disabled) -->
           </div>
+
+          <div id="quick-limits-panel" class="quick-limits-panel" style="display: none">
+            <div class="quick-limits-header">
+              <h3>Quick Limits</h3>
+              <p class="muted-copy">Set limits for your most visited sites</p>
+            </div>
+            <ul id="quick-limits-list" class="quick-limits-list"></ul>
+          </div>
         </div>
       </main>
 
@@ -90,10 +98,9 @@
         <div class="settings-grid">
           <article class="settings-card">
             <div class="card-header">
-              <h3>Per-site daily limits</h3>
+              <h3>Per-site time-based limits</h3>
               <p class="card-subtitle">
-                Cap visits to distracting sites. We'll redirect you to the bear wall when you hit
-                the limit.
+                Cap visits to distracting sites with 5-hour and daily limits. We'll redirect you to the bear wall when you hit the limit.
               </p>
             </div>
 
@@ -107,16 +114,58 @@
                 required
               />
 
-              <label for="limit-value">Daily visits allowed</label>
-              <input
-                id="limit-value"
-                name="limit"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="15"
-                required
-              />
+              <label class="toggle-row" for="limit-enabled">
+                <div>
+                  <span>Enable limits for this domain</span>
+                </div>
+                <input type="checkbox" id="limit-enabled" name="enabled" checked />
+              </label>
+
+              <div id="limit-config-section">
+                <div class="limit-type-section">
+                  <label class="toggle-row" for="five-hour-enabled">
+                    <div>
+                      <span>5-hour window limit</span>
+                      <p class="muted-copy">Max visits in any 5-hour period</p>
+                    </div>
+                    <input type="checkbox" id="five-hour-enabled" name="fiveHourEnabled" checked />
+                  </label>
+
+                  <div id="five-hour-config" class="limit-input-group">
+                    <label for="five-hour-limit">Visits per 5 hours</label>
+                    <input
+                      id="five-hour-limit"
+                      name="fiveHourLimit"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value="10"
+                    />
+                  </div>
+                </div>
+
+                <div class="limit-type-section">
+                  <label class="toggle-row" for="daily-enabled">
+                    <div>
+                      <span>Daily limit</span>
+                      <p class="muted-copy">Max visits per day</p>
+                    </div>
+                    <input type="checkbox" id="daily-enabled" name="dailyEnabled" checked />
+                  </label>
+
+                  <div id="daily-config" class="limit-input-group">
+                    <label for="daily-limit">Visits per day</label>
+                    <input
+                      id="daily-limit"
+                      name="dailyLimit"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value="20"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <p id="limit-error" class="form-error" role="alert"></p>
               <button type="submit" class="pill-button pill-button-primary">Save limit</button>

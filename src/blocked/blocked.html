@@ -11,7 +11,8 @@
       <div class="bear" role="img" aria-label="Bear mascot">🐻</div>
       <h1 id="page-heading">Whoa there, friend!</h1>
       <p class="message" role="status" aria-live="polite">
-        You've hit your daily limit for <strong id="domain-name">this site</strong>.
+        You've hit your <strong id="limit-type">daily</strong> limit for
+        <strong id="domain-name">this site</strong>.
       </p>
       <p class="subtext" id="subtext">Maybe it's time for a breather? Your focus bear thinks so.</p>
 
@@ -30,7 +31,11 @@
         <button id="back-btn" class="btn btn-primary" aria-label="Go back to previous page">
           Back to work
         </button>
-        <button id="settings-btn" class="btn btn-secondary" aria-label="Open settings to adjust limits">
+        <button
+          id="settings-btn"
+          class="btn btn-secondary"
+          aria-label="Open settings to adjust limits"
+        >
           Adjust limits
         </button>
       </div>
@@ -38,6 +43,6 @@
       <p class="footer">Reset happens at midnight. You got this! 💪</p>
     </main>
 
-    <script src="blocked.js"></script>
+    <script type="module" src="blocked.js"></script>
   </body>
 </html>

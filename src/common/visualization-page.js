@@ -11,6 +11,8 @@ import {
   setLimitForDomain,
   clearAllData,
   calculateFocusHeroBadges,
+  normalizeLimitConfig,
+  createDefaultLimitConfig,
 } from '../background/storage.js';
 
 /**
@@ -133,6 +135,21 @@ export async function setupVisualizationPage(options = {}) {
   const settingsToast = document.getElementById('settings-toast');
   const resetDataBtn = document.getElementById('reset-data-btn');
 
+  const applyLimitConfigToForm = (domainValue, config) => {
+    if (!limitForm) return;
+    const resolvedConfig = config ? normalizeLimitConfig(config) : createDefaultLimitConfig();
+    limitForm.elements.domain.value = domainValue || '';
+    limitForm.elements.enabled.checked = resolvedConfig.enabled;
+    limitForm.elements.fiveHourEnabled.checked = resolvedConfig.fiveHour.enabled;
+    limitForm.elements.fiveHourLimit.value = resolvedConfig.fiveHour.limit;
+    limitForm.elements.dailyEnabled.checked = resolvedConfig.daily.enabled;
+    limitForm.elements.dailyLimit.value = resolvedConfig.daily.limit;
+  };
+
+  const resetLimitFormToDefaults = () => {
+    applyLimitConfigToForm('', createDefaultLimitConfig());
+  };
+
   const showSettingsToast = (message) => {
     if (!settingsToast) return;
     settingsToast.textContent = message;
@@ -173,19 +190,65 @@ export async function setupVisualizationPage(options = {}) {
       return;
     }
 
-    entries.forEach(([domain, limit]) => {
+    entries.forEach(([domain, limitConfig]) => {
+      const normalized = normalizeLimitConfig(limitConfig);
       const item = document.createElement('li');
       const info = document.createElement('div');
-      info.innerHTML = `<strong>${domain}</strong><br/><span>${limit} visits/day</span>`;
+      info.className = 'limit-item-info';
+
+      let limitText = '';
+      if (!normalized.enabled) {
+        limitText = '<span style="color: #999;">Disabled</span>';
+      } else {
+        const parts = [];
+        if (normalized.fiveHour.enabled) {
+          parts.push(`${normalized.fiveHour.limit} per 5h`);
+        }
+        if (normalized.daily.enabled) {
+          parts.push(`${normalized.daily.limit} per day`);
+        }
+        limitText =
+          parts.length > 0
+            ? parts.join(', ')
+            : '<span style="color: #999;">No limits active</span>';
+      }
+
+      info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
+
+      // Quick toggle switch
+      const toggleWrapper = document.createElement('label');
+      toggleWrapper.className = 'limit-item-toggle';
+      toggleWrapper.setAttribute('aria-label', `Toggle limit for ${domain}`);
+
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.checked = normalized.enabled;
+      toggleInput.dataset.domain = domain;
+      toggleInput.dataset.action = 'toggle';
+
+      toggleWrapper.appendChild(toggleInput);
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'pill-button pill-button-secondary pill-button-small';
+      editBtn.dataset.domain = domain;
+      editBtn.dataset.action = 'edit';
+      editBtn.textContent = 'Edit';
+      editBtn.setAttribute('aria-label', `Edit limit for ${domain}`);
 
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
-      removeBtn.className = 'pill-button pill-button-secondary';
+      removeBtn.className = 'pill-button pill-button-secondary pill-button-small';
       removeBtn.dataset.domain = domain;
+      removeBtn.dataset.action = 'remove';
       removeBtn.textContent = 'Remove';
       removeBtn.setAttribute('aria-label', `Remove limit for ${domain}`);
 
-      item.append(info, removeBtn);
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'limit-item-actions';
+      btnGroup.append(toggleWrapper, editBtn, removeBtn);
+
+      item.append(info, btnGroup);
       limitList.appendChild(item);
     });
   };
@@ -248,6 +311,101 @@ export async function setupVisualizationPage(options = {}) {
     });
   };
 
+  const renderQuickLimits = async (aggregatedVisits) => {
+    const quickLimitsPanel = document.getElementById('quick-limits-panel');
+    const quickLimitsList = document.getElementById('quick-limits-list');
+
+    if (!quickLimitsPanel || !quickLimitsList) return;
+
+    // Get top 5 domains by visit count
+    const sortedDomains = Object.entries(aggregatedVisits)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([domain]) => domain);
+
+    if (sortedDomains.length === 0) {
+      quickLimitsPanel.style.display = 'none';
+      return;
+    }
+
+    quickLimitsPanel.style.display = 'block';
+    quickLimitsList.innerHTML = '';
+
+    const limits = await getLimits();
+
+    sortedDomains.forEach((domain) => {
+      const visitCount = aggregatedVisits[domain].count;
+      const limitConfig = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+      const defaultConfig = createDefaultLimitConfig();
+      const hasLimit = limitConfig !== null;
+      const isEnabled = hasLimit && limitConfig.enabled;
+
+      const item = document.createElement('li');
+      item.className = 'quick-limit-item';
+
+      const info = document.createElement('div');
+      info.className = 'quick-limit-info';
+
+      let statusText = '';
+      if (!hasLimit) {
+        statusText = `
+          <span class="limit-status no-limit">
+            Default ${defaultConfig.fiveHour.limit}/5h · ${defaultConfig.daily.limit}/day
+          </span>
+        `.trim();
+      } else if (!isEnabled) {
+        statusText = '<span class="limit-status disabled">Disabled</span>';
+      } else {
+        const parts = [];
+        if (limitConfig.fiveHour.enabled) {
+          parts.push(`${limitConfig.fiveHour.limit}/5h`);
+        }
+        if (limitConfig.daily.enabled) {
+          parts.push(`${limitConfig.daily.limit}/day`);
+        }
+        statusText = `<span class="limit-status active">${parts.join(', ')}</span>`;
+      }
+
+      info.innerHTML = `
+        <div class="quick-limit-domain">${domain}</div>
+        <div class="quick-limit-stats">
+          <span class="visit-count">${visitCount} visits</span>
+          ${statusText}
+        </div>
+      `;
+
+      const actions = document.createElement('div');
+      actions.className = 'quick-limit-actions';
+
+      // Toggle switch
+      const toggleWrapper = document.createElement('label');
+      toggleWrapper.className = 'quick-limit-toggle';
+      toggleWrapper.setAttribute('aria-label', `Toggle limit for ${domain}`);
+
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.checked = isEnabled;
+      toggleInput.dataset.domain = domain;
+      toggleInput.dataset.action = 'quick-toggle';
+      toggleInput.dataset.state = hasLimit ? 'configured' : 'default';
+
+      toggleWrapper.appendChild(toggleInput);
+      actions.appendChild(toggleWrapper);
+
+      const customizeBtn = document.createElement('button');
+      customizeBtn.type = 'button';
+      customizeBtn.className = 'pill-button pill-button-secondary pill-button-small';
+      customizeBtn.dataset.domain = domain;
+      customizeBtn.dataset.action = 'quick-customize';
+      customizeBtn.textContent = 'Customize';
+      customizeBtn.setAttribute('aria-label', `Customize limit for ${domain}`);
+      actions.appendChild(customizeBtn);
+
+      item.append(info, actions);
+      quickLimitsList.appendChild(item);
+    });
+  };
+
   const renderVisualization = async (range = currentRange) => {
     const graphContainer = document.getElementById('graph-container');
     const domainListEl = document.getElementById('domain-list');
@@ -280,6 +438,9 @@ export async function setupVisualizationPage(options = {}) {
       if (onDataLoaded) {
         onDataLoaded(aggregatedVisits);
       }
+
+      // Render quick limits panel
+      await renderQuickLimits(aggregatedVisits);
 
       if (cleanupGraph) {
         cleanupGraph();
@@ -380,30 +541,143 @@ export async function setupVisualizationPage(options = {}) {
 
   if (limitList) {
     limitList.addEventListener('click', async (event) => {
-      const { domain } = event.target.dataset || {};
-      if (!domain) return;
-      try {
-        await setLimitForDomain(domain, null);
-        await refreshLimitList();
-        showSettingsToast(`Removed limit for ${domain}`);
-      } catch (error) {
-        console.error('Unable to remove limit:', error);
-        showSettingsToast('Unable to remove that limit.');
+      const { domain, action } = event.target.dataset || {};
+      if (!domain || !action) return;
+
+      if (action === 'toggle') {
+        // Quick toggle to enable/disable limits
+        try {
+          const limits = await getLimits();
+          const limitConfig = normalizeLimitConfig(limits[domain]);
+
+          // Toggle the enabled state
+          const newEnabled = event.target.checked;
+          limitConfig.enabled = newEnabled;
+
+          await setLimitForDomain(domain, limitConfig);
+          await refreshLimitList();
+          showSettingsToast(`${domain} limits ${newEnabled ? 'enabled' : 'disabled'}`);
+        } catch (error) {
+          console.error('Unable to toggle limit:', error);
+          // Revert checkbox state
+          event.target.checked = !event.target.checked;
+          showSettingsToast('Unable to toggle that limit.');
+        }
+      } else if (action === 'remove') {
+        try {
+          await setLimitForDomain(domain, null);
+          await refreshLimitList();
+          showSettingsToast(`Removed limit for ${domain}`);
+        } catch (error) {
+          console.error('Unable to remove limit:', error);
+          showSettingsToast('Unable to remove that limit.');
+        }
+      } else if (action === 'edit') {
+        // Populate form with existing limit data
+        const limits = await getLimits();
+        const limitConfig = normalizeLimitConfig(limits[domain]);
+
+        if (limitForm) {
+          applyLimitConfigToForm(domain, limitConfig);
+
+          // Scroll to form
+          limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          limitForm.elements.domain.focus();
+        }
+      }
+    });
+  }
+
+  // Quick limits panel event handlers
+  const quickLimitsList = document.getElementById('quick-limits-list');
+  if (quickLimitsList) {
+    quickLimitsList.addEventListener('click', async (event) => {
+      const { domain, action } = event.target.dataset || {};
+      if (!domain || !action) return;
+
+      if (action === 'quick-toggle') {
+        // Quick toggle to enable/disable limits
+        const desiredState = event.target.checked;
+        try {
+          const limits = await getLimits();
+          let limitConfig = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+
+          // Toggle the enabled state
+          const newEnabled = desiredState;
+
+          if (!limitConfig && newEnabled) {
+            limitConfig = createDefaultLimitConfig();
+          }
+
+          if (!limitConfig) {
+            event.target.checked = false;
+            return;
+          }
+
+          limitConfig.enabled = newEnabled;
+
+          await setLimitForDomain(domain, limitConfig);
+          await renderVisualization(currentRange);
+        } catch (error) {
+          console.error('Unable to toggle limit:', error);
+          // Revert checkbox state
+          event.target.checked = !desiredState;
+        }
+      } else if (action === 'quick-customize') {
+        // Open settings and populate form with this domain
+        await showSettingsView();
+
+        if (limitForm) {
+          const limits = await getLimits();
+          const limitConfig = limits[domain]
+            ? normalizeLimitConfig(limits[domain])
+            : createDefaultLimitConfig();
+          applyLimitConfigToForm(domain, limitConfig);
+
+          // Scroll to form
+          limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          limitForm.elements.domain.focus();
+        }
       }
     });
   }
 
   if (limitForm) {
+    resetLimitFormToDefaults();
+    // Toggle visibility of limit config sections
+    const limitEnabledToggle = limitForm.elements.enabled;
+    const fiveHourEnabledToggle = limitForm.elements.fiveHourEnabled;
+    const dailyEnabledToggle = limitForm.elements.dailyEnabled;
+    const limitConfigSection = document.getElementById('limit-config-section');
+    const fiveHourConfig = document.getElementById('five-hour-config');
+    const dailyConfig = document.getElementById('daily-config');
+
+    if (limitEnabledToggle && limitConfigSection) {
+      limitEnabledToggle.addEventListener('change', () => {
+        limitConfigSection.style.opacity = limitEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
+    if (fiveHourEnabledToggle && fiveHourConfig) {
+      fiveHourEnabledToggle.addEventListener('change', () => {
+        fiveHourConfig.style.opacity = fiveHourEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
+    if (dailyEnabledToggle && dailyConfig) {
+      dailyEnabledToggle.addEventListener('change', () => {
+        dailyConfig.style.opacity = dailyEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
     limitForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const domainInput = limitForm.elements.domain;
-      const limitInput = limitForm.elements.limit;
       const rawDomain = domainInput.value.trim();
       const normalizedDomain = rawDomain
         .replace(/^https?:\/\//i, '')
         .split('/')[0]
         .toLowerCase();
-      const limitValue = Number(limitInput.value);
 
       if (!normalizedDomain || !/^[a-z0-9.-]+$/.test(normalizedDomain)) {
         if (limitErrorEl) {
@@ -412,9 +686,22 @@ export async function setupVisualizationPage(options = {}) {
         return;
       }
 
-      if (!Number.isInteger(limitValue) || limitValue <= 0) {
+      const enabled = limitForm.elements.enabled.checked;
+      const fiveHourEnabled = limitForm.elements.fiveHourEnabled.checked;
+      const fiveHourLimit = Number(limitForm.elements.fiveHourLimit.value);
+      const dailyEnabled = limitForm.elements.dailyEnabled.checked;
+      const dailyLimit = Number(limitForm.elements.dailyLimit.value);
+
+      if (fiveHourEnabled && (!Number.isInteger(fiveHourLimit) || fiveHourLimit <= 0)) {
         if (limitErrorEl) {
-          limitErrorEl.textContent = 'Enter a positive visit limit.';
+          limitErrorEl.textContent = 'Enter a positive 5-hour limit.';
+        }
+        return;
+      }
+
+      if (dailyEnabled && (!Number.isInteger(dailyLimit) || dailyLimit <= 0)) {
+        if (limitErrorEl) {
+          limitErrorEl.textContent = 'Enter a positive daily limit.';
         }
         return;
       }
@@ -424,8 +711,23 @@ export async function setupVisualizationPage(options = {}) {
       }
 
       try {
-        await setLimitForDomain(normalizedDomain, limitValue);
+        const limitConfig = {
+          enabled,
+          fiveHour: {
+            enabled: fiveHourEnabled,
+            limit: fiveHourLimit,
+          },
+          daily: {
+            enabled: dailyEnabled,
+            limit: dailyLimit,
+          },
+        };
+
+        await setLimitForDomain(normalizedDomain, limitConfig);
         limitForm.reset();
+        // Restore default values after reset
+        resetLimitFormToDefaults();
+
         await refreshLimitList();
         showSettingsToast(`Limit saved for ${normalizedDomain}`);
       } catch (error) {

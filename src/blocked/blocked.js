@@ -1,3 +1,5 @@
+import { getTodayKey, normalizeLimitConfig } from '../background/storage.js';
+
 /**
  * FocusBear Blocked Page Script
  */
@@ -35,22 +37,12 @@ const urlParams = new URLSearchParams(window.location.search);
 let domain = urlParams.get('domain') || null;
 let count = urlParams.get('count') || null;
 let limit = urlParams.get('limit') || null;
-
-// Helper function to get today's date key
-function getTodayKey() {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
-}
+let limitType = urlParams.get('limitType') || 'daily';
 
 // Fetch data from storage if URL params are missing
 async function loadBlockedPageData() {
   try {
-    const data = await chrome.storage.local.get([
-      'visits',
-      'limits',
-      'settings',
-      'blockedDomains',
-    ]);
+    const data = await chrome.storage.local.get(['visits', 'limits', 'settings', 'blockedDomains']);
 
     // If we don't have domain from URL, try to detect it from referrer or storage
     if (!domain) {
@@ -77,6 +69,9 @@ async function loadBlockedPageData() {
       if (!limit || limit === '?') {
         limit = blockedDomains[domain].limit;
       }
+      if (blockedDomains[domain].limitType) {
+        limitType = blockedDomains[domain].limitType;
+      }
     }
 
     // Fallback to visits and limits if still not found
@@ -92,7 +87,22 @@ async function loadBlockedPageData() {
       }
 
       if (!limit || limit === '?') {
-        limit = limits[domain] || '?';
+        const limitConfig = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+        if (limitConfig) {
+          if (limitType === 'fiveHour' && limitConfig.fiveHour.enabled) {
+            limit = limitConfig.fiveHour.limit;
+          } else if (limitConfig.daily.enabled) {
+            limit = limitConfig.daily.limit;
+            limitType = 'daily';
+          } else if (limitConfig.fiveHour.enabled) {
+            limit = limitConfig.fiveHour.limit;
+            limitType = 'fiveHour';
+          } else {
+            limit = '?';
+          }
+        } else {
+          limit = '?';
+        }
       }
     }
 
@@ -105,6 +115,10 @@ async function loadBlockedPageData() {
     document.getElementById('domain-name').textContent = domain;
     document.getElementById('visit-count').textContent = count;
     document.getElementById('limit-value').textContent = limit;
+
+    // Update limit type text
+    const limitTypeText = limitType === 'fiveHour' ? '5-hour window' : 'daily';
+    document.getElementById('limit-type').textContent = limitTypeText;
 
     // Apply high contrast mode if enabled
     const settings = data.settings || {};

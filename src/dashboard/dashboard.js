@@ -1,9 +1,24 @@
 import { setupVisualizationPage } from '../common/visualization-page.js';
-import { getLimits, calculateFocusHeroBadges } from '../background/storage.js';
+import {
+  getLimits,
+  setLimitForDomain,
+  calculateFocusHeroBadges,
+  normalizeLimitConfig,
+  createDefaultLimitConfig,
+} from '../background/storage.js';
 
 let currentTableData = [];
 let currentLimits = {};
 let currentBadges = {};
+let currentPage = 1;
+let pageSize = 25;
+let filteredData = [];
+let currentAggregatedData = {};
+const tableFilters = {
+  query: '',
+  sortField: 'count',
+  sortOrder: 'desc',
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   // Setup view mode toggle
@@ -11,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup table controls early
   setupTableControls();
+
+  // Setup pagination controls
+  setupPagination();
+
+  // Setup footer
+  setupFooter();
 
   // Handle window resize
   window.addEventListener('resize', handleResize);
@@ -60,6 +81,15 @@ function setupViewModeToggle() {
       }
     });
   });
+}
+
+function setupFooter() {
+  // Load and display version from manifest
+  const manifest = chrome.runtime.getManifest();
+  const footerVersion = document.getElementById('footer-version');
+  if (footerVersion) {
+    footerVersion.textContent = `v${manifest.version_name || manifest.version}`;
+  }
 }
 
 function getGraphDimensions() {
@@ -113,12 +143,13 @@ async function handleDataLoaded(aggregatedData) {
   // Load limits and badges
   currentLimits = await getLimits();
   currentBadges = await calculateFocusHeroBadges();
+  currentAggregatedData = aggregatedData;
 
   // Prepare table data
   currentTableData = prepareTableData(aggregatedData);
 
   // Render table
-  renderTable(currentTableData);
+  renderTable();
 }
 
 function updateStatsSummary(data) {
@@ -138,12 +169,21 @@ function prepareTableData(aggregatedData) {
     count: data.count || 0,
     subpaths: Object.keys(data.subpaths || {}).length,
     lastVisit: data.lastVisit || 0,
-    limit: currentLimits[domain] || null,
+    limit: currentLimits[domain] ? normalizeLimitConfig(currentLimits[domain]) : null,
     badge: currentBadges[domain] || null,
   }));
 }
 
-function renderTable(data) {
+function applyTableFilters(data) {
+  let result = [...data];
+  if (tableFilters.query) {
+    result = result.filter((row) => row.domain.toLowerCase().includes(tableFilters.query));
+  }
+  result = sortTableData(result, tableFilters.sortField, tableFilters.sortOrder);
+  return result;
+}
+
+function renderTable() {
   const tbody = document.getElementById('table-body');
   const emptyState = document.getElementById('table-empty');
 
@@ -151,20 +191,35 @@ function renderTable(data) {
 
   tbody.innerHTML = '';
 
-  if (data.length === 0) {
+  filteredData = applyTableFilters(currentTableData);
+
+  if (filteredData.length === 0) {
     if (emptyState) emptyState.style.display = 'block';
+    updatePaginationInfo(0, 0, 0);
     return;
   }
 
   if (emptyState) emptyState.style.display = 'none';
 
-  data.forEach((row) => {
+  // Calculate pagination
+  const totalItems = filteredData.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const pageData = filteredData.slice(startIndex, endIndex);
+
+  // Render paginated data
+  pageData.forEach((row) => {
     const tr = document.createElement('tr');
 
     // Domain cell
     const domainTd = document.createElement('td');
     domainTd.className = 'domain-cell';
-    domainTd.textContent = row.domain;
+    const domainBtn = document.createElement('button');
+    domainBtn.type = 'button';
+    domainBtn.className = 'domain-link';
+    domainBtn.textContent = row.domain;
+    domainBtn.addEventListener('click', () => openDomainDetail(row.domain));
+    domainTd.appendChild(domainBtn);
     if (row.badge) {
       const badge = document.createElement('span');
       badge.className = 'badge-icon-table';
@@ -199,7 +254,18 @@ function renderTable(data) {
 
     // Limit cell
     const limitTd = document.createElement('td');
-    limitTd.textContent = row.limit ? `${row.limit} visits/day` : '—';
+    if (row.limit) {
+      const limitParts = [];
+      if (row.limit.fiveHour?.enabled && row.limit.fiveHour?.limit) {
+        limitParts.push(`${row.limit.fiveHour.limit}/5h`);
+      }
+      if (row.limit.daily?.enabled && row.limit.daily?.limit) {
+        limitParts.push(`${row.limit.daily.limit}/day`);
+      }
+      limitTd.textContent = limitParts.length > 0 ? limitParts.join(', ') : '—';
+    } else {
+      limitTd.textContent = '—';
+    }
     tr.appendChild(limitTd);
 
     // Status cell
@@ -207,25 +273,61 @@ function renderTable(data) {
     const statusBadge = document.createElement('span');
     statusBadge.className = 'status-badge';
 
-    if (!row.limit) {
+    if (!row.limit || !row.limit.enabled) {
       statusBadge.classList.add('no-limit');
       statusBadge.textContent = 'No Limit';
-    } else if (row.count > row.limit) {
-      statusBadge.classList.add('over-limit');
-      statusBadge.textContent = 'Over Limit';
-    } else if (row.count >= row.limit * 0.8) {
-      statusBadge.classList.add('near-limit');
-      statusBadge.textContent = 'Near Limit';
     } else {
-      statusBadge.classList.add('under-limit');
-      statusBadge.textContent = 'Under Limit';
+      // Check against daily limit for status
+      const dailyLimit = row.limit.daily?.limit;
+      if (dailyLimit && row.count > dailyLimit) {
+        statusBadge.classList.add('over-limit');
+        statusBadge.textContent = 'Over Limit';
+      } else if (dailyLimit && row.count >= dailyLimit * 0.8) {
+        statusBadge.classList.add('near-limit');
+        statusBadge.textContent = 'Near Limit';
+      } else {
+        statusBadge.classList.add('under-limit');
+        statusBadge.textContent = 'Under Limit';
+      }
     }
 
     statusTd.appendChild(statusBadge);
     tr.appendChild(statusTd);
 
+    // Actions cell
+    const actionsTd = document.createElement('td');
+    actionsTd.className = 'actions-cell';
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'table-toggle';
+
+    const toggleInput = document.createElement('input');
+    toggleInput.type = 'checkbox';
+    toggleInput.checked = row.limit ? row.limit.enabled !== false : false;
+    toggleInput.dataset.domain = row.domain;
+    toggleInput.addEventListener('change', async (e) => {
+      toggleInput.disabled = true;
+      const success = await handleInlineLimitToggle(row.domain, e.target.checked);
+      if (!success) {
+        toggleInput.checked = !e.target.checked;
+      }
+      toggleInput.disabled = false;
+    });
+
+    const toggleSlider = document.createElement('span');
+    toggleSlider.className = 'toggle-slider';
+
+    toggleLabel.appendChild(toggleInput);
+    toggleLabel.appendChild(toggleSlider);
+    actionsTd.appendChild(toggleLabel);
+
+    tr.appendChild(actionsTd);
+
     tbody.appendChild(tr);
   });
+
+  // Update pagination info
+  updatePaginationInfo(startIndex + 1, endIndex, totalItems);
 }
 
 function formatRelativeTime(date) {
@@ -248,17 +350,19 @@ function setupTableControls() {
 
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = currentTableData.filter((row) => row.domain.toLowerCase().includes(query));
-      renderTable(filtered);
+      tableFilters.query = e.target.value.toLowerCase();
+      currentPage = 1;
+      renderTable();
     });
   }
 
   if (sortSelect) {
     sortSelect.addEventListener('change', (e) => {
       const [field, order] = e.target.value.split('-');
-      const sorted = sortTableData([...currentTableData], field, order);
-      renderTable(sorted);
+      setSort(field, order);
+      currentPage = 1;
+      renderTable();
+      updateSortHeaderState(field, order);
     });
   }
 
@@ -267,24 +371,19 @@ function setupTableControls() {
   headers.forEach((header) => {
     header.addEventListener('click', () => {
       const field = header.dataset.sort;
-      const currentOrder = header.classList.contains('sorted-asc') ? 'desc' : 'asc';
-
-      // Remove sorted class from all headers
-      headers.forEach((h) => h.classList.remove('sorted-asc', 'sorted-desc'));
-
-      // Add sorted class to clicked header
-      header.classList.add(currentOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
-
-      // Sort and render
-      const sorted = sortTableData([...currentTableData], field, currentOrder);
-      renderTable(sorted);
-
-      // Update select to match
+      const currentOrder =
+        tableFilters.sortField === field && tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
+      setSort(field, currentOrder);
+      currentPage = 1;
+      renderTable();
+      updateSortHeaderState(field, currentOrder);
       if (sortSelect) {
         sortSelect.value = `${field}-${currentOrder}`;
       }
     });
   });
+
+  updateSortHeaderState(tableFilters.sortField, tableFilters.sortOrder);
 }
 
 function sortTableData(data, field, order = 'desc') {
@@ -305,4 +404,107 @@ function sortTableData(data, field, order = 'desc') {
     }
     return bVal - aVal;
   });
+}
+
+function setSort(field, order) {
+  tableFilters.sortField = field;
+  tableFilters.sortOrder = order;
+}
+
+function updateSortHeaderState(field, order) {
+  const headers = document.querySelectorAll('.data-table th.sortable');
+  headers.forEach((header) => {
+    header.classList.remove('sorted-asc', 'sorted-desc');
+    if (header.dataset.sort === field) {
+      header.classList.add(order === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    }
+  });
+}
+
+function setupPagination() {
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+  const sizeSelect = document.getElementById('pagination-size');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        renderTable();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredData.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage += 1;
+        renderTable();
+      }
+    });
+  }
+
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', (e) => {
+      pageSize = parseInt(e.target.value, 10);
+      currentPage = 1; // Reset to first page
+      renderTable();
+    });
+  }
+}
+
+function updatePaginationInfo(start, end, total) {
+  const startEl = document.getElementById('pagination-start');
+  const endEl = document.getElementById('pagination-end');
+  const totalEl = document.getElementById('pagination-total');
+  const pageEl = document.getElementById('pagination-page');
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+
+  if (startEl) startEl.textContent = start;
+  if (endEl) endEl.textContent = end;
+  if (totalEl) totalEl.textContent = total;
+
+  const totalPages = Math.ceil(total / pageSize);
+  if (pageEl) pageEl.textContent = total > 0 ? `Page ${currentPage} of ${totalPages}` : 'Page 0';
+
+  // Update button states
+  if (prevBtn) prevBtn.disabled = currentPage === 1 || total === 0;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
+}
+
+async function handleInlineLimitToggle(domain, enabled) {
+  try {
+    const limits = await getLimits();
+    const existing = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+    if (!existing && !enabled) {
+      return true;
+    }
+
+    let updatedConfig = existing;
+    if (!existing && enabled) {
+      updatedConfig = createDefaultLimitConfig();
+    }
+
+    if (!updatedConfig) {
+      return false;
+    }
+
+    updatedConfig.enabled = enabled;
+    await setLimitForDomain(domain, updatedConfig);
+    currentLimits = await getLimits();
+    currentTableData = prepareTableData(currentAggregatedData);
+    renderTable();
+    return true;
+  } catch (error) {
+    console.error('Error toggling inline limit:', error);
+    return false;
+  }
+}
+
+function openDomainDetail(domain) {
+  const detailUrl = new URL(chrome.runtime.getURL('src/dashboard/domain.html'));
+  detailUrl.searchParams.set('domain', domain);
+  window.location.href = detailUrl.toString();
 }

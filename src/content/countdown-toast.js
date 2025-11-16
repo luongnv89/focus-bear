@@ -18,13 +18,14 @@ if (!window.focusBearToastInjected) {
   const injectToast = () => {
     if (document.body) {
       document.body.appendChild(toastContainer);
-    } else {
-      // Retry when DOM is ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          document.body.appendChild(toastContainer);
-        });
-      }
+      return;
+    }
+
+    // Retry when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.appendChild(toastContainer);
+      });
     }
   };
 
@@ -36,7 +37,7 @@ if (!window.focusBearToastInjected) {
    * @param {number} remaining - Number of visits remaining
    * @param {number} limit - Total daily limit
    */
-  function showToast(domain, remaining, limit) {
+  const showToast = (domain, remaining, limit, limitType = 'daily') => {
     // Create toast element
     const toast = document.createElement('div');
     toast.className = 'focusbear-toast';
@@ -55,16 +56,23 @@ if (!window.focusBearToastInjected) {
 
     // Build message
     let message;
+    const limitLabel = limitType === 'fiveHour' ? '5-hour window' : 'day';
+    const timeframeLabel = limitType === 'fiveHour' ? 'window' : 'day';
     if (remaining === 0) {
-      message = `<strong>${domain}</strong><br/>Limit reached for today`;
+      message = `<strong>${domain}</strong><br/>Limit reached for this ${limitLabel}`;
     } else if (remaining === 1) {
-      message = `<strong>${domain}</strong><br/>1 visit left today`;
+      message = `<strong>${domain}</strong><br/>1 visit left this ${timeframeLabel}`;
     } else {
-      message = `<strong>${domain}</strong><br/>${remaining} visits left today`;
+      message = `<strong>${domain}</strong><br/>${remaining} visits left this ${limitLabel}`;
     }
 
     // Icon based on severity
-    const icon = severity === 'danger' ? '🛑' : severity === 'warning' ? '⚠️' : '🐻';
+    let icon = '🐻';
+    if (severity === 'danger') {
+      icon = '🛑';
+    } else if (severity === 'warning') {
+      icon = '⚠️';
+    }
 
     toast.innerHTML = `
       <div class="focusbear-toast-icon">${icon}</div>
@@ -89,13 +97,13 @@ if (!window.focusBearToastInjected) {
         }
       }, 300);
     }, 3500);
-  }
+  };
 
   // Listen for messages from background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'SHOW_COUNTDOWN_TOAST') {
-      const { domain, remaining, limit } = message;
-      showToast(domain, remaining, limit);
+      const { domain, remaining, limit, limitType } = message;
+      showToast(domain, remaining, limit, limitType);
       sendResponse({ success: true });
     }
     return false; // No async response needed

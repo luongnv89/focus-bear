@@ -334,7 +334,8 @@ body.high-contrast .dashboard-header .header-logo {
 }
 
 .table-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: auto;
 }
@@ -415,6 +416,21 @@ body.high-contrast .dashboard-header .header-logo {
   color: var(--color-primary);
 }
 
+.domain-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.domain-link:hover,
+.domain-link:focus {
+  text-decoration: underline;
+}
+
 .visits-cell {
   font-weight: 600;
   font-size: 14px;
@@ -465,6 +481,204 @@ body.high-contrast .dashboard-header .header-logo {
   text-align: center;
   color: var(--color-text-muted);
   font-size: 14px;
+}
+
+/* Table Actions Column */
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Table Toggle Switch */
+.table-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.table-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.table-toggle input:checked + .toggle-slider {
+  background-color: var(--color-primary);
+}
+
+.table-toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.table-toggle input:focus + .toggle-slider {
+  box-shadow: 0 0 0 2px var(--color-primary-lighter);
+}
+
+/* Small pill button for table */
+.pill-button-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-text-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pill-button-small:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* High contrast mode for table actions */
+.high-contrast .toggle-slider {
+  background-color: #666;
+  border: 2px solid #fff;
+}
+
+.high-contrast .table-toggle input:checked + .toggle-slider {
+  background-color: #0ff;
+}
+
+.high-contrast .toggle-slider::before {
+  background-color: #000;
+}
+
+.high-contrast .pill-button-small {
+  background: #222;
+  border-color: #fff;
+  color: #fff;
+}
+
+.high-contrast .pill-button-small:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* Table Pagination */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.pagination-info span {
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dark);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-page {
+  font-size: 13px;
+  color: var(--color-text-dark);
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.pagination-size {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dark);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pagination-size:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast pagination */
+.high-contrast .table-pagination {
+  background: #000;
+  border-color: #fff;
+}
+
+.high-contrast .pagination-info,
+.high-contrast .pagination-info span,
+.high-contrast .pagination-page {
+  color: #fff;
+}
+
+.high-contrast .pagination-btn,
+.high-contrast .pagination-size {
+  background: #222;
+  border-color: #fff;
+  color: #fff;
+}
+
+.high-contrast .pagination-btn:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
 }
 
 /* Responsive adjustments */
@@ -766,4 +980,100 @@ body.high-contrast .dashboard-header .header-logo {
 
 .high-contrast .table-empty {
   color: #fff;
+}
+
+/* Dashboard Footer */
+.dashboard-footer {
+  background: var(--color-card);
+  border-top: 1px solid var(--color-border);
+  padding: 16px 32px;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.footer-content strong {
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+.footer-tagline {
+  color: var(--color-text-muted);
+}
+
+.footer-separator {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.footer-version {
+  font-family: 'Courier New', monospace;
+  background: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.footer-privacy {
+  color: var(--color-text-muted);
+}
+
+.footer-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* High contrast footer */
+.high-contrast .dashboard-footer {
+  background: #000;
+  border-color: #fff;
+}
+
+.high-contrast .footer-content strong,
+.high-contrast .footer-tagline,
+.high-contrast .footer-privacy {
+  color: #fff;
+}
+
+.high-contrast .footer-version {
+  background: #222;
+  color: #0ff;
+  border: 1px solid #666;
+}
+
+.high-contrast .footer-link {
+  color: #0ff;
+  font-weight: 600;
+}
+
+.high-contrast .footer-link:hover {
+  color: #fff;
+}
+
+/* Responsive footer */
+@media (max-width: 768px) {
+  .dashboard-footer {
+    padding: 12px 16px;
+  }
+
+  .footer-content {
+    font-size: 12px;
+    gap: 6px;
+  }
 }

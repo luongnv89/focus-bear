@@ -9,6 +9,7 @@
  *       "example.com": {
  *         count: 5,
  *         lastVisit: 1700000000000,
+ *         timestamps: [1700000000000, 1700000001000, ...],
  *         subpaths: {
  *           "/path1": { count: 2, lastVisit: 1700000000000 },
  *           "/path2": { count: 3, lastVisit: 1700000000000 }
@@ -17,13 +18,22 @@
  *       "twitter.com": {
  *         count: 12,
  *         lastVisit: 1700000000000,
+ *         timestamps: [...],
  *         subpaths: {}
  *       }
  *     }
  *   },
  *   limits: {
- *     "example.com": 10,
- *     "twitter.com": 5
+ *     "example.com": {
+ *       enabled: true,
+ *       fiveHour: { enabled: true, limit: 10 },
+ *       daily: { enabled: true, limit: 20 }
+ *     },
+ *     "twitter.com": {
+ *       enabled: true,
+ *       fiveHour: { enabled: true, limit: 10 },
+ *       daily: { enabled: true, limit: 20 }
+ *     }
  *   },
  *   settings: {
  *     highContrastMode: false,
@@ -36,6 +46,31 @@ const defaultSettings = {
   highContrastMode: false,
   onboardingComplete: false,
 };
+
+const limitDefaults = {
+  enabled: true,
+  fiveHour: { enabled: true, limit: 10 },
+  daily: { enabled: true, limit: 20 },
+};
+
+/**
+ * Create a normalized limit config merged with defaults
+ * @param {Object} overrides - Partial configuration to override defaults
+ * @returns {Object} Normalized limit configuration
+ */
+export function createDefaultLimitConfig(overrides = {}) {
+  return {
+    enabled: overrides.enabled ?? limitDefaults.enabled,
+    fiveHour: {
+      enabled: overrides.fiveHour?.enabled ?? limitDefaults.fiveHour.enabled,
+      limit: overrides.fiveHour?.limit ?? limitDefaults.fiveHour.limit,
+    },
+    daily: {
+      enabled: overrides.daily?.enabled ?? limitDefaults.daily.enabled,
+      limit: overrides.daily?.limit ?? limitDefaults.daily.limit,
+    },
+  };
+}
 
 /**
  * Get today's date in YYYY-MM-DD format
@@ -112,6 +147,7 @@ export async function incrementVisit(domain, subpath = null) {
         visits[dateKey][domain] = {
           count: 0,
           lastVisit: timestamp,
+          timestamps: [],
           subpaths: {},
         };
       }
@@ -119,6 +155,12 @@ export async function incrementVisit(domain, subpath = null) {
       // Increment domain count
       visits[dateKey][domain].count += 1;
       visits[dateKey][domain].lastVisit = timestamp;
+
+      // Store timestamp for time-window calculations
+      if (!visits[dateKey][domain].timestamps) {
+        visits[dateKey][domain].timestamps = [];
+      }
+      visits[dateKey][domain].timestamps.push(timestamp);
 
       // Handle subpath if provided
       if (subpath) {
@@ -165,21 +207,82 @@ export async function getLimitForDomain(domain) {
 /**
  * Set limit for a domain
  * @param {string} domain - Domain name
- * @param {number|null} limit - Limit value (null for unlimited)
+ * @param {Object|null} limitConfig - Limit configuration object or null for unlimited
+ * @param {boolean} limitConfig.enabled - Whether limits are enabled for this domain
+ * @param {Object} limitConfig.fiveHour - 5-hour window limit config
+ * @param {boolean} limitConfig.fiveHour.enabled - Whether 5-hour limit is enabled
+ * @param {number} limitConfig.fiveHour.limit - Number of visits allowed in 5 hours
+ * @param {Object} limitConfig.daily - Daily limit config
+ * @param {boolean} limitConfig.daily.enabled - Whether daily limit is enabled
+ * @param {number} limitConfig.daily.limit - Number of visits allowed per day
  * @returns {Promise<void>}
  */
-export async function setLimitForDomain(domain, limit) {
+export async function setLimitForDomain(domain, limitConfig) {
   return new Promise((resolve) => {
     chrome.storage.local.get(['limits'], (data) => {
       const limits = data.limits || {};
 
-      if (limit === null) {
+      if (limitConfig === null) {
         delete limits[domain];
       } else {
-        limits[domain] = limit;
+        limits[domain] = createDefaultLimitConfig(limitConfig);
       }
 
       chrome.storage.local.set({ limits }, resolve);
+    });
+  });
+}
+
+/**
+ * Normalize legacy limit format to new format
+ * Converts old number-based limits to new object-based format
+ * @param {number|Object} limit - Legacy number or new object format
+ * @returns {Object} Normalized limit configuration
+ */
+export function normalizeLimitConfig(limit) {
+  // If already in new format, return as-is
+  if (typeof limit === 'object' && limit !== null && limit.enabled !== undefined) {
+    return createDefaultLimitConfig(limit);
+  }
+
+  // If legacy number format, convert to new format
+  if (typeof limit === 'number') {
+    return createDefaultLimitConfig({
+      daily: { enabled: true, limit },
+    });
+  }
+
+  // Default config
+  return createDefaultLimitConfig();
+}
+
+/**
+ * Delete all visit data and limits for a specific domain
+ * @param {string} domain - Domain name to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteDomainData(domain) {
+  if (!domain) return;
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['visits', 'limits'], (data) => {
+      const visits = data.visits || {};
+      const limits = data.limits || {};
+
+      Object.keys(visits).forEach((dateKey) => {
+        if (visits[dateKey]?.[domain]) {
+          delete visits[dateKey][domain];
+          if (Object.keys(visits[dateKey]).length === 0) {
+            delete visits[dateKey];
+          }
+        }
+      });
+
+      if (limits[domain]) {
+        delete limits[domain];
+      }
+
+      chrome.storage.local.set({ visits, limits }, resolve);
     });
   });
 }
@@ -255,28 +358,34 @@ export async function calculateFocusHeroBadges() {
 
   // Check last 7 days for each domain with a limit
   const today = new Date();
-  const dateKeys = [];
-  for (let i = 0; i < 7; i++) {
+  const dateKeys = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    dateKeys.push(date.toISOString().split('T')[0]);
-  }
+    date.setDate(date.getDate() - index);
+    return date.toISOString().split('T')[0];
+  });
 
   Object.keys(limits).forEach((domain) => {
-    const limit = limits[domain];
+    const normalizedLimit = normalizeLimitConfig(limits[domain]);
+
+    if (!normalizedLimit.enabled || !normalizedLimit.daily.enabled) {
+      return;
+    }
+
+    const dailyLimit = normalizedLimit.daily.limit;
     let consecutiveDaysUnderLimit = 0;
 
     // Check days in reverse chronological order
-    for (const dateKey of dateKeys) {
+    dateKeys.some((dateKey) => {
       const dayVisits = visits[dateKey]?.[domain];
       const count = dayVisits ? dayVisits.count : 0;
 
-      if (count <= limit) {
-        consecutiveDaysUnderLimit++;
-      } else {
-        break; // Streak broken
+      if (count <= dailyLimit) {
+        consecutiveDaysUnderLimit += 1;
+        return false;
       }
-    }
+
+      return true; // streak broken
+    });
 
     // Award badge if 3+ consecutive days under limit
     if (consecutiveDaysUnderLimit >= 3) {
@@ -305,9 +414,8 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 60 * 60 * 1000);
       break;
     case 'today': {
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      startDate = today;
+      const todayKey = getTodayKey();
+      startDate = new Date(`${todayKey}T00:00:00.000Z`);
       break;
     }
     case 'week':
@@ -317,9 +425,8 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       break;
     default: {
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      startDate = today;
+      const todayKey = getTodayKey();
+      startDate = new Date(`${todayKey}T00:00:00.000Z`);
       break;
     }
   }
