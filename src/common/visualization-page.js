@@ -292,6 +292,98 @@ export async function setupVisualizationPage(options = {}) {
     });
   };
 
+  const renderQuickLimits = async (aggregatedVisits) => {
+    const quickLimitsPanel = document.getElementById('quick-limits-panel');
+    const quickLimitsList = document.getElementById('quick-limits-list');
+
+    if (!quickLimitsPanel || !quickLimitsList) return;
+
+    // Get top 5 domains by visit count
+    const sortedDomains = Object.entries(aggregatedVisits)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 5)
+      .map(([domain]) => domain);
+
+    if (sortedDomains.length === 0) {
+      quickLimitsPanel.style.display = 'none';
+      return;
+    }
+
+    quickLimitsPanel.style.display = 'block';
+    quickLimitsList.innerHTML = '';
+
+    const limits = await getLimits();
+    const { normalizeLimitConfig } = await import('../background/storage.js');
+
+    sortedDomains.forEach((domain) => {
+      const visitCount = aggregatedVisits[domain].count;
+      const limitConfig = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+      const hasLimit = limitConfig !== null;
+      const isEnabled = hasLimit && limitConfig.enabled;
+
+      const item = document.createElement('li');
+      item.className = 'quick-limit-item';
+
+      const info = document.createElement('div');
+      info.className = 'quick-limit-info';
+
+      let statusText = '';
+      if (!hasLimit) {
+        statusText = '<span class="limit-status no-limit">No limit</span>';
+      } else if (!isEnabled) {
+        statusText = '<span class="limit-status disabled">Disabled</span>';
+      } else {
+        const parts = [];
+        if (limitConfig.fiveHour.enabled) {
+          parts.push(`${limitConfig.fiveHour.limit}/5h`);
+        }
+        if (limitConfig.daily.enabled) {
+          parts.push(`${limitConfig.daily.limit}/day`);
+        }
+        statusText = `<span class="limit-status active">${parts.join(', ')}</span>`;
+      }
+
+      info.innerHTML = `
+        <div class="quick-limit-domain">${domain}</div>
+        <div class="quick-limit-stats">
+          <span class="visit-count">${visitCount} visits</span>
+          ${statusText}
+        </div>
+      `;
+
+      const actions = document.createElement('div');
+      actions.className = 'quick-limit-actions';
+
+      if (hasLimit) {
+        // Toggle switch
+        const toggleWrapper = document.createElement('label');
+        toggleWrapper.className = 'quick-limit-toggle';
+        toggleWrapper.setAttribute('aria-label', `Toggle limit for ${domain}`);
+
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.checked = isEnabled;
+        toggleInput.dataset.domain = domain;
+        toggleInput.dataset.action = 'quick-toggle';
+
+        toggleWrapper.appendChild(toggleInput);
+        actions.appendChild(toggleWrapper);
+      } else {
+        // "Set limit" button
+        const setBtn = document.createElement('button');
+        setBtn.type = 'button';
+        setBtn.className = 'pill-button pill-button-primary pill-button-small';
+        setBtn.dataset.domain = domain;
+        setBtn.dataset.action = 'quick-set';
+        setBtn.textContent = 'Set Limit';
+        actions.appendChild(setBtn);
+      }
+
+      item.append(info, actions);
+      quickLimitsList.appendChild(item);
+    });
+  };
+
   const renderVisualization = async (range = currentRange) => {
     const graphContainer = document.getElementById('graph-container');
     const domainListEl = document.getElementById('domain-list');
@@ -324,6 +416,9 @@ export async function setupVisualizationPage(options = {}) {
       if (onDataLoaded) {
         onDataLoaded(aggregatedVisits);
       }
+
+      // Render quick limits panel
+      await renderQuickLimits(aggregatedVisits);
 
       if (cleanupGraph) {
         cleanupGraph();
@@ -469,6 +564,51 @@ export async function setupVisualizationPage(options = {}) {
           limitForm.elements.fiveHourLimit.value = limitConfig.fiveHour.limit;
           limitForm.elements.dailyEnabled.checked = limitConfig.daily.enabled;
           limitForm.elements.dailyLimit.value = limitConfig.daily.limit;
+
+          // Scroll to form
+          limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          limitForm.elements.domain.focus();
+        }
+      }
+    });
+  }
+
+  // Quick limits panel event handlers
+  const quickLimitsList = document.getElementById('quick-limits-list');
+  if (quickLimitsList) {
+    quickLimitsList.addEventListener('click', async (event) => {
+      const { domain, action } = event.target.dataset || {};
+      if (!domain || !action) return;
+
+      if (action === 'quick-toggle') {
+        // Quick toggle to enable/disable limits
+        try {
+          const limits = await getLimits();
+          const { normalizeLimitConfig } = await import('../background/storage.js');
+          const limitConfig = normalizeLimitConfig(limits[domain]);
+
+          // Toggle the enabled state
+          const newEnabled = event.target.checked;
+          limitConfig.enabled = newEnabled;
+
+          await setLimitForDomain(domain, limitConfig);
+          await renderVisualization(currentRange);
+        } catch (error) {
+          console.error('Unable to toggle limit:', error);
+          // Revert checkbox state
+          event.target.checked = !event.target.checked;
+        }
+      } else if (action === 'quick-set') {
+        // Open settings and populate form with this domain
+        await showSettingsView();
+
+        if (limitForm) {
+          limitForm.elements.domain.value = domain;
+          limitForm.elements.enabled.checked = true;
+          limitForm.elements.fiveHourEnabled.checked = true;
+          limitForm.elements.fiveHourLimit.value = 10;
+          limitForm.elements.dailyEnabled.checked = true;
+          limitForm.elements.dailyLimit.value = 20;
 
           // Scroll to form
           limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
