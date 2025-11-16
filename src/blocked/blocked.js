@@ -35,6 +35,7 @@ const urlParams = new URLSearchParams(window.location.search);
 let domain = urlParams.get('domain') || null;
 let count = urlParams.get('count') || null;
 let limit = urlParams.get('limit') || null;
+let limitType = urlParams.get('limitType') || 'daily';
 
 // Helper function to get today's date key
 function getTodayKey() {
@@ -77,6 +78,9 @@ async function loadBlockedPageData() {
       if (!limit || limit === '?') {
         limit = blockedDomains[domain].limit;
       }
+      if (blockedDomains[domain].limitType) {
+        limitType = blockedDomains[domain].limitType;
+      }
     }
 
     // Fallback to visits and limits if still not found
@@ -105,6 +109,10 @@ async function loadBlockedPageData() {
     document.getElementById('domain-name').textContent = domain;
     document.getElementById('visit-count').textContent = count;
     document.getElementById('limit-value').textContent = limit;
+
+    // Update limit type text
+    const limitTypeText = limitType === 'fiveHour' ? '5-hour window' : 'daily';
+    document.getElementById('limit-type').textContent = limitTypeText;
 
     // Apply high contrast mode if enabled
     const settings = data.settings || {};

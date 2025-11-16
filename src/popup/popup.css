@@ -593,6 +593,34 @@ main {
   height: 22px;
 }
 
+.limit-type-section {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-primary-lighter);
+}
+
+.limit-input-group {
+  margin-top: 12px;
+  padding-left: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.limit-input-group label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.limit-input-group input {
+  width: 100%;
+  max-width: 200px;
+}
+
 .settings-toast {
   margin-top: 20px;
   padding: 12px 16px;

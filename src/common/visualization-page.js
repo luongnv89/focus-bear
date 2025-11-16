@@ -163,6 +163,7 @@ export async function setupVisualizationPage(options = {}) {
 
   const refreshLimitList = async () => {
     if (!limitList) return;
+    const { normalizeLimitConfig } = await import('../background/storage.js');
     const limits = await getLimits();
     const entries = Object.entries(limits);
     limitList.innerHTML = '';
@@ -173,19 +174,49 @@ export async function setupVisualizationPage(options = {}) {
       return;
     }
 
-    entries.forEach(([domain, limit]) => {
+    entries.forEach(([domain, limitConfig]) => {
+      const normalized = normalizeLimitConfig(limitConfig);
       const item = document.createElement('li');
       const info = document.createElement('div');
-      info.innerHTML = `<strong>${domain}</strong><br/><span>${limit} visits/day</span>`;
+
+      let limitText = '';
+      if (!normalized.enabled) {
+        limitText = '<span style="color: #999;">Disabled</span>';
+      } else {
+        const parts = [];
+        if (normalized.fiveHour.enabled) {
+          parts.push(`${normalized.fiveHour.limit} per 5h`);
+        }
+        if (normalized.daily.enabled) {
+          parts.push(`${normalized.daily.limit} per day`);
+        }
+        limitText = parts.length > 0 ? parts.join(', ') : '<span style="color: #999;">No limits active</span>';
+      }
+
+      info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'pill-button pill-button-secondary';
+      editBtn.dataset.domain = domain;
+      editBtn.dataset.action = 'edit';
+      editBtn.textContent = 'Edit';
+      editBtn.setAttribute('aria-label', `Edit limit for ${domain}`);
 
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'pill-button pill-button-secondary';
       removeBtn.dataset.domain = domain;
+      removeBtn.dataset.action = 'remove';
       removeBtn.textContent = 'Remove';
       removeBtn.setAttribute('aria-label', `Remove limit for ${domain}`);
 
-      item.append(info, removeBtn);
+      const btnGroup = document.createElement('div');
+      btnGroup.style.display = 'flex';
+      btnGroup.style.gap = '8px';
+      btnGroup.append(editBtn, removeBtn);
+
+      item.append(info, btnGroup);
       limitList.appendChild(item);
     });
   };
@@ -380,30 +411,75 @@ export async function setupVisualizationPage(options = {}) {
 
   if (limitList) {
     limitList.addEventListener('click', async (event) => {
-      const { domain } = event.target.dataset || {};
-      if (!domain) return;
-      try {
-        await setLimitForDomain(domain, null);
-        await refreshLimitList();
-        showSettingsToast(`Removed limit for ${domain}`);
-      } catch (error) {
-        console.error('Unable to remove limit:', error);
-        showSettingsToast('Unable to remove that limit.');
+      const { domain, action } = event.target.dataset || {};
+      if (!domain || !action) return;
+
+      if (action === 'remove') {
+        try {
+          await setLimitForDomain(domain, null);
+          await refreshLimitList();
+          showSettingsToast(`Removed limit for ${domain}`);
+        } catch (error) {
+          console.error('Unable to remove limit:', error);
+          showSettingsToast('Unable to remove that limit.');
+        }
+      } else if (action === 'edit') {
+        // Populate form with existing limit data
+        const limits = await getLimits();
+        const { normalizeLimitConfig } = await import('../background/storage.js');
+        const limitConfig = normalizeLimitConfig(limits[domain]);
+
+        if (limitForm) {
+          limitForm.elements.domain.value = domain;
+          limitForm.elements.enabled.checked = limitConfig.enabled;
+          limitForm.elements.fiveHourEnabled.checked = limitConfig.fiveHour.enabled;
+          limitForm.elements.fiveHourLimit.value = limitConfig.fiveHour.limit;
+          limitForm.elements.dailyEnabled.checked = limitConfig.daily.enabled;
+          limitForm.elements.dailyLimit.value = limitConfig.daily.limit;
+
+          // Scroll to form
+          limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          limitForm.elements.domain.focus();
+        }
       }
     });
   }
 
   if (limitForm) {
+    // Toggle visibility of limit config sections
+    const limitEnabledToggle = limitForm.elements.enabled;
+    const fiveHourEnabledToggle = limitForm.elements.fiveHourEnabled;
+    const dailyEnabledToggle = limitForm.elements.dailyEnabled;
+    const limitConfigSection = document.getElementById('limit-config-section');
+    const fiveHourConfig = document.getElementById('five-hour-config');
+    const dailyConfig = document.getElementById('daily-config');
+
+    if (limitEnabledToggle && limitConfigSection) {
+      limitEnabledToggle.addEventListener('change', () => {
+        limitConfigSection.style.opacity = limitEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
+    if (fiveHourEnabledToggle && fiveHourConfig) {
+      fiveHourEnabledToggle.addEventListener('change', () => {
+        fiveHourConfig.style.opacity = fiveHourEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
+    if (dailyEnabledToggle && dailyConfig) {
+      dailyEnabledToggle.addEventListener('change', () => {
+        dailyConfig.style.opacity = dailyEnabledToggle.checked ? '1' : '0.5';
+      });
+    }
+
     limitForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const domainInput = limitForm.elements.domain;
-      const limitInput = limitForm.elements.limit;
       const rawDomain = domainInput.value.trim();
       const normalizedDomain = rawDomain
         .replace(/^https?:\/\//i, '')
         .split('/')[0]
         .toLowerCase();
-      const limitValue = Number(limitInput.value);
 
       if (!normalizedDomain || !/^[a-z0-9.-]+$/.test(normalizedDomain)) {
         if (limitErrorEl) {
@@ -412,9 +488,22 @@ export async function setupVisualizationPage(options = {}) {
         return;
       }
 
-      if (!Number.isInteger(limitValue) || limitValue <= 0) {
+      const enabled = limitForm.elements.enabled.checked;
+      const fiveHourEnabled = limitForm.elements.fiveHourEnabled.checked;
+      const fiveHourLimit = Number(limitForm.elements.fiveHourLimit.value);
+      const dailyEnabled = limitForm.elements.dailyEnabled.checked;
+      const dailyLimit = Number(limitForm.elements.dailyLimit.value);
+
+      if (fiveHourEnabled && (!Number.isInteger(fiveHourLimit) || fiveHourLimit <= 0)) {
         if (limitErrorEl) {
-          limitErrorEl.textContent = 'Enter a positive visit limit.';
+          limitErrorEl.textContent = 'Enter a positive 5-hour limit.';
+        }
+        return;
+      }
+
+      if (dailyEnabled && (!Number.isInteger(dailyLimit) || dailyLimit <= 0)) {
+        if (limitErrorEl) {
+          limitErrorEl.textContent = 'Enter a positive daily limit.';
         }
         return;
       }
@@ -424,8 +513,27 @@ export async function setupVisualizationPage(options = {}) {
       }
 
       try {
-        await setLimitForDomain(normalizedDomain, limitValue);
+        const limitConfig = {
+          enabled,
+          fiveHour: {
+            enabled: fiveHourEnabled,
+            limit: fiveHourLimit,
+          },
+          daily: {
+            enabled: dailyEnabled,
+            limit: dailyLimit,
+          },
+        };
+
+        await setLimitForDomain(normalizedDomain, limitConfig);
         limitForm.reset();
+        // Restore default values after reset
+        limitForm.elements.enabled.checked = true;
+        limitForm.elements.fiveHourEnabled.checked = true;
+        limitForm.elements.fiveHourLimit.value = 10;
+        limitForm.elements.dailyEnabled.checked = true;
+        limitForm.elements.dailyLimit.value = 20;
+
         await refreshLimitList();
         showSettingsToast(`Limit saved for ${normalizedDomain}`);
       } catch (error) {

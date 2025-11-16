@@ -9,6 +9,7 @@
  *       "example.com": {
  *         count: 5,
  *         lastVisit: 1700000000000,
+ *         timestamps: [1700000000000, 1700000001000, ...],
  *         subpaths: {
  *           "/path1": { count: 2, lastVisit: 1700000000000 },
  *           "/path2": { count: 3, lastVisit: 1700000000000 }
@@ -17,13 +18,22 @@
  *       "twitter.com": {
  *         count: 12,
  *         lastVisit: 1700000000000,
+ *         timestamps: [...],
  *         subpaths: {}
  *       }
  *     }
  *   },
  *   limits: {
- *     "example.com": 10,
- *     "twitter.com": 5
+ *     "example.com": {
+ *       enabled: true,
+ *       fiveHour: { enabled: true, limit: 10 },
+ *       daily: { enabled: true, limit: 20 }
+ *     },
+ *     "twitter.com": {
+ *       enabled: true,
+ *       fiveHour: { enabled: true, limit: 10 },
+ *       daily: { enabled: true, limit: 20 }
+ *     }
  *   },
  *   settings: {
  *     highContrastMode: false,
@@ -112,6 +122,7 @@ export async function incrementVisit(domain, subpath = null) {
         visits[dateKey][domain] = {
           count: 0,
           lastVisit: timestamp,
+          timestamps: [],
           subpaths: {},
         };
       }
@@ -119,6 +130,12 @@ export async function incrementVisit(domain, subpath = null) {
       // Increment domain count
       visits[dateKey][domain].count += 1;
       visits[dateKey][domain].lastVisit = timestamp;
+
+      // Store timestamp for time-window calculations
+      if (!visits[dateKey][domain].timestamps) {
+        visits[dateKey][domain].timestamps = [];
+      }
+      visits[dateKey][domain].timestamps.push(timestamp);
 
       // Handle subpath if provided
       if (subpath) {
@@ -165,23 +182,70 @@ export async function getLimitForDomain(domain) {
 /**
  * Set limit for a domain
  * @param {string} domain - Domain name
- * @param {number|null} limit - Limit value (null for unlimited)
+ * @param {Object|null} limitConfig - Limit configuration object or null for unlimited
+ * @param {boolean} limitConfig.enabled - Whether limits are enabled for this domain
+ * @param {Object} limitConfig.fiveHour - 5-hour window limit config
+ * @param {boolean} limitConfig.fiveHour.enabled - Whether 5-hour limit is enabled
+ * @param {number} limitConfig.fiveHour.limit - Number of visits allowed in 5 hours
+ * @param {Object} limitConfig.daily - Daily limit config
+ * @param {boolean} limitConfig.daily.enabled - Whether daily limit is enabled
+ * @param {number} limitConfig.daily.limit - Number of visits allowed per day
  * @returns {Promise<void>}
  */
-export async function setLimitForDomain(domain, limit) {
+export async function setLimitForDomain(domain, limitConfig) {
   return new Promise((resolve) => {
     chrome.storage.local.get(['limits'], (data) => {
       const limits = data.limits || {};
 
-      if (limit === null) {
+      if (limitConfig === null) {
         delete limits[domain];
       } else {
-        limits[domain] = limit;
+        // Ensure proper structure with defaults
+        limits[domain] = {
+          enabled: limitConfig.enabled !== undefined ? limitConfig.enabled : true,
+          fiveHour: {
+            enabled: limitConfig.fiveHour?.enabled !== undefined ? limitConfig.fiveHour.enabled : true,
+            limit: limitConfig.fiveHour?.limit || 10,
+          },
+          daily: {
+            enabled: limitConfig.daily?.enabled !== undefined ? limitConfig.daily.enabled : true,
+            limit: limitConfig.daily?.limit || 20,
+          },
+        };
       }
 
       chrome.storage.local.set({ limits }, resolve);
     });
   });
+}
+
+/**
+ * Normalize legacy limit format to new format
+ * Converts old number-based limits to new object-based format
+ * @param {number|Object} limit - Legacy number or new object format
+ * @returns {Object} Normalized limit configuration
+ */
+export function normalizeLimitConfig(limit) {
+  // If already in new format, return as-is
+  if (typeof limit === 'object' && limit !== null && limit.enabled !== undefined) {
+    return limit;
+  }
+
+  // If legacy number format, convert to new format
+  if (typeof limit === 'number') {
+    return {
+      enabled: true,
+      fiveHour: { enabled: true, limit: 10 },
+      daily: { enabled: true, limit: limit }, // Use legacy number as daily limit
+    };
+  }
+
+  // Default config
+  return {
+    enabled: true,
+    fiveHour: { enabled: true, limit: 10 },
+    daily: { enabled: true, limit: 20 },
+  };
 }
 
 /**

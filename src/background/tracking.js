@@ -77,22 +77,25 @@ async function trackTabFocus(tabId) {
  */
 async function showCountdownToastIfNeeded(tabId, domain, currentCount) {
   try {
-    const limits = await getLimits();
-    const limit = limits[domain];
+    const { checkLimit } = await import('./limits.js');
+    const limitStatus = await checkLimit(domain);
 
     // Only show toast if domain has a limit
-    if (!limit) {
+    if (!limitStatus.limit) {
       return;
     }
 
-    const remaining = Math.max(0, limit - currentCount);
+    const remaining = Math.max(0, limitStatus.limit - limitStatus.count);
 
     // Send message to content script to show toast
     await chrome.tabs.sendMessage(tabId, {
       type: 'SHOW_COUNTDOWN_TOAST',
       domain,
       remaining,
-      limit,
+      limit: limitStatus.limit,
+      limitType: limitStatus.limitType,
+      fiveHourCount: limitStatus.fiveHourCount,
+      dailyCount: limitStatus.dailyCount,
     });
   } catch (error) {
     // Content script might not be injected yet or tab doesn't support it
