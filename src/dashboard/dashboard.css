@@ -507,19 +507,127 @@
   color: #fff;
 }
 
+.high-contrast .header-left h1,
+.high-contrast .header-left .tagline,
+.high-contrast .panel-header h3,
+.high-contrast .panel-subtitle {
+  color: #fff;
+}
+
+/* View mode toggle buttons */
+.high-contrast .view-mode-toggle {
+  background: #222;
+  border: 1px solid #fff;
+}
+
 .high-contrast .view-mode-btn {
   color: #fff;
+  border: 1px solid transparent;
+}
+
+.high-contrast .view-mode-btn:hover {
+  background: #333;
+  border-color: #fff;
 }
 
 .high-contrast .view-mode-btn.active {
   background: #fff;
   color: #000;
+  font-weight: 700;
+  border-color: #fff;
 }
 
-.high-contrast .data-table th,
-.high-contrast .data-table td {
+/* Icon button (settings) */
+.high-contrast .icon-button {
+  background: #222;
+  border: 1px solid #fff;
+  color: #fff;
+}
+
+.high-contrast .icon-button:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* Action buttons (Export PNG, Refresh) */
+.high-contrast .action-button {
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 600;
+}
+
+.high-contrast .action-button:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* Search box */
+.high-contrast #table-search {
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 500;
+}
+
+.high-contrast #table-search::placeholder {
+  color: #aaa;
+  opacity: 1;
+}
+
+.high-contrast #table-search:focus {
+  border-color: #0ff;
+  outline: 2px solid #0ff;
+  outline-offset: 2px;
+}
+
+/* Sorting dropdown */
+.high-contrast #table-sort {
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+  font-weight: 500;
+}
+
+.high-contrast #table-sort:hover {
+  border-color: #0ff;
+}
+
+.high-contrast #table-sort:focus {
+  border-color: #0ff;
+  outline: 2px solid #0ff;
+  outline-offset: 2px;
+}
+
+/* Table */
+.high-contrast .data-table {
+  border: 2px solid #fff;
+}
+
+.high-contrast .data-table thead {
+  background: #222;
+}
+
+.high-contrast .data-table th {
   color: #fff;
   border-color: #fff;
+  font-weight: 700;
+}
+
+.high-contrast .data-table th.sortable:hover {
+  color: #0ff;
+  background: #111;
+}
+
+.high-contrast .data-table th.sorted-asc,
+.high-contrast .data-table th.sorted-desc {
+  background: #333;
+  color: #0ff;
+}
+
+.high-contrast .data-table td {
+  color: #fff;
+  border-color: #666;
 }
 
 .high-contrast .data-table tbody tr {
@@ -529,4 +637,111 @@
 
 .high-contrast .data-table tbody tr:hover {
   background: #222;
+}
+
+.high-contrast .domain-cell {
+  color: #0ff;
+  font-weight: 700;
+}
+
+.high-contrast .visits-cell {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Status badges in high contrast */
+.high-contrast .status-badge {
+  border: 2px solid #fff;
+  font-weight: 700;
+}
+
+.high-contrast .status-badge.under-limit {
+  background: #0f0;
+  color: #000;
+}
+
+.high-contrast .status-badge.near-limit {
+  background: #ff0;
+  color: #000;
+}
+
+.high-contrast .status-badge.over-limit {
+  background: #f00;
+  color: #fff;
+  border-color: #f00;
+}
+
+.high-contrast .status-badge.no-limit {
+  background: #666;
+  color: #fff;
+}
+
+/* Stats summary */
+.high-contrast .stats-summary {
+  border-color: #fff;
+}
+
+.high-contrast .stat-item strong {
+  color: #0ff;
+}
+
+.high-contrast .stat-label {
+  color: #fff;
+}
+
+/* Time filter buttons */
+.high-contrast .time-filter {
+  background: #222;
+  border: 1px solid #fff;
+}
+
+.high-contrast .time-filter-btn {
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.high-contrast .time-filter-btn:hover {
+  background: #333;
+  border-color: #fff;
+}
+
+.high-contrast .time-filter-btn.active {
+  background: #fff;
+  color: #000;
+  font-weight: 700;
+  border-color: #fff;
+}
+
+/* Panel backgrounds */
+.high-contrast .topology-panel,
+.high-contrast .table-panel {
+  background: #000;
+  border-color: #fff;
+}
+
+.high-contrast .table-wrapper {
+  background: #000;
+}
+
+/* Loading and empty states */
+.high-contrast .loading-state {
+  color: #fff;
+}
+
+.high-contrast .loading-spinner {
+  border-color: #666;
+  border-top-color: #0ff;
+}
+
+.high-contrast .graph-error {
+  color: #f00;
+  font-weight: 700;
+}
+
+.high-contrast .graph-empty {
+  color: #fff;
+}
+
+.high-contrast .table-empty {
+  color: #fff;
 }
