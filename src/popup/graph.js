@@ -143,18 +143,15 @@ export function renderRadialGraph(container, data, options = {}) {
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => (d.isCenter ? 5 : 4))
-    .attr('fill', (d) => (d.isCenter ? 'white' : '#111827'))
+    .attr('fill', 'white')
     .attr('font-size', (d) => (d.isCenter ? '14px' : '10px'))
     .attr('font-weight', 600)
     .attr('pointer-events', 'none')
+    .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
     .text((d) => {
       if (d.isCenter) return 'You';
-      // Show domain name or count based on node size
-      if (sizeScale(d.count) > 15) {
-        // Truncate long domains
-        return d.id.length > 12 ? `${d.id.substring(0, 10)}...` : d.id;
-      }
-      return d.count;
+      // Always show domain name for consistency
+      return d.id.length > 12 ? `${d.id.substring(0, 10)}...` : d.id;
     });
 
   // Add Focus Hero badges
@@ -420,20 +417,18 @@ export function renderRadialGraph(container, data, options = {}) {
       .append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', (d) => (d.isCenter ? 5 : 4))
-      .attr('fill', (d) => (d.isCenter ? 'white' : '#111827'))
+      .attr('fill', 'white')
       .attr('font-size', (d) => (d.isCenter ? '12px' : '9px'))
       .attr('font-weight', 600)
       .attr('pointer-events', 'none')
+      .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
       .text((d) => {
         if (d.isCenter) {
           return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
         }
-        // Show subpath or count
-        if (subpathSizeScale(d.count) > 12) {
-          const shortPath = d.subpath.length > 10 ? `${d.subpath.substring(0, 8)}...` : d.subpath;
-          return shortPath;
-        }
-        return d.count;
+        // Always show subpath name for consistency
+        const shortPath = d.subpath.length > 10 ? `${d.subpath.substring(0, 8)}...` : d.subpath;
+        return shortPath;
       });
 
     // Add "Back" button
