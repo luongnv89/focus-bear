@@ -106,6 +106,7 @@ export async function setupVisualizationPage(options = {}) {
     graphDimensions = {},
     listLimit = 10,
     fullPage = false,
+    onDataLoaded = null,
   } = options;
 
   const graphWidth = graphDimensions.width || 400;
@@ -265,11 +266,20 @@ export async function setupVisualizationPage(options = {}) {
       if (domains.length === 0) {
         emptyState.style.display = 'block';
         content.style.display = 'none';
+        // Call callback with empty data
+        if (onDataLoaded) {
+          onDataLoaded({});
+        }
         return;
       }
 
       emptyState.style.display = 'none';
       content.style.display = 'block';
+
+      // Call data loaded callback
+      if (onDataLoaded) {
+        onDataLoaded(aggregatedVisits);
+      }
 
       if (cleanupGraph) {
         cleanupGraph();
@@ -620,7 +630,7 @@ export async function setupVisualizationPage(options = {}) {
     const loadTime = Math.round(perfEnd - perfStart);
     console.log(`[FocusBear Performance] Page load time: ${loadTime}ms`);
     if (loadTime > 300) {
-      console.warn(`[FocusBear Performance] Load time exceeds target of 300ms`);
+      console.warn('[FocusBear Performance] Load time exceeds target of 300ms');
     }
   } catch (error) {
     console.error('Error initializing visualization page:', error);
