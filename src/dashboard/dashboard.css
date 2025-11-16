@@ -41,6 +41,15 @@
   height: 48px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: white;
+  padding: 2px;
+}
+
+/* High contrast mode - ensure logo is visible */
+body.high-contrast .dashboard-header .header-logo {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .header-left h1 {
