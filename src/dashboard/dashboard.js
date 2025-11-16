@@ -9,22 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup view mode toggle
   setupViewModeToggle();
 
-  // Get initial container dimensions
-  const graphDimensions = getGraphDimensions();
-
-  // Setup visualization page
-  setupVisualizationPage({
-    fullPage: true,
-    graphDimensions,
-    listLimit: 50,
-    onDataLoaded: handleDataLoaded,
-  });
-
-  // Setup table controls
+  // Setup table controls early
   setupTableControls();
 
   // Handle window resize
   window.addEventListener('resize', handleResize);
+
+  // Wait for layout to settle before getting dimensions
+  setTimeout(() => {
+    const graphDimensions = getGraphDimensions();
+    console.log('[Dashboard] Initializing with dimensions:', graphDimensions);
+
+    // Setup visualization page
+    setupVisualizationPage({
+      fullPage: true,
+      graphDimensions,
+      listLimit: 50,
+      onDataLoaded: handleDataLoaded,
+    });
+  }, 100);
 });
 
 function setupViewModeToggle() {
@@ -64,16 +67,31 @@ function getGraphDimensions() {
   const viewContainer = document.getElementById('view-container');
 
   if (!topologyPanel || !viewContainer) {
+    console.warn('[Dashboard] Topology panel not found, using default dimensions');
     return { width: 900, height: 600 };
   }
 
+  // Wait for layout to settle
   const rect = topologyPanel.getBoundingClientRect();
   const padding = 48; // Account for panel padding
 
-  return {
-    width: Math.max(600, rect.width - padding),
-    height: Math.max(400, rect.height - 120), // Account for panel header
-  };
+  const width = Math.max(600, rect.width - padding);
+  const height = Math.max(400, rect.height - 120); // Account for panel header
+
+  console.log('[Dashboard] Calculated graph dimensions:', {
+    width,
+    height,
+    panelWidth: rect.width,
+    panelHeight: rect.height,
+  });
+
+  // Ensure dimensions are valid
+  if (width <= 0 || height <= 0 || !Number.isFinite(width) || !Number.isFinite(height)) {
+    console.warn('[Dashboard] Invalid dimensions calculated, using defaults');
+    return { width: 900, height: 600 };
+  }
+
+  return { width, height };
 }
 
 function handleResize() {

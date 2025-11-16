@@ -265,6 +265,21 @@
   padding: 24px;
 }
 
+.graph-error {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-error);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.graph-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
 /* Table Panel */
 .table-controls {
   display: flex;

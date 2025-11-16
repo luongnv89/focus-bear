@@ -264,8 +264,8 @@ export async function setupVisualizationPage(options = {}) {
 
       const domains = Object.keys(aggregatedVisits);
       if (domains.length === 0) {
-        emptyState.style.display = 'block';
-        content.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        if (content) content.style.display = 'none';
         // Call callback with empty data
         if (onDataLoaded) {
           onDataLoaded({});
@@ -273,8 +273,8 @@ export async function setupVisualizationPage(options = {}) {
         return;
       }
 
-      emptyState.style.display = 'none';
-      content.style.display = 'block';
+      if (emptyState) emptyState.style.display = 'none';
+      if (content) content.style.display = 'block';
 
       // Call data loaded callback
       if (onDataLoaded) {
@@ -287,8 +287,12 @@ export async function setupVisualizationPage(options = {}) {
       }
 
       if (isFeatureEnabled('RADIAL_GRAPH')) {
-        graphContainer.style.display = 'block';
-        domainListEl.style.display = 'none';
+        if (graphContainer) {
+          graphContainer.style.display = 'block';
+        }
+        if (domainListEl) {
+          domainListEl.style.display = 'none';
+        }
 
         // Calculate Focus Hero badges
         const badges = await calculateFocusHeroBadges();
@@ -299,14 +303,25 @@ export async function setupVisualizationPage(options = {}) {
           badges,
         });
       } else {
-        graphContainer.style.display = 'none';
-        domainListEl.style.display = 'block';
-        renderSimpleList(aggregatedVisits, domainListEl);
+        if (graphContainer) {
+          graphContainer.style.display = 'none';
+        }
+        if (domainListEl) {
+          domainListEl.style.display = 'block';
+          renderSimpleList(aggregatedVisits, domainListEl);
+        }
       }
     } catch (error) {
       console.error('Error rendering visualization:', error);
+      console.error('Error stack:', error.stack);
       if (graphContainer) {
-        graphContainer.innerHTML = '<div class="graph-error">Error loading visualization</div>';
+        const errorHtml = `
+          <div class="graph-error">
+            Error loading visualization<br/>
+            <small style="font-size: 11px; opacity: 0.7;">${error.message}</small>
+          </div>
+        `;
+        graphContainer.innerHTML = errorHtml;
       }
     }
   };
