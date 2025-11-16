@@ -54,7 +54,11 @@ async function loadAggregatedStats(range = 'today') {
   const aggregated = {};
 
   Object.entries(visits).forEach(([dateKey, dateVisits]) => {
-    const visitDate = new Date(dateKey);
+    // Parse date string as local date to avoid timezone issues
+    // dateKey format: "YYYY-MM-DD"
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const visitDate = new Date(year, month - 1, day); // month is 0-indexed
+
     if (visitDate >= startDate && visitDate <= now) {
       Object.entries(dateVisits).forEach(([domain, domainData]) => {
         if (!aggregated[domain]) {
