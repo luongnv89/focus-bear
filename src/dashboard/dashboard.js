@@ -1,5 +1,11 @@
 import { setupVisualizationPage } from '../common/visualization-page.js';
-import { getLimits, calculateFocusHeroBadges } from '../background/storage.js';
+import {
+  getLimits,
+  setLimitForDomain,
+  calculateFocusHeroBadges,
+  normalizeLimitConfig,
+  createDefaultLimitConfig,
+} from '../background/storage.js';
 
 let currentTableData = [];
 let currentLimits = {};
@@ -7,6 +13,12 @@ let currentBadges = {};
 let currentPage = 1;
 let pageSize = 25;
 let filteredData = [];
+let currentAggregatedData = {};
+const tableFilters = {
+  query: '',
+  sortField: 'count',
+  sortOrder: 'desc',
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   // Setup view mode toggle
@@ -131,12 +143,13 @@ async function handleDataLoaded(aggregatedData) {
   // Load limits and badges
   currentLimits = await getLimits();
   currentBadges = await calculateFocusHeroBadges();
+  currentAggregatedData = aggregatedData;
 
   // Prepare table data
   currentTableData = prepareTableData(aggregatedData);
 
   // Render table
-  renderTable(currentTableData);
+  renderTable();
 }
 
 function updateStatsSummary(data) {
@@ -156,12 +169,21 @@ function prepareTableData(aggregatedData) {
     count: data.count || 0,
     subpaths: Object.keys(data.subpaths || {}).length,
     lastVisit: data.lastVisit || 0,
-    limit: currentLimits[domain] || null,
+    limit: currentLimits[domain] ? normalizeLimitConfig(currentLimits[domain]) : null,
     badge: currentBadges[domain] || null,
   }));
 }
 
-function renderTable(data) {
+function applyTableFilters(data) {
+  let result = [...data];
+  if (tableFilters.query) {
+    result = result.filter((row) => row.domain.toLowerCase().includes(tableFilters.query));
+  }
+  result = sortTableData(result, tableFilters.sortField, tableFilters.sortOrder);
+  return result;
+}
+
+function renderTable() {
   const tbody = document.getElementById('table-body');
   const emptyState = document.getElementById('table-empty');
 
@@ -169,10 +191,9 @@ function renderTable(data) {
 
   tbody.innerHTML = '';
 
-  // Store filtered data for pagination
-  filteredData = data;
+  filteredData = applyTableFilters(currentTableData);
 
-  if (data.length === 0) {
+  if (filteredData.length === 0) {
     if (emptyState) emptyState.style.display = 'block';
     updatePaginationInfo(0, 0, 0);
     return;
@@ -181,11 +202,10 @@ function renderTable(data) {
   if (emptyState) emptyState.style.display = 'none';
 
   // Calculate pagination
-  const totalItems = data.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
+  const totalItems = filteredData.length;
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalItems);
-  const pageData = data.slice(startIndex, endIndex);
+  const pageData = filteredData.slice(startIndex, endIndex);
 
   // Render paginated data
   pageData.forEach((row) => {
@@ -194,7 +214,12 @@ function renderTable(data) {
     // Domain cell
     const domainTd = document.createElement('td');
     domainTd.className = 'domain-cell';
-    domainTd.textContent = row.domain;
+    const domainBtn = document.createElement('button');
+    domainBtn.type = 'button';
+    domainBtn.className = 'domain-link';
+    domainBtn.textContent = row.domain;
+    domainBtn.addEventListener('click', () => openDomainDetail(row.domain));
+    domainTd.appendChild(domainBtn);
     if (row.badge) {
       const badge = document.createElement('span');
       badge.className = 'badge-icon-table';
@@ -273,35 +298,28 @@ function renderTable(data) {
     const actionsTd = document.createElement('td');
     actionsTd.className = 'actions-cell';
 
-    if (row.limit) {
-      // Create toggle switch for domains with limits
-      const toggleLabel = document.createElement('label');
-      toggleLabel.className = 'table-toggle';
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'table-toggle';
 
-      const toggleInput = document.createElement('input');
-      toggleInput.type = 'checkbox';
-      toggleInput.checked = row.limit?.enabled !== false;
-      toggleInput.dataset.domain = row.domain;
-      toggleInput.addEventListener('change', async (e) => {
-        await handleLimitToggle(row.domain, e.target.checked);
-      });
+    const toggleInput = document.createElement('input');
+    toggleInput.type = 'checkbox';
+    toggleInput.checked = row.limit ? row.limit.enabled !== false : false;
+    toggleInput.dataset.domain = row.domain;
+    toggleInput.addEventListener('change', async (e) => {
+      toggleInput.disabled = true;
+      const success = await handleInlineLimitToggle(row.domain, e.target.checked);
+      if (!success) {
+        toggleInput.checked = !e.target.checked;
+      }
+      toggleInput.disabled = false;
+    });
 
-      const toggleSlider = document.createElement('span');
-      toggleSlider.className = 'toggle-slider';
+    const toggleSlider = document.createElement('span');
+    toggleSlider.className = 'toggle-slider';
 
-      toggleLabel.appendChild(toggleInput);
-      toggleLabel.appendChild(toggleSlider);
-      actionsTd.appendChild(toggleLabel);
-    } else {
-      // Create "Set Limit" button for domains without limits
-      const setLimitBtn = document.createElement('button');
-      setLimitBtn.className = 'pill-button-small pill-button-secondary';
-      setLimitBtn.textContent = 'Set Limit';
-      setLimitBtn.addEventListener('click', () => {
-        handleSetLimit(row.domain);
-      });
-      actionsTd.appendChild(setLimitBtn);
-    }
+    toggleLabel.appendChild(toggleInput);
+    toggleLabel.appendChild(toggleSlider);
+    actionsTd.appendChild(toggleLabel);
 
     tr.appendChild(actionsTd);
 
@@ -332,19 +350,19 @@ function setupTableControls() {
 
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = currentTableData.filter((row) => row.domain.toLowerCase().includes(query));
-      currentPage = 1; // Reset to first page on search
-      renderTable(filtered);
+      tableFilters.query = e.target.value.toLowerCase();
+      currentPage = 1;
+      renderTable();
     });
   }
 
   if (sortSelect) {
     sortSelect.addEventListener('change', (e) => {
       const [field, order] = e.target.value.split('-');
-      const sorted = sortTableData([...currentTableData], field, order);
-      currentPage = 1; // Reset to first page on sort
-      renderTable(sorted);
+      setSort(field, order);
+      currentPage = 1;
+      renderTable();
+      updateSortHeaderState(field, order);
     });
   }
 
@@ -353,25 +371,19 @@ function setupTableControls() {
   headers.forEach((header) => {
     header.addEventListener('click', () => {
       const field = header.dataset.sort;
-      const currentOrder = header.classList.contains('sorted-asc') ? 'desc' : 'asc';
-
-      // Remove sorted class from all headers
-      headers.forEach((h) => h.classList.remove('sorted-asc', 'sorted-desc'));
-
-      // Add sorted class to clicked header
-      header.classList.add(currentOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
-
-      // Sort and render
-      const sorted = sortTableData([...currentTableData], field, currentOrder);
-      currentPage = 1; // Reset to first page on sort
-      renderTable(sorted);
-
-      // Update select to match
+      const currentOrder =
+        tableFilters.sortField === field && tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
+      setSort(field, currentOrder);
+      currentPage = 1;
+      renderTable();
+      updateSortHeaderState(field, currentOrder);
       if (sortSelect) {
         sortSelect.value = `${field}-${currentOrder}`;
       }
     });
   });
+
+  updateSortHeaderState(tableFilters.sortField, tableFilters.sortOrder);
 }
 
 function sortTableData(data, field, order = 'desc') {
@@ -394,6 +406,21 @@ function sortTableData(data, field, order = 'desc') {
   });
 }
 
+function setSort(field, order) {
+  tableFilters.sortField = field;
+  tableFilters.sortOrder = order;
+}
+
+function updateSortHeaderState(field, order) {
+  const headers = document.querySelectorAll('.data-table th.sortable');
+  headers.forEach((header) => {
+    header.classList.remove('sorted-asc', 'sorted-desc');
+    if (header.dataset.sort === field) {
+      header.classList.add(order === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    }
+  });
+}
+
 function setupPagination() {
   const prevBtn = document.getElementById('pagination-prev');
   const nextBtn = document.getElementById('pagination-next');
@@ -402,8 +429,8 @@ function setupPagination() {
   if (prevBtn) {
     prevBtn.addEventListener('click', () => {
       if (currentPage > 1) {
-        currentPage--;
-        renderTable(filteredData);
+        currentPage -= 1;
+        renderTable();
       }
     });
   }
@@ -412,8 +439,8 @@ function setupPagination() {
     nextBtn.addEventListener('click', () => {
       const totalPages = Math.ceil(filteredData.length / pageSize);
       if (currentPage < totalPages) {
-        currentPage++;
-        renderTable(filteredData);
+        currentPage += 1;
+        renderTable();
       }
     });
   }
@@ -422,7 +449,7 @@ function setupPagination() {
     sizeSelect.addEventListener('change', (e) => {
       pageSize = parseInt(e.target.value, 10);
       currentPage = 1; // Reset to first page
-      renderTable(filteredData);
+      renderTable();
     });
   }
 }
@@ -447,66 +474,37 @@ function updatePaginationInfo(start, end, total) {
   if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
 }
 
-async function handleLimitToggle(domain, enabled) {
+async function handleInlineLimitToggle(domain, enabled) {
   try {
-    // Get current limit config
     const limits = await getLimits();
-    const currentLimit = limits[domain];
-
-    if (!currentLimit) return;
-
-    // Update the enabled state
-    const updatedLimit = {
-      ...currentLimit,
-      enabled,
-    };
-
-    // Save to storage
-    const result = await chrome.storage.local.get('limits');
-    const allLimits = result.limits || {};
-    allLimits[domain] = updatedLimit;
-    await chrome.storage.local.set({ limits: allLimits });
-
-    // Reload limits and re-render table
-    currentLimits = await getLimits();
-    currentTableData = prepareTableData(await getAggregatedData());
-    renderTable(filteredData.length > 0 ? filteredData : currentTableData);
-  } catch (error) {
-    console.error('Error toggling limit:', error);
-  }
-}
-
-function handleSetLimit(domain) {
-  // Switch to settings view and pre-fill the domain
-  const settingsView = document.getElementById('settings-view');
-  const mainView = document.getElementById('main-view');
-  const settingsBtn = document.getElementById('settings-btn');
-
-  if (settingsView && mainView) {
-    // Show settings view
-    mainView.style.display = 'none';
-    settingsView.hidden = false;
-    settingsView.setAttribute('aria-hidden', 'false');
-
-    // Pre-fill domain in the limit form
-    const domainInput = document.getElementById('limit-domain');
-    if (domainInput) {
-      domainInput.value = domain;
-      domainInput.focus();
+    const existing = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+    if (!existing && !enabled) {
+      return true;
     }
+
+    let updatedConfig = existing;
+    if (!existing && enabled) {
+      updatedConfig = createDefaultLimitConfig();
+    }
+
+    if (!updatedConfig) {
+      return false;
+    }
+
+    updatedConfig.enabled = enabled;
+    await setLimitForDomain(domain, updatedConfig);
+    currentLimits = await getLimits();
+    currentTableData = prepareTableData(currentAggregatedData);
+    renderTable();
+    return true;
+  } catch (error) {
+    console.error('Error toggling inline limit:', error);
+    return false;
   }
 }
 
-async function getAggregatedData() {
-  // This function should get the current aggregated data
-  // For now, we'll reconstruct it from currentTableData
-  const data = {};
-  currentTableData.forEach((row) => {
-    data[row.domain] = {
-      count: row.count,
-      subpaths: {},
-      lastVisit: row.lastVisit,
-    };
-  });
-  return data;
+function openDomainDetail(domain) {
+  const detailUrl = new URL(chrome.runtime.getURL('src/dashboard/domain.html'));
+  detailUrl.searchParams.set('domain', domain);
+  window.location.href = detailUrl.toString();
 }

@@ -416,6 +416,21 @@ body.high-contrast .dashboard-header .header-logo {
   color: var(--color-primary);
 }
 
+.domain-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.domain-link:hover,
+.domain-link:focus {
+  text-decoration: underline;
+}
+
 .visits-cell {
   font-weight: 600;
   font-size: 14px;

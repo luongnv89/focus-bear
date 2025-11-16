@@ -8,6 +8,8 @@ import {
   incrementVisit,
   getAggregatedStats,
   calculateFocusHeroBadges,
+  createDefaultLimitConfig,
+  deleteDomainData,
 } from '../src/background/storage.js';
 
 // Mock chrome.storage.local
@@ -179,9 +181,15 @@ describe('Storage Module', () => {
   describe('calculateFocusHeroBadges', () => {
     beforeEach(() => {
       // Set up test data with limits
+      const buildDailyLimit = (limit) =>
+        createDefaultLimitConfig({
+          fiveHour: { enabled: false, limit: 10 },
+          daily: { enabled: true, limit },
+        });
+
       chrome.storage.local.data.limits = {
-        'example.com': 10,
-        'twitter.com': 5,
+        'example.com': buildDailyLimit(10),
+        'twitter.com': buildDailyLimit(5),
       };
     });
 
@@ -291,6 +299,37 @@ describe('Storage Module', () => {
 
       const badges = await calculateFocusHeroBadges();
       expect(badges['no-limit-site.com']).toBeUndefined();
+    });
+  });
+
+  describe('deleteDomainData', () => {
+    test('removes visits and limits for the specified domain', async () => {
+      const today = getTodayKey();
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      chrome.storage.local.data = {
+        visits: {
+          [today]: {
+            'example.com': { count: 5, lastVisit: Date.now(), subpaths: {} },
+            'other.com': { count: 2, lastVisit: Date.now(), subpaths: {} },
+          },
+          [yesterday]: {
+            'example.com': { count: 3, lastVisit: Date.now() - 86400000, subpaths: {} },
+          },
+        },
+        limits: {
+          'example.com': createDefaultLimitConfig(),
+          'other.com': createDefaultLimitConfig({ daily: { enabled: true, limit: 5 } }),
+        },
+      };
+
+      await deleteDomainData('example.com');
+
+      expect(chrome.storage.local.data.limits['example.com']).toBeUndefined();
+      expect(chrome.storage.local.data.limits['other.com']).toBeDefined();
+      expect(chrome.storage.local.data.visits[today]['example.com']).toBeUndefined();
+      expect(chrome.storage.local.data.visits[today]['other.com']).toBeDefined();
+      expect(chrome.storage.local.data.visits[yesterday]).toBeUndefined();
     });
   });
 });

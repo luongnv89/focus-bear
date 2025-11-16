@@ -4,6 +4,7 @@
  */
 
 import { checkLimit } from '../src/background/limits.js';
+import { createDefaultLimitConfig } from '../src/background/storage.js';
 
 // Mock chrome APIs
 global.chrome = {
@@ -43,6 +44,14 @@ global.chrome = {
   },
 };
 
+const todayKey = () => new Date().toISOString().split('T')[0];
+
+const buildDailyLimit = (limit = 10) =>
+  createDefaultLimitConfig({
+    fiveHour: { enabled: false, limit: 10 },
+    daily: { enabled: true, limit },
+  });
+
 describe('Limits Module', () => {
   beforeEach(() => {
     chrome.storage.local.data = {};
@@ -50,10 +59,9 @@ describe('Limits Module', () => {
 
   describe('checkLimit', () => {
     test('returns exceeded=false when no limit is set', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
+          [todayKey()]: {
             'example.com': { count: 100, lastVisit: Date.now(), subpaths: {} },
           },
         },
@@ -64,18 +72,23 @@ describe('Limits Module', () => {
       expect(result.exceeded).toBe(false);
       expect(result.count).toBe(100);
       expect(result.limit).toBe(null);
+      expect(result.limitType).toBe(null);
     });
 
-    test('returns exceeded=false when under limit', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
+    test('returns countdown info when under daily limit', async () => {
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
-            'example.com': { count: 5, lastVisit: Date.now(), subpaths: {} },
+          [todayKey()]: {
+            'example.com': {
+              count: 5,
+              lastVisit: Date.now(),
+              subpaths: {},
+              timestamps: [Date.now() - 60 * 60 * 1000],
+            },
           },
         },
         limits: {
-          'example.com': 10,
+          'example.com': buildDailyLimit(10),
         },
       };
 
@@ -83,18 +96,18 @@ describe('Limits Module', () => {
       expect(result.exceeded).toBe(false);
       expect(result.count).toBe(5);
       expect(result.limit).toBe(10);
+      expect(result.limitType).toBe('daily');
     });
 
-    test('returns exceeded=true when limit is exceeded', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
+    test('returns exceeded=true when daily limit is exceeded', async () => {
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
+          [todayKey()]: {
             'example.com': { count: 15, lastVisit: Date.now(), subpaths: {} },
           },
         },
         limits: {
-          'example.com': 10,
+          'example.com': buildDailyLimit(10),
         },
       };
 
@@ -102,18 +115,18 @@ describe('Limits Module', () => {
       expect(result.exceeded).toBe(true);
       expect(result.count).toBe(15);
       expect(result.limit).toBe(10);
+      expect(result.limitType).toBe('daily');
     });
 
-    test('returns exceeded=true when at exact limit', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
+    test('returns exceeded=true when at exact daily limit', async () => {
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
+          [todayKey()]: {
             'example.com': { count: 10, lastVisit: Date.now(), subpaths: {} },
           },
         },
         limits: {
-          'example.com': 10,
+          'example.com': buildDailyLimit(10),
         },
       };
 
@@ -121,20 +134,22 @@ describe('Limits Module', () => {
       expect(result.exceeded).toBe(true);
       expect(result.count).toBe(10);
       expect(result.limit).toBe(10);
+      expect(result.limitType).toBe('daily');
     });
 
     test('handles missing visit data', async () => {
       chrome.storage.local.data = {
         visits: {},
         limits: {
-          'example.com': 10,
+          'example.com': buildDailyLimit(12),
         },
       };
 
       const result = await checkLimit('example.com');
       expect(result.exceeded).toBe(false);
       expect(result.count).toBe(0);
-      expect(result.limit).toBe(10);
+      expect(result.limit).toBe(12);
+      expect(result.limitType).toBe('daily');
     });
 
     test('handles domain not visited today', async () => {
@@ -146,7 +161,7 @@ describe('Limits Module', () => {
           },
         },
         limits: {
-          'example.com': 10,
+          'example.com': buildDailyLimit(10),
         },
       };
 
@@ -154,48 +169,80 @@ describe('Limits Module', () => {
       expect(result.exceeded).toBe(false);
       expect(result.count).toBe(0);
       expect(result.limit).toBe(10);
+      expect(result.limitType).toBe('daily');
     });
-  });
 
-  describe('Limit boundary conditions', () => {
-    test('correctly handles zero limit', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
+    test('detects five-hour limit breaches before daily limit', async () => {
+      const now = Date.now();
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
-            'example.com': { count: 1, lastVisit: Date.now(), subpaths: {} },
+          [todayKey()]: {
+            'example.com': {
+              count: 50,
+              lastVisit: now,
+              subpaths: {},
+              timestamps: [now - 60 * 60 * 1000, now - 30 * 60 * 1000],
+            },
           },
         },
         limits: {
-          'example.com': 0,
+          'example.com': createDefaultLimitConfig({
+            fiveHour: { enabled: true, limit: 2 },
+            daily: { enabled: true, limit: 100 },
+          }),
         },
       };
 
       const result = await checkLimit('example.com');
-      // Note: Zero limit is treated as "no limit" due to falsy check
-      // This is current behavior but could be considered a bug
-      expect(result.exceeded).toBe(false);
-      expect(result.count).toBe(1);
-      expect(result.limit).toBe(null);
+      expect(result.exceeded).toBe(true);
+      expect(result.limitType).toBe('fiveHour');
+      expect(result.limit).toBe(2);
+      expect(result.count).toBe(2);
     });
 
-    test('correctly handles very large limit', async () => {
-      const todayKey = new Date().toISOString().split('T')[0];
+    test('returns countdown info for five-hour limit when under threshold', async () => {
+      const now = Date.now();
       chrome.storage.local.data = {
         visits: {
-          [todayKey]: {
-            'example.com': { count: 1000, lastVisit: Date.now(), subpaths: {} },
+          [todayKey()]: {
+            'example.com': {
+              count: 3,
+              lastVisit: now,
+              subpaths: {},
+              timestamps: [now - 30 * 60 * 1000, now - 4 * 60 * 60 * 1000, now - 7 * 60 * 60 * 1000],
+            },
           },
         },
         limits: {
-          'example.com': 10000,
+          'example.com': createDefaultLimitConfig({
+            fiveHour: { enabled: true, limit: 5 },
+            daily: { enabled: false, limit: 20 },
+          }),
         },
       };
 
       const result = await checkLimit('example.com');
       expect(result.exceeded).toBe(false);
-      expect(result.count).toBe(1000);
-      expect(result.limit).toBe(10000);
+      expect(result.limitType).toBe('fiveHour');
+      expect(result.limit).toBe(5);
+      expect(result.count).toBe(2); // Only timestamps inside last 5 hours
+    });
+
+    test('supports legacy numeric limits', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 4, lastVisit: Date.now(), subpaths: {} },
+          },
+        },
+        limits: {
+          'example.com': 7,
+        },
+      };
+
+      const result = await checkLimit('example.com');
+      expect(result.limit).toBe(7);
+      expect(result.limitType).toBe('daily');
     });
   });
 });

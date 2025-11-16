@@ -1,3 +1,5 @@
+import { getTodayKey, normalizeLimitConfig } from '../background/storage.js';
+
 /**
  * FocusBear Blocked Page Script
  */
@@ -37,21 +39,10 @@ let count = urlParams.get('count') || null;
 let limit = urlParams.get('limit') || null;
 let limitType = urlParams.get('limitType') || 'daily';
 
-// Helper function to get today's date key
-function getTodayKey() {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
-}
-
 // Fetch data from storage if URL params are missing
 async function loadBlockedPageData() {
   try {
-    const data = await chrome.storage.local.get([
-      'visits',
-      'limits',
-      'settings',
-      'blockedDomains',
-    ]);
+    const data = await chrome.storage.local.get(['visits', 'limits', 'settings', 'blockedDomains']);
 
     // If we don't have domain from URL, try to detect it from referrer or storage
     if (!domain) {
@@ -96,7 +87,22 @@ async function loadBlockedPageData() {
       }
 
       if (!limit || limit === '?') {
-        limit = limits[domain] || '?';
+        const limitConfig = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
+        if (limitConfig) {
+          if (limitType === 'fiveHour' && limitConfig.fiveHour.enabled) {
+            limit = limitConfig.fiveHour.limit;
+          } else if (limitConfig.daily.enabled) {
+            limit = limitConfig.daily.limit;
+            limitType = 'daily';
+          } else if (limitConfig.fiveHour.enabled) {
+            limit = limitConfig.fiveHour.limit;
+            limitType = 'fiveHour';
+          } else {
+            limit = '?';
+          }
+        } else {
+          limit = '?';
+        }
       }
     }
 

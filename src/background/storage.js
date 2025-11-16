@@ -47,6 +47,31 @@ const defaultSettings = {
   onboardingComplete: false,
 };
 
+const limitDefaults = {
+  enabled: true,
+  fiveHour: { enabled: true, limit: 10 },
+  daily: { enabled: true, limit: 20 },
+};
+
+/**
+ * Create a normalized limit config merged with defaults
+ * @param {Object} overrides - Partial configuration to override defaults
+ * @returns {Object} Normalized limit configuration
+ */
+export function createDefaultLimitConfig(overrides = {}) {
+  return {
+    enabled: overrides.enabled ?? limitDefaults.enabled,
+    fiveHour: {
+      enabled: overrides.fiveHour?.enabled ?? limitDefaults.fiveHour.enabled,
+      limit: overrides.fiveHour?.limit ?? limitDefaults.fiveHour.limit,
+    },
+    daily: {
+      enabled: overrides.daily?.enabled ?? limitDefaults.daily.enabled,
+      limit: overrides.daily?.limit ?? limitDefaults.daily.limit,
+    },
+  };
+}
+
 /**
  * Get today's date in YYYY-MM-DD format
  * @returns {string} Date string
@@ -200,18 +225,7 @@ export async function setLimitForDomain(domain, limitConfig) {
       if (limitConfig === null) {
         delete limits[domain];
       } else {
-        // Ensure proper structure with defaults
-        limits[domain] = {
-          enabled: limitConfig.enabled !== undefined ? limitConfig.enabled : true,
-          fiveHour: {
-            enabled: limitConfig.fiveHour?.enabled !== undefined ? limitConfig.fiveHour.enabled : true,
-            limit: limitConfig.fiveHour?.limit || 10,
-          },
-          daily: {
-            enabled: limitConfig.daily?.enabled !== undefined ? limitConfig.daily.enabled : true,
-            limit: limitConfig.daily?.limit || 20,
-          },
-        };
+        limits[domain] = createDefaultLimitConfig(limitConfig);
       }
 
       chrome.storage.local.set({ limits }, resolve);
@@ -228,24 +242,49 @@ export async function setLimitForDomain(domain, limitConfig) {
 export function normalizeLimitConfig(limit) {
   // If already in new format, return as-is
   if (typeof limit === 'object' && limit !== null && limit.enabled !== undefined) {
-    return limit;
+    return createDefaultLimitConfig(limit);
   }
 
   // If legacy number format, convert to new format
   if (typeof limit === 'number') {
-    return {
-      enabled: true,
-      fiveHour: { enabled: true, limit: 10 },
-      daily: { enabled: true, limit: limit }, // Use legacy number as daily limit
-    };
+    return createDefaultLimitConfig({
+      daily: { enabled: true, limit },
+    });
   }
 
   // Default config
-  return {
-    enabled: true,
-    fiveHour: { enabled: true, limit: 10 },
-    daily: { enabled: true, limit: 20 },
-  };
+  return createDefaultLimitConfig();
+}
+
+/**
+ * Delete all visit data and limits for a specific domain
+ * @param {string} domain - Domain name to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteDomainData(domain) {
+  if (!domain) return;
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['visits', 'limits'], (data) => {
+      const visits = data.visits || {};
+      const limits = data.limits || {};
+
+      Object.keys(visits).forEach((dateKey) => {
+        if (visits[dateKey]?.[domain]) {
+          delete visits[dateKey][domain];
+          if (Object.keys(visits[dateKey]).length === 0) {
+            delete visits[dateKey];
+          }
+        }
+      });
+
+      if (limits[domain]) {
+        delete limits[domain];
+      }
+
+      chrome.storage.local.set({ visits, limits }, resolve);
+    });
+  });
 }
 
 /**
@@ -319,28 +358,34 @@ export async function calculateFocusHeroBadges() {
 
   // Check last 7 days for each domain with a limit
   const today = new Date();
-  const dateKeys = [];
-  for (let i = 0; i < 7; i++) {
+  const dateKeys = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    dateKeys.push(date.toISOString().split('T')[0]);
-  }
+    date.setDate(date.getDate() - index);
+    return date.toISOString().split('T')[0];
+  });
 
   Object.keys(limits).forEach((domain) => {
-    const limit = limits[domain];
+    const normalizedLimit = normalizeLimitConfig(limits[domain]);
+
+    if (!normalizedLimit.enabled || !normalizedLimit.daily.enabled) {
+      return;
+    }
+
+    const dailyLimit = normalizedLimit.daily.limit;
     let consecutiveDaysUnderLimit = 0;
 
     // Check days in reverse chronological order
-    for (const dateKey of dateKeys) {
+    dateKeys.some((dateKey) => {
       const dayVisits = visits[dateKey]?.[domain];
       const count = dayVisits ? dayVisits.count : 0;
 
-      if (count <= limit) {
-        consecutiveDaysUnderLimit++;
-      } else {
-        break; // Streak broken
+      if (count <= dailyLimit) {
+        consecutiveDaysUnderLimit += 1;
+        return false;
       }
-    }
+
+      return true; // streak broken
+    });
 
     // Award badge if 3+ consecutive days under limit
     if (consecutiveDaysUnderLimit >= 3) {
@@ -369,9 +414,8 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 60 * 60 * 1000);
       break;
     case 'today': {
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      startDate = today;
+      const todayKey = getTodayKey();
+      startDate = new Date(`${todayKey}T00:00:00.000Z`);
       break;
     }
     case 'week':
@@ -381,9 +425,8 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       break;
     default: {
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      startDate = today;
+      const todayKey = getTodayKey();
+      startDate = new Date(`${todayKey}T00:00:00.000Z`);
       break;
     }
   }

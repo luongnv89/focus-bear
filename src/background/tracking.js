@@ -3,7 +3,7 @@
  * Monitors tab activation and updates to track focus switches
  */
 
-import { incrementVisit, getLimits, getTodayKey } from './storage.js';
+import { incrementVisit } from './storage.js';
 import { updateBlockingRules } from './limits.js';
 
 /**
@@ -59,7 +59,7 @@ async function trackTabFocus(tabId) {
     console.log(`Focus switch recorded: ${domain}${subpath} (count: ${newCount})`);
 
     // Check if this domain has a limit and show countdown toast
-    await showCountdownToastIfNeeded(tabId, domain, newCount);
+    await showCountdownToastIfNeeded(tabId, domain);
 
     // Update blocking rules in case a limit was just exceeded
     await updateBlockingRules();
@@ -75,17 +75,19 @@ async function trackTabFocus(tabId) {
  * @param {string} domain - Domain name
  * @param {number} currentCount - Current visit count
  */
-async function showCountdownToastIfNeeded(tabId, domain, currentCount) {
+async function showCountdownToastIfNeeded(tabId, domain) {
   try {
     const { checkLimit } = await import('./limits.js');
     const limitStatus = await checkLimit(domain);
 
     // Only show toast if domain has a limit
-    if (!limitStatus.limit) {
+    if (!limitStatus.limit || !limitStatus.limitType) {
       return;
     }
 
-    const remaining = Math.max(0, limitStatus.limit - limitStatus.count);
+    const relevantCount =
+      limitStatus.limitType === 'fiveHour' ? limitStatus.fiveHourCount : limitStatus.dailyCount;
+    const remaining = Math.max(0, limitStatus.limit - relevantCount);
 
     // Send message to content script to show toast
     await chrome.tabs.sendMessage(tabId, {

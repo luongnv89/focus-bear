@@ -243,12 +243,14 @@ Create a settings panel accessible via a gear icon as per UX design. This panel 
 ### Task 1.7 – Per-Site Daily Limit Configuration
 
 **Description**
-Allow the user to set per-site daily focus visit limits from the Settings panel.
+Allow the user to set per-site 5-hour and daily focus visit limits from the Settings panel with sensible defaults.
 
 **Acceptance Criteria**
 - In settings:
-  - List of top N domains with input fields or sliders for “Max visits/day”.
+  - List of top N domains with input fields or sliders for “Max visits/5 hours” and “Max visits/day”.
   - Ability to add a custom domain by typing its name/URL.
+  - Default configuration ready to apply with a single toggle (10 visits per 5 hours, 20 visits per day) plus a “Customize” action per domain.
+  - Domain detail view reachable from analytics table to tweak limits/delete data per domain.
 - Limits stored in `chrome.storage.local`.
 - Default behavior:
   - Sites with no limit are “unlimited”.
