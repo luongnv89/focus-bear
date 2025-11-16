@@ -102,6 +102,19 @@ header {
   border-bottom: 1px solid var(--color-border);
 }
 
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 h1 {
   font-size: 20px;
   font-weight: 600;
