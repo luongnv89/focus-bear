@@ -932,6 +932,30 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
+  // Listen for custom event to open domain settings from graph drilldown
+  window.addEventListener('openDomainSettings', async (event) => {
+    const { domain } = event.detail || {};
+    if (!domain) return;
+
+    try {
+      await showSettingsView();
+
+      if (limitForm) {
+        const limits = await getLimits();
+        const limitConfig = limits[domain]
+          ? normalizeLimitConfig(limits[domain])
+          : createDefaultLimitConfig();
+        applyLimitConfigToForm(domain, limitConfig);
+
+        // Scroll to form
+        limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        limitForm.querySelector('input[name="domain"]')?.focus();
+      }
+    } catch (error) {
+      console.error('Failed to open domain settings:', error);
+    }
+  });
+
   // Performance monitoring
   const perfStart = performance.now();
 
