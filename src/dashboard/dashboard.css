@@ -467,6 +467,103 @@ body.high-contrast .dashboard-header .header-logo {
   font-size: 14px;
 }
 
+/* Table Pagination */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.pagination-info span {
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-btn {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dark);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-page {
+  font-size: 13px;
+  color: var(--color-text-dark);
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
+.pagination-size {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dark);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pagination-size:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast pagination */
+.high-contrast .table-pagination {
+  background: #000;
+  border-color: #fff;
+}
+
+.high-contrast .pagination-info,
+.high-contrast .pagination-info span,
+.high-contrast .pagination-page {
+  color: #fff;
+}
+
+.high-contrast .pagination-btn,
+.high-contrast .pagination-size {
+  background: #222;
+  border-color: #fff;
+  color: #fff;
+}
+
+.high-contrast .pagination-btn:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1400px) {
   .view-container {
@@ -772,52 +869,33 @@ body.high-contrast .dashboard-header .header-logo {
 .dashboard-footer {
   background: var(--color-card);
   border-top: 1px solid var(--color-border);
-  padding: 20px 32px;
+  padding: 16px 32px;
   margin-top: auto;
 }
 
 .footer-content {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 8px;
   max-width: 1400px;
   margin: 0 auto;
+  font-size: 13px;
+  flex-wrap: wrap;
 }
 
-.footer-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.footer-brand strong {
+.footer-content strong {
   color: var(--color-text-dark);
   font-weight: 600;
 }
 
 .footer-tagline {
   color: var(--color-text-muted);
-  font-size: 13px;
 }
 
 .footer-separator {
   color: var(--color-text-muted);
   opacity: 0.5;
-}
-
-.footer-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--color-text-muted);
 }
 
 .footer-version {
@@ -826,17 +904,11 @@ body.high-contrast .dashboard-header .header-logo {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .footer-privacy {
-  font-size: 12px;
-}
-
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .footer-link {
@@ -850,24 +922,14 @@ body.high-contrast .dashboard-header .header-logo {
   text-decoration: underline;
 }
 
-.footer-link-button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  font-size: 13px;
-  font-family: inherit;
-}
-
 /* High contrast footer */
 .high-contrast .dashboard-footer {
   background: #000;
   border-color: #fff;
 }
 
-.high-contrast .footer-brand strong,
+.high-contrast .footer-content strong,
 .high-contrast .footer-tagline,
-.high-contrast .footer-meta,
 .high-contrast .footer-privacy {
   color: #fff;
 }
@@ -890,17 +952,11 @@ body.high-contrast .dashboard-header .header-logo {
 /* Responsive footer */
 @media (max-width: 768px) {
   .dashboard-footer {
-    padding: 16px 20px;
+    padding: 12px 16px;
   }
 
   .footer-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .footer-right {
-    width: 100%;
-    justify-content: flex-start;
+    font-size: 12px;
+    gap: 6px;
   }
 }

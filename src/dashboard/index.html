@@ -184,6 +184,22 @@
                   No data to display
                 </div>
               </div>
+              <div class="table-pagination">
+                <div class="pagination-info">
+                  Showing <span id="pagination-start">0</span>-<span id="pagination-end">0</span> of <span id="pagination-total">0</span>
+                </div>
+                <div class="pagination-controls">
+                  <button id="pagination-prev" class="pagination-btn" aria-label="Previous page">←</button>
+                  <span id="pagination-page" class="pagination-page">Page 1</span>
+                  <button id="pagination-next" class="pagination-btn" aria-label="Next page">→</button>
+                </div>
+                <select id="pagination-size" class="pagination-size" aria-label="Items per page">
+                  <option value="10">10 per page</option>
+                  <option value="25" selected>25 per page</option>
+                  <option value="50">50 per page</option>
+                  <option value="100">100 per page</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -297,27 +313,17 @@
 
       <footer class="dashboard-footer">
         <div class="footer-content">
-          <div class="footer-left">
-            <div class="footer-brand">
-              <strong>FocusBear</strong>
-              <span class="footer-separator">•</span>
-              <span class="footer-tagline">Track your focus, privacy-first</span>
-            </div>
-            <div class="footer-meta">
-              <span id="footer-version" class="footer-version">v0.1.0</span>
-              <span class="footer-separator">•</span>
-              <span class="footer-privacy">🔒 All data stays local</span>
-            </div>
-          </div>
-          <div class="footer-right">
-            <a href="https://github.com/luongnv89/focus-bear" target="_blank" rel="noopener" class="footer-link">
-              GitHub
-            </a>
-            <span class="footer-separator">•</span>
-            <button id="footer-about-btn" class="footer-link footer-link-button">
-              About
-            </button>
-          </div>
+          <strong>FocusBear</strong>
+          <span class="footer-separator">•</span>
+          <span class="footer-tagline">Track your focus, privacy-first</span>
+          <span class="footer-separator">•</span>
+          <span id="footer-version" class="footer-version">v0.1.0</span>
+          <span class="footer-separator">•</span>
+          <span class="footer-privacy">🔒 All data stays local</span>
+          <span class="footer-separator">•</span>
+          <a href="https://github.com/luongnv89/focus-bear" target="_blank" rel="noopener" class="footer-link">
+            GitHub
+          </a>
         </div>
       </footer>
     </div>

@@ -4,6 +4,9 @@ import { getLimits, calculateFocusHeroBadges } from '../background/storage.js';
 let currentTableData = [];
 let currentLimits = {};
 let currentBadges = {};
+let currentPage = 1;
+let pageSize = 25;
+let filteredData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   // Setup view mode toggle
@@ -11,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup table controls early
   setupTableControls();
+
+  // Setup pagination controls
+  setupPagination();
 
   // Setup footer
   setupFooter();
@@ -72,23 +78,6 @@ function setupFooter() {
   if (footerVersion) {
     footerVersion.textContent = `v${manifest.version_name || manifest.version}`;
   }
-
-  // Setup About button
-  const aboutBtn = document.getElementById('footer-about-btn');
-  if (aboutBtn) {
-    aboutBtn.addEventListener('click', () => {
-      showAboutDialog();
-    });
-  }
-}
-
-function showAboutDialog() {
-  const manifest = chrome.runtime.getManifest();
-  const version = manifest.version_name || manifest.version;
-
-  const message = `${manifest.name} ${version}\n\n${manifest.description}\n\n🔒 Privacy-first: All data stays local on your device.\n\nMade with focus and care.`;
-
-  alert(message);
 }
 
 function getGraphDimensions() {
@@ -180,14 +169,26 @@ function renderTable(data) {
 
   tbody.innerHTML = '';
 
+  // Store filtered data for pagination
+  filteredData = data;
+
   if (data.length === 0) {
     if (emptyState) emptyState.style.display = 'block';
+    updatePaginationInfo(0, 0, 0);
     return;
   }
 
   if (emptyState) emptyState.style.display = 'none';
 
-  data.forEach((row) => {
+  // Calculate pagination
+  const totalItems = data.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const pageData = data.slice(startIndex, endIndex);
+
+  // Render paginated data
+  pageData.forEach((row) => {
     const tr = document.createElement('tr');
 
     // Domain cell
@@ -255,6 +256,9 @@ function renderTable(data) {
 
     tbody.appendChild(tr);
   });
+
+  // Update pagination info
+  updatePaginationInfo(startIndex + 1, endIndex, totalItems);
 }
 
 function formatRelativeTime(date) {
@@ -279,6 +283,7 @@ function setupTableControls() {
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
       const filtered = currentTableData.filter((row) => row.domain.toLowerCase().includes(query));
+      currentPage = 1; // Reset to first page on search
       renderTable(filtered);
     });
   }
@@ -287,6 +292,7 @@ function setupTableControls() {
     sortSelect.addEventListener('change', (e) => {
       const [field, order] = e.target.value.split('-');
       const sorted = sortTableData([...currentTableData], field, order);
+      currentPage = 1; // Reset to first page on sort
       renderTable(sorted);
     });
   }
@@ -306,6 +312,7 @@ function setupTableControls() {
 
       // Sort and render
       const sorted = sortTableData([...currentTableData], field, currentOrder);
+      currentPage = 1; // Reset to first page on sort
       renderTable(sorted);
 
       // Update select to match
@@ -334,4 +341,57 @@ function sortTableData(data, field, order = 'desc') {
     }
     return bVal - aVal;
   });
+}
+
+function setupPagination() {
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+  const sizeSelect = document.getElementById('pagination-size');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable(filteredData);
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredData.length / pageSize);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable(filteredData);
+      }
+    });
+  }
+
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', (e) => {
+      pageSize = parseInt(e.target.value, 10);
+      currentPage = 1; // Reset to first page
+      renderTable(filteredData);
+    });
+  }
+}
+
+function updatePaginationInfo(start, end, total) {
+  const startEl = document.getElementById('pagination-start');
+  const endEl = document.getElementById('pagination-end');
+  const totalEl = document.getElementById('pagination-total');
+  const pageEl = document.getElementById('pagination-page');
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+
+  if (startEl) startEl.textContent = start;
+  if (endEl) endEl.textContent = end;
+  if (totalEl) totalEl.textContent = total;
+
+  const totalPages = Math.ceil(total / pageSize);
+  if (pageEl) pageEl.textContent = total > 0 ? `Page ${currentPage} of ${totalPages}` : 'Page 0';
+
+  // Update button states
+  if (prevBtn) prevBtn.disabled = currentPage === 1 || total === 0;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
 }
