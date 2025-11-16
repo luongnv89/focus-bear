@@ -229,7 +229,18 @@ function renderTable(data) {
 
     // Limit cell
     const limitTd = document.createElement('td');
-    limitTd.textContent = row.limit ? `${row.limit} visits/day` : '—';
+    if (row.limit) {
+      const limitParts = [];
+      if (row.limit.fiveHour?.enabled && row.limit.fiveHour?.limit) {
+        limitParts.push(`${row.limit.fiveHour.limit}/5h`);
+      }
+      if (row.limit.daily?.enabled && row.limit.daily?.limit) {
+        limitParts.push(`${row.limit.daily.limit}/day`);
+      }
+      limitTd.textContent = limitParts.length > 0 ? limitParts.join(', ') : '—';
+    } else {
+      limitTd.textContent = '—';
+    }
     tr.appendChild(limitTd);
 
     // Status cell
@@ -237,22 +248,62 @@ function renderTable(data) {
     const statusBadge = document.createElement('span');
     statusBadge.className = 'status-badge';
 
-    if (!row.limit) {
+    if (!row.limit || !row.limit.enabled) {
       statusBadge.classList.add('no-limit');
       statusBadge.textContent = 'No Limit';
-    } else if (row.count > row.limit) {
-      statusBadge.classList.add('over-limit');
-      statusBadge.textContent = 'Over Limit';
-    } else if (row.count >= row.limit * 0.8) {
-      statusBadge.classList.add('near-limit');
-      statusBadge.textContent = 'Near Limit';
     } else {
-      statusBadge.classList.add('under-limit');
-      statusBadge.textContent = 'Under Limit';
+      // Check against daily limit for status
+      const dailyLimit = row.limit.daily?.limit;
+      if (dailyLimit && row.count > dailyLimit) {
+        statusBadge.classList.add('over-limit');
+        statusBadge.textContent = 'Over Limit';
+      } else if (dailyLimit && row.count >= dailyLimit * 0.8) {
+        statusBadge.classList.add('near-limit');
+        statusBadge.textContent = 'Near Limit';
+      } else {
+        statusBadge.classList.add('under-limit');
+        statusBadge.textContent = 'Under Limit';
+      }
     }
 
     statusTd.appendChild(statusBadge);
     tr.appendChild(statusTd);
+
+    // Actions cell
+    const actionsTd = document.createElement('td');
+    actionsTd.className = 'actions-cell';
+
+    if (row.limit) {
+      // Create toggle switch for domains with limits
+      const toggleLabel = document.createElement('label');
+      toggleLabel.className = 'table-toggle';
+
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.checked = row.limit?.enabled !== false;
+      toggleInput.dataset.domain = row.domain;
+      toggleInput.addEventListener('change', async (e) => {
+        await handleLimitToggle(row.domain, e.target.checked);
+      });
+
+      const toggleSlider = document.createElement('span');
+      toggleSlider.className = 'toggle-slider';
+
+      toggleLabel.appendChild(toggleInput);
+      toggleLabel.appendChild(toggleSlider);
+      actionsTd.appendChild(toggleLabel);
+    } else {
+      // Create "Set Limit" button for domains without limits
+      const setLimitBtn = document.createElement('button');
+      setLimitBtn.className = 'pill-button-small pill-button-secondary';
+      setLimitBtn.textContent = 'Set Limit';
+      setLimitBtn.addEventListener('click', () => {
+        handleSetLimit(row.domain);
+      });
+      actionsTd.appendChild(setLimitBtn);
+    }
+
+    tr.appendChild(actionsTd);
 
     tbody.appendChild(tr);
   });
@@ -394,4 +445,68 @@ function updatePaginationInfo(start, end, total) {
   // Update button states
   if (prevBtn) prevBtn.disabled = currentPage === 1 || total === 0;
   if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
+}
+
+async function handleLimitToggle(domain, enabled) {
+  try {
+    // Get current limit config
+    const limits = await getLimits();
+    const currentLimit = limits[domain];
+
+    if (!currentLimit) return;
+
+    // Update the enabled state
+    const updatedLimit = {
+      ...currentLimit,
+      enabled,
+    };
+
+    // Save to storage
+    const result = await chrome.storage.local.get('limits');
+    const allLimits = result.limits || {};
+    allLimits[domain] = updatedLimit;
+    await chrome.storage.local.set({ limits: allLimits });
+
+    // Reload limits and re-render table
+    currentLimits = await getLimits();
+    currentTableData = prepareTableData(await getAggregatedData());
+    renderTable(filteredData.length > 0 ? filteredData : currentTableData);
+  } catch (error) {
+    console.error('Error toggling limit:', error);
+  }
+}
+
+function handleSetLimit(domain) {
+  // Switch to settings view and pre-fill the domain
+  const settingsView = document.getElementById('settings-view');
+  const mainView = document.getElementById('main-view');
+  const settingsBtn = document.getElementById('settings-btn');
+
+  if (settingsView && mainView) {
+    // Show settings view
+    mainView.style.display = 'none';
+    settingsView.hidden = false;
+    settingsView.setAttribute('aria-hidden', 'false');
+
+    // Pre-fill domain in the limit form
+    const domainInput = document.getElementById('limit-domain');
+    if (domainInput) {
+      domainInput.value = domain;
+      domainInput.focus();
+    }
+  }
+}
+
+async function getAggregatedData() {
+  // This function should get the current aggregated data
+  // For now, we'll reconstruct it from currentTableData
+  const data = {};
+  currentTableData.forEach((row) => {
+    data[row.domain] = {
+      count: row.count,
+      subpaths: {},
+      lastVisit: row.lastVisit,
+    };
+  });
+  return data;
 }

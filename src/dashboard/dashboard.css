@@ -468,6 +468,106 @@ body.high-contrast .dashboard-header .header-logo {
   font-size: 14px;
 }
 
+/* Table Actions Column */
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Table Toggle Switch */
+.table-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.table-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.3s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.table-toggle input:checked + .toggle-slider {
+  background-color: var(--color-primary);
+}
+
+.table-toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.table-toggle input:focus + .toggle-slider {
+  box-shadow: 0 0 0 2px var(--color-primary-lighter);
+}
+
+/* Small pill button for table */
+.pill-button-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-text-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pill-button-small:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* High contrast mode for table actions */
+.high-contrast .toggle-slider {
+  background-color: #666;
+  border: 2px solid #fff;
+}
+
+.high-contrast .table-toggle input:checked + .toggle-slider {
+  background-color: #0ff;
+}
+
+.high-contrast .toggle-slider::before {
+  background-color: #000;
+}
+
+.high-contrast .pill-button-small {
+  background: #222;
+  border-color: #fff;
+  color: #fff;
+}
+
+.high-contrast .pill-button-small:hover {
+  background: #fff;
+  color: #000;
+}
+
 /* Table Pagination */
 .table-pagination {
   display: flex;
