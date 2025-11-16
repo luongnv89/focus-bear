@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup table controls early
   setupTableControls();
 
+  // Setup footer
+  setupFooter();
+
   // Handle window resize
   window.addEventListener('resize', handleResize);
 
@@ -60,6 +63,32 @@ function setupViewModeToggle() {
       }
     });
   });
+}
+
+function setupFooter() {
+  // Load and display version from manifest
+  const manifest = chrome.runtime.getManifest();
+  const footerVersion = document.getElementById('footer-version');
+  if (footerVersion) {
+    footerVersion.textContent = `v${manifest.version_name || manifest.version}`;
+  }
+
+  // Setup About button
+  const aboutBtn = document.getElementById('footer-about-btn');
+  if (aboutBtn) {
+    aboutBtn.addEventListener('click', () => {
+      showAboutDialog();
+    });
+  }
+}
+
+function showAboutDialog() {
+  const manifest = chrome.runtime.getManifest();
+  const version = manifest.version_name || manifest.version;
+
+  const message = `${manifest.name} ${version}\n\n${manifest.description}\n\n🔒 Privacy-first: All data stays local on your device.\n\nMade with focus and care.`;
+
+  alert(message);
 }
 
 function getGraphDimensions() {
