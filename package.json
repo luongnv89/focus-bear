@@ -9,7 +9,8 @@
     "format": "prettier --write \"src/**/*.{js,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{js,html,css}\"",
     "test": "jest",
-    "build": "node scripts/build.js",
+    "version:update": "bash scripts/update-version.sh",
+    "build": "npm run version:update && node scripts/build.js",
     "dev": "node scripts/watch.js",
     "prepare": "husky install",
     "pre-commit": "lint-staged"

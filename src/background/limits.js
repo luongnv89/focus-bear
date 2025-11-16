@@ -76,6 +76,18 @@ export async function updateBlockingRules() {
       return acc;
     }, []);
 
+    // Store blocked domains info in storage for the blocked page to access
+    // This is a fallback in case URL parameters don't work properly
+    const blockedDomainsMap = {};
+    blockedDomains.forEach((item) => {
+      blockedDomainsMap[item.domain] = {
+        count: item.count,
+        limit: item.limit,
+        blockedAt: Date.now(),
+      };
+    });
+    await chrome.storage.local.set({ blockedDomains: blockedDomainsMap });
+
     // Get existing rule IDs to remove them
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
     const ruleIdsToRemove = existingRules.map((rule) => rule.id);
@@ -128,6 +140,7 @@ export async function updateBlockingRules() {
     });
 
     console.log(`Updated blocking rules: ${blockedDomains.length} domains blocked`);
+    console.log('Blocked domains stored:', Object.keys(blockedDomainsMap));
   } catch (error) {
     console.error('Error updating blocking rules:', error);
   }

@@ -154,12 +154,88 @@ main {
 .empty-illustration {
   font-size: 60px;
   margin-bottom: 20px;
+  animation: wave 2s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
 }
 
 #empty-state p {
   margin: 10px 0;
   line-height: 1.6;
   color: var(--color-text-muted);
+}
+
+/* Enhanced empty state styling */
+.empty-state {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.empty-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 12px;
+}
+
+.empty-message {
+  font-size: 16px;
+  color: var(--color-text-dark);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.empty-instructions {
+  background: var(--color-primary-lighter);
+  border: 1px solid var(--color-primary-light);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.empty-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-secondary);
+  margin-bottom: 12px;
+}
+
+.empty-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.empty-steps li {
+  padding: 8px 0;
+  color: var(--color-text-dark);
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.empty-cta {
+  font-size: 15px;
+  color: var(--color-secondary-dark);
+  font-weight: 600;
+  margin-top: 20px;
+  font-style: italic;
 }
 
 #content {
@@ -177,6 +253,12 @@ main {
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-dark);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .eyebrow {
@@ -524,4 +606,61 @@ main {
 
 .settings-toast.visible {
   display: block;
+}
+
+/* Export buttons */
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.export-buttons .pill-button {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Badge animations */
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+.badge-icon {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Accessibility: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  #refresh-btn:hover {
+    transform: none;
+  }
+
+  #settings-btn:hover {
+    transform: none;
+  }
+
+  .pill-button-primary:hover {
+    transform: none;
+  }
+
+  .empty-illustration {
+    animation: none;
+  }
 }

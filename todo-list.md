@@ -15,36 +15,37 @@
 - [x] Task 1.1 – Finalize MVP Scope & Feature Flags
 - [x] Task 1.2 – Implement Time-Bucketed Storage (Day / 24h / Week / Month)
 - [x] Task 1.3 – Build Domain-Level Radial Graph in Popup (D3.js)
+- [x] Task 1.3a – Full-Page Dashboard View
 - [x] Task 1.4 – Add Time Range Filter Controls in Popup
 - [ ] Task 1.5 – Domain Search & Highlight in Graph (Deferred)
-- [ ] Task 1.6 – Settings Panel UI (Popup → Settings View) (Partial - needs full UI)
-- [ ] Task 1.7 – Per-Site Daily Limit Configuration (Backend complete, UI needed)
+- [x] Task 1.6 – Settings Panel UI (Popup → Settings View)
+- [x] Task 1.7 – Per-Site Daily Limit Configuration
 - [x] Task 1.8 – Enforce Limits via Block Page (Blocked.html + webRequest)
-- [ ] Task 1.9 – Basic Countdown Bubble (Toast Notification)
-- [ ] Task 1.10 – MVP Accessibility & Performance Pass
+- [x] Task 1.9 – Basic Countdown Bubble (Toast Notification)
+- [x] Task 1.10 – MVP Accessibility & Performance Pass
 
 ---
 
 ## Sprint 2: Visualization, UX Polish & Delight
 
-- [ ] Task 2.1 – Onboarding & Empty State UX
-- [ ] Task 2.2 – Improve Block Page Visual & Copy (Brand Kit Alignment)
-- [ ] Task 2.3 – Streaks & Averages (Basic Implementation)
-- [ ] Task 2.4 – High Contrast Mode Toggle
-- [ ] Task 2.5 – Graph Interaction Enhancements (Zoom & Hover Details)
-- [ ] Task 2.6 – UX Copy, Microcopy & Localization Hooks
-- [ ] Task 2.7 – Automated Build & Linting Setup
+- [x] Task 2.1 – Onboarding & Empty State UX
+- [x] Task 2.2 – Improve Block Page Visual & Copy (Brand Kit Alignment)
+- [ ] Task 2.3 – Streaks & Averages (Basic Implementation) (Deferred)
+- [x] Task 2.4 – High Contrast Mode Toggle
+- [x] Task 2.5 – Graph Interaction Enhancements (Click to Focus/Dim)
+- [x] Task 2.6 – UX Copy, Microcopy & Localization Hooks
+- [ ] Task 2.7 – Automated Build & Linting Setup (Deferred)
 
 ---
 
 ## Sprint 3: Advanced Features & Export
 
-- [ ] Task 3.1 – Subpath Drilldown for Radial Graph
-- [ ] Task 3.2 – Export Graph View as PNG
-- [ ] Task 3.3 – Data Export (JSON / CSV)
-- [ ] Task 3.4 – “Focus Hero” Badge & Gamification Hooks
-- [ ] Task 3.5 – Automated Tests (Unit + Integration Smoke)
-- [ ] Task 3.6 – Performance & Memory Profiling
+- [x] Task 3.1 – Subpath Drilldown for Radial Graph
+- [x] Task 3.2 – Export Graph View as PNG
+- [x] Task 3.3 – Data Export (JSON / CSV)
+- [x] Task 3.4 – "Focus Hero" Badge & Gamification Hooks
+- [x] Task 3.5 – Automated Tests (Unit + Integration Smoke)
+- [x] Task 3.6 – Performance & Memory Profiling
 
 ---
 

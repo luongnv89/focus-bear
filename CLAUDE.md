@@ -119,15 +119,18 @@ Block Page
 
 ## Common Development Commands
 
-> Note: Commands below are to be implemented as the project adds build tooling
-
 ### Build & Development
 
 ```bash
 # Install dependencies
 npm install
 
+# Update version with git commit hash
+# Updates manifest.json version_name to include current commit hash (e.g., "0.1.0-7205313")
+npm run version:update
+
 # Build/bundle extension (minify JS/CSS)
+# Automatically runs version:update before building
 npm run build
 
 # Development mode (watch for changes)
@@ -136,8 +139,14 @@ npm run dev
 # Lint code with ESLint
 npm run lint
 
+# Fix linting issues automatically
+npm run lint:fix
+
 # Format code with Prettier
 npm run format
+
+# Check code formatting
+npm run format:check
 
 # Run tests
 npm run test
@@ -151,6 +160,25 @@ npm run test -- tests/background/limits.test.js
 # 3. Click "Load unpacked"
 # 4. Select project root directory
 ```
+
+### Version Management
+
+The extension uses **semantic versioning** with git commit hash tracking:
+
+- **`version`** in `manifest.json`: Numeric version required by Chrome (e.g., "0.1.0")
+- **`version_name`** in `manifest.json`: Display version with git hash (e.g., "0.1.0-7205313")
+
+The `version_name` is automatically updated before each build via `scripts/update-version.sh`:
+
+```bash
+# Manual update (automatically run by npm run build)
+npm run version:update
+
+# Or run script directly
+bash scripts/update-version.sh
+```
+
+This ensures every build is traceable to a specific git commit for debugging and support.
 
 ### Local Testing & Debugging
 

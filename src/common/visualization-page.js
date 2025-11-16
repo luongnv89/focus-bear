@@ -10,6 +10,7 @@ import {
   getLimits,
   setLimitForDomain,
   clearAllData,
+  calculateFocusHeroBadges,
 } from '../background/storage.js';
 
 /**
@@ -105,6 +106,7 @@ export async function setupVisualizationPage(options = {}) {
     graphDimensions = {},
     listLimit = 10,
     fullPage = false,
+    onDataLoaded = null,
   } = options;
 
   const graphWidth = graphDimensions.width || 400;
@@ -181,6 +183,7 @@ export async function setupVisualizationPage(options = {}) {
       removeBtn.className = 'pill-button pill-button-secondary';
       removeBtn.dataset.domain = domain;
       removeBtn.textContent = 'Remove';
+      removeBtn.setAttribute('aria-label', `Remove limit for ${domain}`);
 
       item.append(info, removeBtn);
       limitList.appendChild(item);
@@ -261,13 +264,22 @@ export async function setupVisualizationPage(options = {}) {
 
       const domains = Object.keys(aggregatedVisits);
       if (domains.length === 0) {
-        emptyState.style.display = 'block';
-        content.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        if (content) content.style.display = 'none';
+        // Call callback with empty data
+        if (onDataLoaded) {
+          onDataLoaded({});
+        }
         return;
       }
 
-      emptyState.style.display = 'none';
-      content.style.display = 'block';
+      if (emptyState) emptyState.style.display = 'none';
+      if (content) content.style.display = 'block';
+
+      // Call data loaded callback
+      if (onDataLoaded) {
+        onDataLoaded(aggregatedVisits);
+      }
 
       if (cleanupGraph) {
         cleanupGraph();
@@ -275,22 +287,41 @@ export async function setupVisualizationPage(options = {}) {
       }
 
       if (isFeatureEnabled('RADIAL_GRAPH')) {
-        graphContainer.style.display = 'block';
-        domainListEl.style.display = 'none';
+        if (graphContainer) {
+          graphContainer.style.display = 'block';
+        }
+        if (domainListEl) {
+          domainListEl.style.display = 'none';
+        }
+
+        // Calculate Focus Hero badges
+        const badges = await calculateFocusHeroBadges();
 
         cleanupGraph = renderRadialGraph(graphContainer, aggregatedVisits, {
           width: graphWidth,
           height: graphHeight,
+          badges,
         });
       } else {
-        graphContainer.style.display = 'none';
-        domainListEl.style.display = 'block';
-        renderSimpleList(aggregatedVisits, domainListEl);
+        if (graphContainer) {
+          graphContainer.style.display = 'none';
+        }
+        if (domainListEl) {
+          domainListEl.style.display = 'block';
+          renderSimpleList(aggregatedVisits, domainListEl);
+        }
       }
     } catch (error) {
       console.error('Error rendering visualization:', error);
+      console.error('Error stack:', error.stack);
       if (graphContainer) {
-        graphContainer.innerHTML = '<div class="graph-error">Error loading visualization</div>';
+        const errorHtml = `
+          <div class="graph-error">
+            Error loading visualization<br/>
+            <small style="font-size: 11px; opacity: 0.7;">${error.message}</small>
+          </div>
+        `;
+        graphContainer.innerHTML = errorHtml;
       }
     }
   };
@@ -442,11 +473,179 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
+  // Export graph as PNG
+  const exportGraphBtn = document.getElementById('export-graph-btn');
+
+  if (exportGraphBtn) {
+    exportGraphBtn.addEventListener('click', async () => {
+      try {
+        const graphContainer = document.getElementById('graph-container');
+        const svg = graphContainer.querySelector('svg');
+
+        if (!svg) {
+          showSettingsToast('No graph to export. Generate a graph first.');
+          return;
+        }
+
+        // Get SVG dimensions
+        const svgRect = svg.getBoundingClientRect();
+        const svgWidth = svgRect.width;
+        const svgHeight = svgRect.height;
+
+        // Serialize SVG to string
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(svg);
+
+        // Add XML namespace if not present
+        if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+          svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+
+        // Create a blob from SVG string
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+
+        // Create an image element
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          canvas.width = svgWidth * 2; // 2x for better quality
+          canvas.height = svgHeight * 2;
+
+          const ctx = canvas.getContext('2d');
+          // Scale for higher quality
+          ctx.scale(2, 2);
+
+          // Fill white background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, svgWidth, svgHeight);
+
+          // Draw image
+          ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+
+          // Convert to PNG blob
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const timeRange = currentRange || 'today';
+            const filename = `focusbear-graph-${timeRange}-${timestamp}.png`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+
+            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(svgUrl);
+            showSettingsToast(`Exported graph as ${filename}`);
+          }, 'image/png');
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(svgUrl);
+          console.error('Failed to load SVG image');
+          showSettingsToast('Unable to export graph. Try again.');
+        };
+
+        img.src = svgUrl;
+      } catch (error) {
+        console.error('Export PNG error:', error);
+        showSettingsToast('Unable to export PNG. Try again.');
+      }
+    });
+  }
+
+  // Export data handlers
+  const exportJsonBtn = document.getElementById('export-json-btn');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
+
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', async () => {
+      try {
+        const data = await chrome.storage.local.get(['visits', 'limits', 'settings']);
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `focusbear-data-${timestamp}.json`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        showSettingsToast(`Exported data as ${filename}`);
+      } catch (error) {
+        console.error('Export JSON error:', error);
+        showSettingsToast('Unable to export JSON. Try again.');
+      }
+    });
+  }
+
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', async () => {
+      try {
+        const data = await chrome.storage.local.get(['visits', 'limits']);
+        const visits = data.visits || {};
+        const limits = data.limits || {};
+
+        // Build CSV content
+        let csv = 'Date,Domain,Path,Visit Count,Daily Limit\n';
+
+        Object.entries(visits).forEach(([date, dateVisits]) => {
+          Object.entries(dateVisits).forEach(([domain, domainData]) => {
+            const limit = limits[domain] || 'No limit';
+            const count = domainData.count || 0;
+
+            // Main domain row
+            csv += `"${date}","${domain}","/",${count},"${limit}"\n`;
+
+            // Subpath rows
+            if (domainData.subpaths) {
+              Object.entries(domainData.subpaths).forEach(([subpath, subpathData]) => {
+                csv += `"${date}","${domain}","${subpath}",${subpathData.count},"${limit}"\n`;
+              });
+            }
+          });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `focusbear-data-${timestamp}.csv`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        showSettingsToast(`Exported data as ${filename}`);
+      } catch (error) {
+        console.error('Export CSV error:', error);
+        showSettingsToast('Unable to export CSV. Try again.');
+      }
+    });
+  }
+
+  // Performance monitoring
+  const perfStart = performance.now();
+
   try {
     await loadHighContrastPreference();
     await renderVisualization(currentRange);
     if (loading) {
       loading.style.display = 'none';
+    }
+
+    // Log performance metrics
+    const perfEnd = performance.now();
+    const loadTime = Math.round(perfEnd - perfStart);
+    console.log(`[FocusBear Performance] Page load time: ${loadTime}ms`);
+    if (loadTime > 300) {
+      console.warn('[FocusBear Performance] Load time exceeds target of 300ms');
     }
   } catch (error) {
     console.error('Error initializing visualization page:', error);

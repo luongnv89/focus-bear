@@ -14,11 +14,11 @@
         <button id="settings-btn" aria-label="Settings">⚙️</button>
       </header>
 
-      <main id="main-view">
-        <div id="loading">Loading...</div>
+      <main id="main-view" role="main">
+        <div id="loading" role="status" aria-live="polite">Loading...</div>
 
-        <div id="empty-state" style="display: none">
-          <div class="empty-illustration">🐻</div>
+        <div id="empty-state" style="display: none" role="status">
+          <div class="empty-illustration" role="img" aria-label="Bear mascot">🐻</div>
           <p>Welcome to FocusBear!</p>
           <p>Start browsing and we'll track your attention.</p>
         </div>
@@ -138,6 +138,26 @@
               </div>
               <input type="checkbox" id="high-contrast-toggle" />
             </label>
+          </article>
+
+          <article class="settings-card">
+            <div class="card-header">
+              <h3>Export data</h3>
+              <p class="card-subtitle">
+                Download your focus tracking data for backup or analysis.
+              </p>
+            </div>
+            <div class="export-buttons">
+              <button id="export-json-btn" class="pill-button pill-button-secondary">
+                Export as JSON
+              </button>
+              <button id="export-csv-btn" class="pill-button pill-button-secondary">
+                Export as CSV
+              </button>
+            </div>
+            <p class="muted-copy" style="margin-top: 12px; font-size: 12px;">
+              🔒 Your data never leaves your device unless you share it.
+            </p>
           </article>
 
           <article class="settings-card danger-card">
