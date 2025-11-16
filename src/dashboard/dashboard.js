@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup visualization page
     setupVisualizationPage({
+      defaultRange: 'week', // Default to week view to show more data
       fullPage: true,
       graphDimensions,
       listLimit: 50,
