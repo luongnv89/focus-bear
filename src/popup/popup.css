@@ -1083,6 +1083,275 @@ main {
   min-height: 350px;
 }
 
+/* Graph Node Pulsing Animation for Over Limit */
+.node-over-limit circle {
+  animation: nodePulse 2s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+  0%,
+  100% {
+    opacity: 0.9;
+    stroke-width: 3px;
+  }
+  50% {
+    opacity: 1;
+    stroke-width: 4px;
+  }
+}
+
+/* Enhanced Empty State Animations */
+.empty-illustration {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.bear-icon {
+  display: inline-block;
+  animation: bearBounce 2s ease-in-out infinite;
+}
+
+.wave-icon {
+  display: inline-block;
+  animation: wave 1.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes bearBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.empty-steps {
+  list-style: none;
+  padding: 0;
+}
+
+.empty-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.step-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-text {
+  flex: 1;
+  line-height: 1.6;
+}
+
+.demo-button {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.demo-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.demo-button span {
+  margin-right: 6px;
+}
+
+/* Loading Skeleton */
+.loading-skeleton {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.skeleton-header {
+  margin-bottom: 32px;
+}
+
+.skeleton-title {
+  width: 200px;
+  height: 24px;
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-subtitle {
+  width: 300px;
+  height: 16px;
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  animation-delay: 0.1s;
+}
+
+.skeleton-graph {
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 32px;
+  animation-delay: 0.2s;
+}
+
+.skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-row {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-row:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.skeleton-row:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.skeleton-row:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+.skeleton-row:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.loading-text {
+  text-align: center;
+  margin-top: 24px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* Error State Styling */
+.error-state {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.error-illustration {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: errorShake 0.5s ease-in-out;
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  margin-bottom: 12px;
+}
+
+.error-message {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.retry-button,
+.support-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-button {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.retry-button:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.support-button {
+  background: var(--color-surface);
+  color: var(--color-text-dark);
+  border: 2px solid var(--color-border);
+}
+
+.support-button:hover {
+  background: var(--color-border-light);
+  border-color: var(--color-text-muted);
+  transform: translateY(-1px);
+}
+
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   .drilldown-edit-btn:hover {
@@ -1091,5 +1360,22 @@ main {
 
   .percentage-bar {
     transition: none;
+  }
+
+  /* Disable pulsing animation for users who prefer reduced motion */
+  .node-over-limit circle {
+    animation: none;
+  }
+
+  .bear-icon,
+  .wave-icon,
+  .error-illustration {
+    animation: none;
+  }
+
+  .demo-button:hover,
+  .retry-button:hover,
+  .support-button:hover {
+    transform: none;
   }
 }

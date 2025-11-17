@@ -6,6 +6,8 @@
 import { incrementVisit } from './storage.js';
 import { updateBlockingRules } from './limits.js';
 import { updateDomainBadge } from './badge.js';
+import { checkLimitWarnings, showLimitExceeded, showAchievementUnlocked } from './notifications.js';
+import { checkAchievements } from './achievements.js';
 
 /**
  * Extract domain and subpath from URL
@@ -64,6 +66,17 @@ async function trackTabFocus(tabId) {
 
     // Check if this domain has a limit and show countdown toast
     await showCountdownToastIfNeeded(tabId, domain);
+
+    // Check for limit warnings (when close to limit)
+    await checkLimitWarnings(domain, newCount);
+
+    // Check for newly unlocked achievements
+    const newlyUnlocked = await checkAchievements();
+    if (newlyUnlocked.length > 0) {
+      console.log('[Tracking] New achievements unlocked:', newlyUnlocked);
+      // Show notification for the first unlocked achievement
+      await showAchievementUnlocked(newlyUnlocked[0]);
+    }
 
     // Update blocking rules in case a limit was just exceeded
     await updateBlockingRules();

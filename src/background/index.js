@@ -6,6 +6,8 @@
 import { initializeTracking, trackCurrentTab } from './tracking.js';
 import { initializeLimitEnforcement } from './limits.js';
 import { initializeBadge } from './badge.js';
+import { initializeNotifications, showDailyEncouragement } from './notifications.js';
+import { initializeAchievements, checkAchievements } from './achievements.js';
 
 async function openDashboardTab() {
   const dashboardUrl = chrome.runtime.getURL('src/dashboard/index.html');
@@ -52,6 +54,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   // Initialize domain counter badge
   await initializeBadge();
+
+  // Initialize notifications
+  await initializeNotifications();
+
+  // Initialize achievements
+  await initializeAchievements();
 });
 
 // Initialize tracking when service worker starts
@@ -64,6 +72,21 @@ initializeLimitEnforcement();
 // Initialize domain counter badge
 initializeBadge().catch((error) => {
   console.error('Error initializing badge on startup:', error);
+});
+
+// Initialize notifications
+initializeNotifications().catch((error) => {
+  console.error('Error initializing notifications on startup:', error);
+});
+
+// Initialize achievements
+initializeAchievements().catch((error) => {
+  console.error('Error initializing achievements on startup:', error);
+});
+
+// Check for daily encouragement once per day (run on startup)
+showDailyEncouragement().catch((error) => {
+  console.error('Error showing daily encouragement:', error);
 });
 
 // Track current tab on startup

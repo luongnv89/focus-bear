@@ -20,17 +20,27 @@
           <h1>FocusBear Dashboard</h1>
         </div>
 
-        <!-- Center: Time Filter -->
-        <div class="time-filter" role="tablist" aria-label="Time range filter">
-          <button class="time-filter-btn active" data-range="today" role="tab" aria-selected="true">
-            Today
-          </button>
-          <button class="time-filter-btn" data-range="week" role="tab" aria-selected="false">
-            Week
-          </button>
-          <button class="time-filter-btn" data-range="month" role="tab" aria-selected="false">
-            Month
-          </button>
+        <!-- Center: Time Filter & Comparison Toggle -->
+        <div class="header-center">
+          <div class="time-filter" role="tablist" aria-label="Time range filter">
+            <button class="time-filter-btn active" data-range="today" role="tab" aria-selected="true">
+              Today
+            </button>
+            <button class="time-filter-btn" data-range="week" role="tab" aria-selected="false">
+              Week
+            </button>
+            <button class="time-filter-btn" data-range="month" role="tab" aria-selected="false">
+              Month
+            </button>
+          </div>
+
+          <label class="comparison-toggle" title="Compare to previous period">
+            <input type="checkbox" id="comparison-toggle-input" />
+            <span class="comparison-toggle-label">
+              <span class="comparison-icon">📊</span>
+              <span class="comparison-text">Compare</span>
+            </span>
+          </label>
         </div>
 
         <!-- Right: Stats + Actions -->
@@ -44,47 +54,19 @@
               <strong id="total-visits">0</strong>
               <span class="stat-label">visits</span>
             </span>
+            <span class="stat-item streak-stat" id="streak-stat" title="Consecutive days staying within all limits">
+              <span class="streak-icon">🔥</span>
+              <strong id="current-streak">0</strong>
+              <span class="stat-label">day streak</span>
+            </span>
+            <span class="stat-item focus-score-stat" id="focus-score-stat" title="Today's focus score (0-100)">
+              <span class="focus-score-icon">⭐</span>
+              <strong id="focus-score">0</strong>
+              <span class="stat-label">focus score</span>
+            </span>
           </div>
 
           <div class="header-actions">
-            <div class="view-mode-toggle" role="group" aria-label="View mode">
-              <button
-                class="view-mode-btn active"
-                data-view="split"
-                title="Split view (topology + table)"
-                aria-pressed="true"
-              >
-                📊
-              </button>
-              <button
-                class="view-mode-btn"
-                data-view="topology"
-                title="Topology view only"
-                aria-pressed="false"
-              >
-                🌐
-              </button>
-              <button
-                class="view-mode-btn"
-                data-view="table"
-                title="Table view only"
-                aria-pressed="false"
-              >
-                📋
-              </button>
-            </div>
-
-            <button
-              id="export-graph-btn"
-              class="icon-button"
-              aria-label="Export graph as PNG"
-              title="Export graph as PNG"
-            >
-              📸
-            </button>
-            <button id="refresh-btn" class="icon-button" aria-label="Refresh" title="Refresh">
-              🔄
-            </button>
             <button id="settings-btn" class="icon-button" aria-label="Settings" title="Settings">
               ⚙️
             </button>
@@ -94,26 +76,73 @@
 
       <main id="main-view" class="dashboard-main">
         <div id="loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>Loading your focus data...</p>
+          <div class="loading-skeleton">
+            <div class="skeleton-header">
+              <div class="skeleton-title"></div>
+              <div class="skeleton-subtitle"></div>
+            </div>
+            <div class="skeleton-graph"></div>
+            <div class="skeleton-table">
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+              <div class="skeleton-row"></div>
+            </div>
+          </div>
+          <p class="loading-text">Loading your focus data...</p>
         </div>
 
         <div id="empty-state" style="display: none" class="empty-state">
-          <div class="empty-illustration" role="img" aria-label="Bear mascot waving">🐻 👋</div>
-          <h2 class="empty-title">Hey there, focus explorer!</h2>
+          <div class="empty-illustration" role="img" aria-label="Bear mascot waving">
+            <span class="bear-icon">🐻</span>
+            <span class="wave-icon">👋</span>
+          </div>
+          <h2 class="empty-title">Welcome to FocusBear!</h2>
           <p class="empty-message">
-            FocusBear is ready to map your browsing habits—but first, you need to browse a bit!
+            Your focus journey starts here. Let's track your browsing habits and help you stay on target!
           </p>
           <div class="empty-instructions">
-            <p class="empty-eyebrow">How it works:</p>
+            <p class="empty-eyebrow">Here's what happens next:</p>
             <ul class="empty-steps">
-              <li>📍 Every time you switch tabs, we track which site gets your attention</li>
-              <li>📊 Your data becomes a beautiful radial graph (like planets orbiting you!)</li>
-              <li>🎯 Set limits on distracting sites to stay focused</li>
-              <li>🔒 Everything stays private—on your device, forever</li>
+              <li>
+                <span class="step-icon">📍</span>
+                <span class="step-text">We track which sites get your attention as you browse</span>
+              </li>
+              <li>
+                <span class="step-icon">📊</span>
+                <span class="step-text">See a beautiful visualization of your focus patterns</span>
+              </li>
+              <li>
+                <span class="step-icon">🎯</span>
+                <span class="step-text">Set limits on distracting sites to stay productive</span>
+              </li>
+              <li>
+                <span class="step-icon">🔒</span>
+                <span class="step-text">All data stays private on your device—100% secure</span>
+              </li>
             </ul>
           </div>
-          <p class="empty-cta">Go ahead, open some tabs! We'll be here when you get back.</p>
+          <p class="empty-cta">Start browsing to see your focus patterns appear!</p>
+          <button id="demo-data-btn" class="demo-button">
+            <span>✨</span> See Demo Data
+          </button>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" style="display: none" class="error-state">
+          <div class="error-illustration" role="img" aria-label="Error icon">⚠️</div>
+          <h2 class="error-title">Oops! Something went wrong</h2>
+          <p class="error-message" id="error-message">
+            We encountered an issue loading your data.
+          </p>
+          <div class="error-actions">
+            <button id="retry-btn" class="retry-button">
+              <span>🔄</span> Try Again
+            </button>
+            <button id="support-btn" class="support-button">
+              <span>💬</span> Get Help
+            </button>
+          </div>
         </div>
 
         <div id="content" style="display: none" class="dashboard-content">
@@ -124,7 +153,73 @@
                 <h3>Focus Topology</h3>
                 <p class="panel-subtitle">Interactive visualization of your attention patterns</p>
               </div>
-              <div id="graph-container" class="graph-container" role="region"></div>
+              <div id="graph-container" class="graph-container" role="region">
+                <!-- Graph Legend (positioned absolutely within container) -->
+                <div class="graph-legend" id="graph-legend" role="complementary" aria-label="Graph legend">
+                  <div class="legend-title">Legend</div>
+                  <div class="legend-items">
+                    <div class="legend-item">
+                      <span class="legend-color-box" style="border: 3px solid #10b981;"></span>
+                      <span class="legend-label">Under Limit</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color-box" style="border: 3px solid #f59e0b;"></span>
+                      <span class="legend-label">Near Limit</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color-box" style="border: 3px solid #ef4444;"></span>
+                      <span class="legend-label">Over Limit</span>
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color-box" style="border: 3px solid #1e40af;"></span>
+                      <span class="legend-label">No Limit</span>
+                    </div>
+                  </div>
+                  <div class="legend-divider"></div>
+                  <div class="legend-section-title">Categories</div>
+                  <div class="legend-categories">
+                    <div class="legend-category-item" title="Social media platforms">
+                      <span class="category-dot" style="background: #ec4899;"></span>
+                      <span class="category-name">Social</span>
+                    </div>
+                    <div class="legend-category-item" title="Productivity tools">
+                      <span class="category-dot" style="background: #10b981;"></span>
+                      <span class="category-name">Work</span>
+                    </div>
+                    <div class="legend-category-item" title="Development tools">
+                      <span class="category-dot" style="background: #8b5cf6;"></span>
+                      <span class="category-name">Dev</span>
+                    </div>
+                    <div class="legend-category-item" title="Entertainment sites">
+                      <span class="category-dot" style="background: #f59e0b;"></span>
+                      <span class="category-name">Media</span>
+                    </div>
+                  </div>
+                  <div class="legend-hint">💡 <span id="legend-hint-text">Domains grouped by category</span></div>
+                  <div class="legend-zoom">Zoom: <span id="zoom-level">100%</span></div>
+                </div>
+              </div>
+
+              <!-- Graph Summary -->
+              <div class="graph-summary" id="graph-summary" role="complementary" aria-label="Focus insights">
+                <div class="summary-content" id="summary-content">
+                  <!-- Populated by JavaScript -->
+                </div>
+              </div>
+
+              <!-- Weekly Insights Popup (shown on dashboard open) -->
+              <div class="insights-popup" id="insights-popup" style="display: none;" role="dialog" aria-label="Weekly insights">
+                <div class="insights-popup-overlay" id="insights-popup-overlay"></div>
+                <div class="insights-popup-content">
+                  <div class="insights-header">
+                    <h4 class="insights-title">📊 Weekly Insights</h4>
+                    <button class="insights-close" id="insights-close" aria-label="Close insights">✕</button>
+                  </div>
+                  <div class="insights-content" id="insights-content">
+                    <!-- Populated by JavaScript -->
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Table Panel -->
@@ -162,6 +257,9 @@
                       <th class="sortable" data-sort="subpaths">
                         Subpaths
                         <span class="sort-indicator"></span>
+                      </th>
+                      <th class="comparison-column" style="display: none;">
+                        Change
                       </th>
                       <th class="sortable" data-sort="lastVisit">
                         Last Visit

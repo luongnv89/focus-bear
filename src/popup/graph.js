@@ -4,6 +4,86 @@
  */
 
 /**
+ * Categorize domain into a group for visual clustering
+ * @param {string} domain - Domain name
+ * @returns {Object} - Category info {name, color}
+ */
+function categorizeDomain(domain) {
+  const categories = {
+    social: {
+      keywords: ['facebook', 'twitter', 'instagram', 'linkedin', 'reddit', 'tiktok', 'snapchat', 'pinterest'],
+      name: 'Social Media',
+      color: '#ec4899', // Pink
+    },
+    productivity: {
+      keywords: ['gmail', 'outlook', 'slack', 'notion', 'trello', 'asana', 'jira', 'confluence'],
+      name: 'Productivity',
+      color: '#10b981', // Green
+    },
+    development: {
+      keywords: ['github', 'gitlab', 'stackoverflow', 'dev.to', 'codepen', 'codesandbox', 'repl.it'],
+      name: 'Development',
+      color: '#8b5cf6', // Purple
+    },
+    entertainment: {
+      keywords: ['youtube', 'netflix', 'twitch', 'spotify', 'soundcloud', 'hulu', 'disney'],
+      name: 'Entertainment',
+      color: '#f59e0b', // Orange
+    },
+    news: {
+      keywords: ['news', 'cnn', 'bbc', 'nytimes', 'guardian', 'medium', 'substack'],
+      name: 'News & Media',
+      color: '#06b6d4', // Cyan
+    },
+    shopping: {
+      keywords: ['amazon', 'ebay', 'etsy', 'shopify', 'walmart', 'target', 'alibaba'],
+      name: 'Shopping',
+      color: '#f43f5e', // Rose
+    },
+  };
+
+  const domainLower = domain.toLowerCase();
+
+  for (const [key, category] of Object.entries(categories)) {
+    if (category.keywords.some(keyword => domainLower.includes(keyword))) {
+      return { name: category.name, color: category.color, key };
+    }
+  }
+
+  return { name: 'Other', color: '#94a3b8', key: 'other' }; // Gray
+}
+
+/**
+ * Helper function to get node outline color based on limit status
+ * @param {string} domain - Domain name
+ * @param {Object} aggregatedData - Domain visit data
+ * @param {Object} limits - User-configured limits
+ * @returns {string} - Color hex code
+ */
+function getNodeOutlineColor(domain, aggregatedData, limits) {
+  const limitConfig = limits[domain];
+  if (!limitConfig || !limitConfig.enabled) {
+    return '#1e40af'; // Default blue for no limit
+  }
+
+  const domainData = aggregatedData[domain];
+  if (!domainData) return '#1e40af';
+
+  const count = domainData.count || 0;
+  const dailyLimit = limitConfig.daily?.limit;
+
+  if (!dailyLimit || !limitConfig.daily?.enabled) {
+    return '#1e40af'; // Default blue if no daily limit configured
+  }
+
+  const ratio = count / dailyLimit;
+
+  if (ratio >= 1) return '#ef4444'; // Red - over limit
+  if (ratio >= 0.8) return '#f59e0b'; // Orange - near limit
+  return '#10b981'; // Green - under limit
+}
+
+/**
  * Render radial graph visualization
  * @param {HTMLElement} container - Container element for graph
  * @param {Object} data - Domain visit data
@@ -15,7 +95,7 @@ export function renderRadialGraph(container, data, options = {}) {
   const containerWidth = containerRect.width || options.width || 400;
   const containerHeight = containerRect.height || options.height || 450;
 
-  const { highlightedDomain = null, badges = {} } = options;
+  const { highlightedDomain = null, badges = {}, limits = {} } = options;
   const width = Math.max(containerWidth - 16, 300); // Subtract 8px padding on each side
   const height = Math.max(containerHeight - 16, 300);
 
@@ -44,18 +124,27 @@ export function renderRadialGraph(container, data, options = {}) {
     return;
   }
 
-  // Prepare nodes data
-  const domains = Object.entries(data).map(([domain, domainData]) => ({
-    id: domain,
-    count: domainData.count,
-    lastVisit: domainData.lastVisit,
-    subpaths: domainData.subpaths || {},
-  }));
+  // Prepare nodes data with category information
+  const domains = Object.entries(data).map(([domain, domainData]) => {
+    const category = categorizeDomain(domain);
+    return {
+      id: domain,
+      count: domainData.count,
+      lastVisit: domainData.lastVisit,
+      subpaths: domainData.subpaths || {},
+      category: category.key,
+      categoryName: category.name,
+      categoryColor: category.color,
+    };
+  });
 
   // Sort by count and limit to top domains
   domains.sort((a, b) => b.count - a.count);
   const maxNodes = 50;
-  const topDomains = domains.slice(0, maxNodes);
+  const topDomains = domains.slice(0, maxNodes).map((d, index) => ({
+    ...d,
+    rank: index + 1, // Add rank for label visibility logic
+  }));
 
   // Calculate node sizes based on visit count
   const maxCount = Math.max(...topDomains.map((d) => d.count));
@@ -93,7 +182,33 @@ export function renderRadialGraph(container, data, options = {}) {
   // Create a group for zoom/pan transformations
   const gZoom = svg.append('g').attr('class', 'zoom-group');
 
-  // Create force simulation
+  // Create category-based grouping force
+  // Position nodes in a circular layout based on category
+  const categoryAngles = {
+    social: 0,
+    productivity: Math.PI / 3,
+    development: (2 * Math.PI) / 3,
+    entertainment: Math.PI,
+    news: (4 * Math.PI) / 3,
+    shopping: (5 * Math.PI) / 3,
+    other: Math.PI / 2,
+  };
+
+  const categoryForce = (alpha) => {
+    nodes.forEach((node) => {
+      if (node.isCenter) return;
+
+      const angle = categoryAngles[node.category] || 0;
+      const radius = 150; // Distance from center for category clustering
+      const targetX = width / 2 + radius * Math.cos(angle);
+      const targetY = height / 2 + radius * Math.sin(angle);
+
+      node.vx += (targetX - node.x) * alpha * 0.1;
+      node.vy += (targetY - node.y) * alpha * 0.1;
+    });
+  };
+
+  // Create force simulation with improved collision detection and category grouping
   const simulation = d3
     .forceSimulation(nodes)
     .force(
@@ -101,15 +216,19 @@ export function renderRadialGraph(container, data, options = {}) {
       d3
         .forceLink(links)
         .id((d) => d.id)
-        .distance(100)
+        .distance(120) // Increased from 100 for more spacing
         .strength(0.5),
     )
-    .force('charge', d3.forceManyBody().strength(-200))
+    .force('charge', d3.forceManyBody().strength(-250)) // Increased from -200 for more repulsion
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force(
       'collision',
-      d3.forceCollide().radius((d) => (d.isCenter ? 40 : sizeScale(d.count) + 5)),
-    );
+      d3
+        .forceCollide()
+        .radius((d) => (d.isCenter ? 45 : sizeScale(d.count) + 15)) // Increased padding for labels
+        .strength(0.8), // Increased from default 0.7
+    )
+    .force('category', categoryForce); // Add category grouping force
 
   // Create link elements
   const link = gZoom
@@ -133,7 +252,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .style('cursor', 'pointer')
     .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
 
-  // Add circles for nodes
+  // Add circles for nodes with color-coding by limit status
   nodeGroup
     .append('circle')
     .attr('r', (d) => (d.isCenter ? 35 : sizeScale(d.count)))
@@ -143,11 +262,24 @@ export function renderRadialGraph(container, data, options = {}) {
       return '#60a5fa'; // Primary light blue for nodes
     })
     .attr('stroke', (d) => {
+      if (d.isCenter) return '#1e40af';
       if (highlightedDomain && d.id === highlightedDomain) return '#ef4444';
-      return '#1e40af';
+      // Color-code by limit status
+      return getNodeOutlineColor(d.id, data, limits);
     })
-    .attr('stroke-width', 2)
-    .attr('opacity', 0.9);
+    .attr('stroke-width', 3) // Increased from 2 for better visibility
+    .attr('opacity', 0.9)
+    .attr('class', (d) => {
+      if (d.isCenter) return '';
+      // Add CSS class for potential pulsing animation
+      const limitConfig = limits[d.id];
+      if (limitConfig && limitConfig.enabled && limitConfig.daily?.enabled) {
+        const count = d.count || 0;
+        const dailyLimit = limitConfig.daily.limit;
+        if (count >= dailyLimit) return 'node-over-limit';
+      }
+      return '';
+    });
 
   // Add count labels (weight in center of circle)
   nodeGroup
@@ -164,21 +296,34 @@ export function renderRadialGraph(container, data, options = {}) {
       return d.count;
     });
 
-  // Dark mode only - optimized for dark blue theme
-  const domainTextColor = '#e2e8f0'; // Light text for dark mode
-  const domainTextShadow = '0 1px 3px rgba(0,0,0,0.8)'; // Dark shadow for depth
+  // Dark mode only - optimized for dark blue theme - improved for readability
+  const domainTextColor = '#f8fafc'; // Brighter text (was #e2e8f0)
+  const domainTextShadow = '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)'; // Enhanced shadow
 
-  // Add domain name labels (below the circle)
-  nodeGroup
+  // Track current zoom level for label visibility
+  let currentZoomLevel = 1;
+
+  // Helper function to determine label visibility
+  function shouldShowLabel(node, zoomLevel) {
+    if (node.isCenter) return true;
+    // Show top 5 domains by default, reveal all when zoomed in > 150%
+    if (zoomLevel > 1.5) return true;
+    return node.rank <= 5;
+  }
+
+  // Add domain name labels (below the circle) with dynamic visibility
+  const domainLabels = nodeGroup
     .filter((d) => !d.isCenter)
     .append('text')
+    .attr('class', 'domain-label')
     .attr('text-anchor', 'middle')
-    .attr('dy', (d) => sizeScale(d.count) + 14)
+    .attr('dy', (d) => sizeScale(d.count) + 16) // Slightly lower for better spacing
     .attr('fill', domainTextColor)
-    .attr('font-size', '11px')
-    .attr('font-weight', 600)
+    .attr('font-size', (d) => (d.rank <= 5 ? '13px' : '11px')) // Larger for top 5
+    .attr('font-weight', 700) // Heavier weight (was 600)
     .attr('pointer-events', 'none')
     .style('text-shadow', domainTextShadow)
+    .style('opacity', (d) => (shouldShowLabel(d, currentZoomLevel) ? 1 : 0))
     .text((d) => (d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id));
 
   // Add Focus Hero badges
@@ -283,21 +428,27 @@ export function renderRadialGraph(container, data, options = {}) {
         d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
       }
 
-      // Show tooltip
+      // Always show label on hover for better readability
+      d3.select(this).select('.domain-label').style('opacity', 1);
+
+      // Show tooltip with enhanced information
       const subpathCount = Object.keys(d.subpaths).length;
       const lastVisitDate = new Date(d.lastVisit).toLocaleString();
 
       const drilldownHint =
-        subpathCount > 0 ? '<br/><em>Double-click to explore subpaths</em>' : '';
+        subpathCount > 0 ? '<br/><em style="color: #93c5fd;">💡 Double-click to explore subpaths</em>' : '';
       const badgeInfo = badges[d.id]
         ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
         : '';
 
+      // Enhanced tooltip with full domain name (no truncation)
       tooltip.html(`
-        <strong>${d.id}</strong><br/>
-        Visits: ${d.count}<br/>
-        Subpaths: ${subpathCount}<br/>
-        Last visit: ${lastVisitDate}${badgeInfo}${drilldownHint}
+        <div style="max-width: 300px;">
+          <strong style="font-size: 13px; color: #60a5fa;">${d.id}</strong><br/>
+          <span style="color: #d1d5db;">Visits: <strong style="color: #fff;">${d.count}</strong></span><br/>
+          <span style="color: #d1d5db;">Subpaths: <strong style="color: #fff;">${subpathCount}</strong></span><br/>
+          <span style="color: #d1d5db; font-size: 11px;">Last: ${lastVisitDate}</span>${badgeInfo}${drilldownHint}
+        </div>
       `);
       tooltip.style('visibility', 'visible');
     })
@@ -310,6 +461,12 @@ export function renderRadialGraph(container, data, options = {}) {
         const targetOpacity = focusedNode === d.id ? 1 : 0.9;
         d3.select(this).select('circle').attr('opacity', targetOpacity).attr('stroke-width', 2);
       }
+
+      // Reset label opacity based on zoom level and rank
+      d3.select(this)
+        .select('.domain-label')
+        .style('opacity', shouldShowLabel(d, currentZoomLevel) ? 1 : 0);
+
       tooltip.style('visibility', 'hidden');
     });
 
@@ -324,9 +481,21 @@ export function renderRadialGraph(container, data, options = {}) {
     nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
   });
 
-  // Add zoom behavior
+  // Add zoom behavior with label visibility updates
   const zoomBehavior = d3.zoom().on('zoom', (event) => {
     gZoom.attr('transform', event.transform);
+
+    // Update current zoom level
+    currentZoomLevel = event.transform.k;
+
+    // Update label visibility based on zoom level
+    domainLabels.style('opacity', (d) => (shouldShowLabel(d, currentZoomLevel) ? 1 : 0));
+
+    // Update legend zoom display
+    const zoomLevelEl = document.getElementById('zoom-level');
+    if (zoomLevelEl) {
+      zoomLevelEl.textContent = `${Math.round(currentZoomLevel * 100)}%`;
+    }
   });
 
   svg.call(zoomBehavior);

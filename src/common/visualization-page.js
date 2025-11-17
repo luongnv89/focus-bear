@@ -103,6 +103,259 @@ function getTitleForRange(range) {
 }
 
 /**
+ * Load previous period data for comparison
+ * @param {string} range - Current time range
+ * @returns {Promise<Object>} - Previous period aggregated data
+ */
+async function loadPreviousPeriodData(range) {
+  const now = new Date();
+  let startDate;
+  let endDate;
+
+  switch (range) {
+    case 'hour': {
+      endDate = new Date(now.getTime() - 60 * 60 * 1000);
+      startDate = new Date(endDate.getTime() - 60 * 60 * 1000);
+      break;
+    }
+    case 'today': {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      startDate = yesterday;
+      endDate = new Date(yesterday);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+    case 'week': {
+      endDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    }
+    case 'month': {
+      endDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    }
+    default: {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      startDate = yesterday;
+      endDate = new Date(yesterday);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+  }
+
+  const data = await chrome.storage.local.get(['visits']);
+  const visits = data.visits || {};
+  const aggregated = {};
+
+  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const visitDate = new Date(year, month - 1, day);
+
+    if (visitDate >= startDate && visitDate <= endDate) {
+      Object.entries(dateVisits).forEach(([domain, domainData]) => {
+        if (!aggregated[domain]) {
+          aggregated[domain] = { count: 0, lastVisit: domainData.lastVisit, subpaths: {} };
+        }
+        aggregated[domain].count += domainData.count;
+        if (domainData.lastVisit > aggregated[domain].lastVisit) {
+          aggregated[domain].lastVisit = domainData.lastVisit;
+        }
+      });
+    }
+  });
+
+  return aggregated;
+}
+
+/**
+ * Generate insights summary text from aggregated data
+ * @param {Object} aggregatedData - Domain visit data
+ * @param {Object} limits - User-configured limits
+ * @param {string} range - Time range (today/week/month)
+ * @param {Object} previousData - Previous period data for comparison
+ * @returns {string} - Natural language summary
+ */
+function generateInsightsSummary(aggregatedData, limits, range, previousData = null) {
+  const domains = Object.entries(aggregatedData);
+
+  if (domains.length === 0) {
+    return 'No data to analyze yet. Start browsing to see insights!';
+  }
+
+  // Sort by visit count
+  const sorted = domains
+    .map(([domain, data]) => ({ domain, count: data.count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Get top 3 domains
+  const top3 = sorted.slice(0, 3);
+
+  // Count domains over limit (only considering enabled limits)
+  let overLimitCount = 0;
+  let nearLimitCount = 0;
+
+  Object.entries(limits).forEach(([domain, limitConfig]) => {
+    if (!limitConfig || !limitConfig.enabled) return;
+
+    const domainData = aggregatedData[domain];
+    if (!domainData) return;
+
+    const count = domainData.count;
+    const dailyLimit = limitConfig.daily?.limit;
+
+    if (dailyLimit && limitConfig.daily.enabled) {
+      const ratio = count / dailyLimit;
+      if (ratio >= 1) {
+        overLimitCount++;
+      } else if (ratio >= 0.8) {
+        nearLimitCount++;
+      }
+    }
+  });
+
+  // Build summary text
+  const parts = [];
+
+  // Range prefix
+  const rangeText = {
+    hour: 'in the last hour',
+    today: 'today',
+    week: 'this week',
+    month: 'this month',
+  }[range] || 'today';
+
+  // Top distractions
+  if (top3.length > 0) {
+    const topList = top3
+      .map((d) => `<strong class="summary-highlight">${d.domain}</strong> (${d.count} visits)`)
+      .join(', ');
+    parts.push(`Your top ${top3.length === 1 ? 'distraction' : 'distractions'} ${rangeText}: ${topList}`);
+  }
+
+  // Limit status
+  if (overLimitCount > 0) {
+    parts.push(
+      `<span class="summary-warning">⚠️ You exceeded limits on ${overLimitCount} ${overLimitCount === 1 ? 'domain' : 'domains'}</span>`,
+    );
+  } else if (nearLimitCount > 0) {
+    parts.push(
+      `<span class="summary-warning">You're approaching limits on ${nearLimitCount} ${nearLimitCount === 1 ? 'domain' : 'domains'}</span>`,
+    );
+  } else if (Object.keys(limits).length > 0) {
+    parts.push(`<span class="summary-success">✓ All limits under control</span>`);
+  }
+
+  // Total domains
+  const totalDomains = domains.length;
+  const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
+
+  // Add comparison insights if previous data available
+  if (previousData) {
+    const previousTotalVisits = Object.values(previousData).reduce(
+      (sum, d) => sum + (d.count || 0),
+      0,
+    );
+    const visitChange = totalVisits - previousTotalVisits;
+    const changePercent =
+      previousTotalVisits > 0 ? Math.round((visitChange / previousTotalVisits) * 100) : 0;
+
+    if (visitChange > 0) {
+      parts.push(
+        `<span class="summary-warning">📈 ${visitChange} more visits (${changePercent > 0 ? '+' : ''}${changePercent}%) than previous period</span>`,
+      );
+    } else if (visitChange < 0) {
+      parts.push(
+        `<span class="summary-success">📉 ${Math.abs(visitChange)} fewer visits (${changePercent}%) than previous period</span>`,
+      );
+    } else {
+      parts.push('No change from previous period');
+    }
+  }
+
+  parts.push(`Tracked <strong>${totalDomains}</strong> ${totalDomains === 1 ? 'domain' : 'domains'} with <strong>${totalVisits}</strong> total visits`);
+
+  return parts.join('. ') + '.';
+}
+
+/**
+ * Generate weekly insights from aggregated data
+ * @param {Object} weekData - Week's visit data
+ * @param {Object} limits - User-configured limits
+ * @returns {Array} - Array of insight objects
+ */
+function generateWeeklyInsights(weekData, limits) {
+  const insights = [];
+  const domains = Object.entries(weekData);
+
+  if (domains.length === 0) return insights;
+
+  // Sort by count
+  const sorted = domains
+    .map(([domain, data]) => ({ domain, count: data.count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Insight 1: Most visited domain
+  const topDomain = sorted[0];
+  insights.push({
+    type: 'info',
+    title: '🎯 Most Visited',
+    text: `You visited <span class="insight-stat">${topDomain.domain}</span> the most this week with <span class="insight-stat">${topDomain.count} visits</span>.`,
+  });
+
+  // Insight 2: Limit violations
+  const overLimitDomains = Object.entries(limits).filter(([domain, limitConfig]) => {
+    if (!limitConfig || !limitConfig.enabled || !limitConfig.daily?.enabled) return false;
+    const domainData = weekData[domain];
+    if (!domainData) return false;
+    return domainData.count / 7 > limitConfig.daily.limit; // Average per day
+  });
+
+  if (overLimitDomains.length > 0) {
+    insights.push({
+      type: 'warning',
+      title: '⚠️ Limits Exceeded',
+      text: `You exceeded daily limits on <span class="insight-stat">${overLimitDomains.length} ${overLimitDomains.length === 1 ? 'domain' : 'domains'}</span> this week. Consider adjusting your limits or reducing usage.`,
+    });
+  } else if (Object.keys(limits).length > 0) {
+    insights.push({
+      type: 'success',
+      title: '✅ Great Self-Control',
+      text: 'You stayed within all your limits this week. Keep up the good work!',
+    });
+  }
+
+  // Insight 3: Total focus switches
+  const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
+  const avgPerDay = Math.round(totalVisits / 7);
+  insights.push({
+    type: 'info',
+    title: '📊 Activity Summary',
+    text: `You switched focus <span class="insight-stat">${totalVisits} times</span> this week, averaging <span class="insight-stat">${avgPerDay} switches/day</span>.`,
+  });
+
+  // Insight 4: Recommendations
+  if (sorted.length >= 3) {
+    const top3Total = sorted.slice(0, 3).reduce((sum, d) => sum + d.count, 0);
+    const percentageOfTotal = Math.round((top3Total / totalVisits) * 100);
+
+    if (percentageOfTotal > 60) {
+      insights.push({
+        type: 'warning',
+        title: '💡 Recommendation',
+        text: `Your top 3 sites account for <span class="insight-stat">${percentageOfTotal}%</span> of your focus switches. Consider setting limits to improve focus distribution.`,
+      });
+    }
+  }
+
+  return insights;
+}
+
+/**
  * Wire up the visualization UI
  * @param {Object} options
  */
@@ -442,14 +695,40 @@ export async function setupVisualizationPage(options = {}) {
           domainListEl.style.display = 'none';
         }
 
-        // Calculate Focus Hero badges
+        // Calculate Focus Hero badges and get limits for color-coding
         const badges = await calculateFocusHeroBadges();
+        const limits = await getLimits();
 
         cleanupGraph = renderRadialGraph(graphContainer, aggregatedVisits, {
           width: graphWidth,
           height: graphHeight,
           badges,
+          limits,
         });
+
+        // Update graph summary (if element exists - dashboard only)
+        const summaryElement = document.getElementById('summary-content');
+        if (summaryElement) {
+          // Load comparison data if toggle is enabled
+          const comparisonToggle = document.getElementById('comparison-toggle-input');
+          const previousData =
+            comparisonToggle && comparisonToggle.checked
+              ? await loadPreviousPeriodData(currentRange)
+              : null;
+
+          const summaryText = generateInsightsSummary(
+            aggregatedVisits,
+            limits,
+            currentRange,
+            previousData,
+          );
+          summaryElement.classList.add('updating');
+          summaryElement.innerHTML = summaryText;
+          // Remove animation class after animation completes
+          setTimeout(() => {
+            summaryElement.classList.remove('updating');
+          }, 300);
+        }
       } else {
         if (graphContainer) {
           graphContainer.style.display = 'none';
@@ -492,11 +771,251 @@ export async function setupVisualizationPage(options = {}) {
     });
   });
 
+  // Comparison toggle handler
+  const comparisonToggle = document.getElementById('comparison-toggle-input');
+  if (comparisonToggle) {
+    comparisonToggle.addEventListener('change', async () => {
+      const comparisonColumns = document.querySelectorAll('.comparison-column');
+      comparisonColumns.forEach((col) => {
+        col.style.display = comparisonToggle.checked ? '' : 'none';
+      });
+
+      // Refresh visualization to include comparison data
+      await renderVisualization(currentRange);
+    });
+  }
+
   const refreshBtn = document.getElementById('refresh-btn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
       await renderVisualization(currentRange);
     });
+  }
+
+  // Insights button handler
+  const insightsBtn = document.getElementById('insights-btn');
+  const insightsReport = document.getElementById('insights-report');
+  const insightsClose = document.getElementById('insights-close');
+  const insightsContent = document.getElementById('insights-content');
+
+  if (insightsBtn && insightsReport) {
+    insightsBtn.addEventListener('click', async () => {
+      // Load week data for insights
+      const weekData = await loadAggregatedStats('week');
+      const limits = await getLimits();
+      const insights = generateWeeklyInsights(weekData, limits);
+
+      // Render insights
+      insightsContent.innerHTML = insights
+        .map(
+          (insight) => `
+        <div class="insight-card ${insight.type}">
+          <div class="insight-card-title">${insight.title}</div>
+          <div class="insight-card-text">${insight.text}</div>
+        </div>
+      `,
+        )
+        .join('');
+
+      insightsReport.style.display = 'block';
+    });
+
+    if (insightsClose) {
+      insightsClose.addEventListener('click', () => {
+        insightsReport.style.display = 'none';
+      });
+    }
+  }
+
+  // Achievements button handler
+  const achievementsBtn = document.getElementById('achievements-btn');
+  const achievementsPanel = document.getElementById('achievements-panel');
+  const achievementsClose = document.getElementById('achievements-close');
+  const achievementsGrid = document.getElementById('achievements-grid');
+  const unlockedCount = document.getElementById('unlocked-count');
+  const totalCount = document.getElementById('total-count');
+
+  if (achievementsBtn && achievementsPanel) {
+    achievementsBtn.addEventListener('click', async () => {
+      // Load achievements
+      const achievements = await window.getAllAchievements();
+
+      const unlocked = achievements.filter((a) => a.unlocked).length;
+      const total = achievements.length;
+
+      unlockedCount.textContent = unlocked;
+      totalCount.textContent = total;
+
+      // Render achievements grid
+      achievementsGrid.innerHTML = achievements
+        .map(
+          (achievement) => {
+            const progress = achievement.progress || { current: 0, target: 1 };
+            const progressPercent = Math.min(100, (progress.current / progress.target) * 100);
+            const unlockedClass = achievement.unlocked ? 'unlocked' : '';
+            const unlockedDate = achievement.unlockedAt
+              ? new Date(achievement.unlockedAt).toLocaleDateString()
+              : '';
+
+            return `
+          <div class="achievement-card ${unlockedClass}">
+            <div class="achievement-card-header">
+              <div class="achievement-icon">${achievement.icon}</div>
+              <div class="achievement-info">
+                <h5 class="achievement-name">${achievement.name}</h5>
+                <div class="achievement-category">${achievement.category}</div>
+              </div>
+            </div>
+            <p class="achievement-description">${achievement.description}</p>
+            ${
+              !achievement.unlocked
+                ? `
+              <div class="achievement-progress">
+                <div class="achievement-progress-bar">
+                  <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="achievement-progress-text">${progress.current} / ${progress.target}</div>
+              </div>
+            `
+                : `
+              <div class="achievement-unlocked-date">Unlocked ${unlockedDate}</div>
+            `
+            }
+          </div>
+        `;
+          },
+        )
+        .join('');
+
+      achievementsPanel.style.display = 'block';
+    });
+
+    if (achievementsClose) {
+      achievementsClose.addEventListener('click', () => {
+        achievementsPanel.style.display = 'none';
+      });
+    }
+  }
+
+  // Goals button handler
+  const goalsBtn = document.getElementById('goals-btn');
+  const goalsPanel = document.getElementById('goals-panel');
+  const goalsClose = document.getElementById('goals-close');
+  const goalsList = document.getElementById('goals-list');
+  const suggestionsGrid = document.getElementById('suggestions-grid');
+  const completedGoalsCount = document.getElementById('completed-goals-count');
+  const totalGoalsCount = document.getElementById('total-goals-count');
+
+  if (goalsBtn && goalsPanel) {
+    goalsBtn.addEventListener('click', async () => {
+      // Load goals
+      const goals = await window.checkGoalProgress();
+      const suggestions = await window.suggestGoals();
+
+      const completed = goals.filter((g) => g.completed).length;
+      const total = goals.length;
+
+      completedGoalsCount.textContent = completed;
+      totalGoalsCount.textContent = total;
+
+      // Render goals list
+      if (goals.length === 0) {
+        goalsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px;">No goals set for today. Add one from suggestions below!</p>';
+      } else {
+        goalsList.innerHTML = goals
+          .map((goal) => {
+            const progressPercent = goal.type === 'total_visits' || goal.type === 'domains_visited'
+              ? Math.min(100, (goal.progress / goal.target) * 100)
+              : goal.type === 'focus_score'
+              ? goal.progress
+              : goal.completed ? 100 : 0;
+
+            const completedClass = goal.completed ? 'completed' : '';
+            const statusClass = goal.completed ? 'completed' : 'in-progress';
+            const statusText = goal.completed ? 'Completed' : 'In Progress';
+
+            let progressText = '';
+            if (goal.type === 'total_visits') {
+              progressText = `${goal.progress} / ${goal.target} visits`;
+            } else if (goal.type === 'domains_visited') {
+              progressText = `${goal.progress} / ${goal.target} domains`;
+            } else if (goal.type === 'focus_score') {
+              progressText = `Score: ${goal.progress}`;
+            } else if (goal.type === 'no_violations') {
+              progressText = goal.progress === 0 ? 'No violations' : `${goal.progress} violations`;
+            } else if (goal.type === 'streak') {
+              progressText = `${goal.progress} days`;
+            }
+
+            return `
+            <div class="goal-card ${completedClass}">
+              <div class="goal-card-header">
+                <div class="goal-icon">${goal.icon}</div>
+                <div class="goal-info">
+                  <h5 class="goal-title">${goal.title}</h5>
+                  <p class="goal-description">${goal.description}</p>
+                </div>
+                <div class="goal-actions">
+                  <button class="goal-remove-btn" data-goal-id="${goal.id}">Remove</button>
+                </div>
+              </div>
+              <div class="goal-progress-section">
+                <div class="goal-progress-bar">
+                  <div class="goal-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+                <div class="goal-progress-text">
+                  <span>${progressText}</span>
+                  <span class="goal-status ${statusClass}">${statusText}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          })
+          .join('');
+
+        // Add event listeners for remove buttons
+        goalsList.querySelectorAll('.goal-remove-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const goalId = btn.dataset.goalId;
+            await window.removeGoalFromToday(goalId);
+            goalsBtn.click(); // Refresh panel
+          });
+        });
+      }
+
+      // Render suggestions
+      suggestionsGrid.innerHTML = suggestions
+        .map(
+          (suggestion) => `
+        <div class="suggestion-card" data-suggestion-id="${suggestion.id}">
+          <div class="suggestion-header">
+            <div class="suggestion-icon">${suggestion.icon}</div>
+            <div class="suggestion-title">${suggestion.title}</div>
+          </div>
+          <p class="suggestion-description">${suggestion.description}</p>
+        </div>
+      `,
+        )
+        .join('');
+
+      // Add event listeners for suggestions
+      suggestionsGrid.querySelectorAll('.suggestion-card').forEach((card) => {
+        card.addEventListener('click', async () => {
+          const suggestionId = card.dataset.suggestionId;
+          const suggestion = suggestions.find((s) => s.id === suggestionId);
+          await window.addGoalToday(suggestion);
+          goalsBtn.click(); // Refresh panel
+        });
+      });
+
+      goalsPanel.style.display = 'block';
+    });
+
+    if (goalsClose) {
+      goalsClose.addEventListener('click', () => {
+        goalsPanel.style.display = 'none';
+      });
+    }
   }
 
   if (settingsBtn && settingsView && mainView) {

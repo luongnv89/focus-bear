@@ -5,8 +5,10 @@ import {
   calculateFocusHeroBadges,
   normalizeLimitConfig,
   createDefaultLimitConfig,
+  calculateOverallStreak,
 } from '../background/storage.js';
 import { updateBlockingRules } from '../background/limits.js';
+import { getTodayFocusScore } from '../background/focus-score.js';
 
 let currentTableData = [];
 let currentLimits = {};
@@ -22,9 +24,9 @@ const tableFilters = {
   sortOrder: 'desc',
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Setup view mode toggle
-  setupViewModeToggle();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show insights popup on dashboard open (if not dismissed today)
+  await showInsightsPopup();
 
   // Setup table controls early
   setupTableControls();
@@ -58,35 +60,47 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 100);
 });
 
-function setupViewModeToggle() {
-  const viewButtons = document.querySelectorAll('.view-mode-btn');
-  const viewContainer = document.getElementById('view-container');
+/**
+ * Show insights popup on dashboard open
+ * Checks if insights have been dismissed today and shows popup if not
+ */
+async function showInsightsPopup() {
+  const popup = document.getElementById('insights-popup');
+  const overlay = document.getElementById('insights-popup-overlay');
+  const closeBtn = document.getElementById('insights-close');
 
-  viewButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const mode = btn.dataset.view;
+  if (!popup || !overlay || !closeBtn) return;
 
-      // Update button states
-      viewButtons.forEach((b) => {
-        b.classList.toggle('active', b === btn);
-        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-      });
+  // Check if insights were dismissed today
+  const today = new Date().toISOString().split('T')[0];
+  const { insightsDismissedDate } = await chrome.storage.local.get('insightsDismissedDate');
 
-      // Update container class
-      viewContainer.className = 'view-container';
-      if (mode === 'topology') {
-        viewContainer.classList.add('topology-only');
-      } else if (mode === 'table') {
-        viewContainer.classList.add('table-only');
-      }
+  if (insightsDismissedDate === today) {
+    // Already dismissed today, don't show
+    return;
+  }
 
-      // Trigger resize event to recalculate graph dimensions
-      if (mode === 'topology' || mode === 'split') {
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
-      }
-    });
+  // Load and display insights content (will be populated by visualization-page.js)
+  // Show popup after a short delay to let the page load
+  setTimeout(() => {
+    popup.style.display = 'flex';
+  }, 1000);
+
+  // Close handlers
+  const closePopup = async () => {
+    popup.style.display = 'none';
+    // Save dismissal date
+    await chrome.storage.local.set({ insightsDismissedDate: today });
+  };
+
+  closeBtn.addEventListener('click', closePopup);
+  overlay.addEventListener('click', closePopup);
+
+  // Also close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && popup.style.display === 'flex') {
+      closePopup();
+    }
   });
 }
 
@@ -151,6 +165,12 @@ async function handleDataLoaded(aggregatedData) {
   currentLimits = await getLimits();
   currentBadges = await calculateFocusHeroBadges();
   currentAggregatedData = aggregatedData;
+
+  // Update streak display
+  await updateStreakDisplay();
+
+  // Update focus score display
+  await updateFocusScoreDisplay();
 
   // Load today's aggregated data separately for status badge calculation
   todayAggregatedData = await loadTodayAggregatedStats();
@@ -332,27 +352,38 @@ function renderTable() {
     }
     tr.appendChild(limitTd);
 
-    // Status cell
+    // Status cell with icons and numeric progress
     const statusTd = document.createElement('td');
     const statusBadge = document.createElement('span');
     statusBadge.className = 'status-badge';
 
     if (!row.limit || !row.limit.enabled) {
       statusBadge.classList.add('no-limit');
-      statusBadge.textContent = 'No Limit';
+      statusBadge.innerHTML = '∞ No Limit';
+      statusBadge.title = 'No limits configured for this domain';
     } else {
       // Check against daily limit for status using TODAY's count only
       // This ensures status resets each day regardless of displayed time range
       const dailyLimit = row.limit.daily?.limit;
-      if (dailyLimit && row.todayCount > dailyLimit) {
+      const todayCount = row.todayCount || 0;
+
+      if (dailyLimit && todayCount >= dailyLimit) {
         statusBadge.classList.add('over-limit');
-        statusBadge.textContent = 'Over Limit';
-      } else if (dailyLimit && row.todayCount >= dailyLimit * 0.8) {
+        statusBadge.innerHTML = `✗ Over Limit (${todayCount}/${dailyLimit})`;
+        statusBadge.title = `You have exceeded the daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+      } else if (dailyLimit && todayCount >= dailyLimit * 0.8) {
         statusBadge.classList.add('near-limit');
-        statusBadge.textContent = 'Near Limit';
-      } else {
+        statusBadge.innerHTML = `⚠️ Near Limit (${todayCount}/${dailyLimit})`;
+        statusBadge.title = `You are approaching the daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+      } else if (dailyLimit) {
         statusBadge.classList.add('under-limit');
-        statusBadge.textContent = 'Under Limit';
+        statusBadge.innerHTML = `✓ Under Limit (${todayCount}/${dailyLimit})`;
+        statusBadge.title = `Within daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+      } else {
+        // Limit is enabled but no daily limit configured
+        statusBadge.classList.add('no-limit');
+        statusBadge.innerHTML = '∞ No Limit';
+        statusBadge.title = 'Limits are enabled but no daily limit is configured';
       }
     }
 
@@ -370,12 +401,37 @@ function renderTable() {
     toggleInput.type = 'checkbox';
     toggleInput.checked = row.limit ? row.limit.enabled !== false : false;
     toggleInput.dataset.domain = row.domain;
+
+    // Add descriptive tooltip
+    const currentState = toggleInput.checked ? 'Enabled' : 'Disabled';
+    toggleLabel.title = `${currentState} - Click to ${toggleInput.checked ? 'disable' : 'enable'} limit for ${row.domain}`;
+
     toggleInput.addEventListener('change', async (e) => {
       toggleInput.disabled = true;
+      toggleLabel.classList.add('toggle-loading');
+
       const success = await handleInlineLimitToggle(row.domain, e.target.checked);
-      if (!success) {
+
+      if (success) {
+        // Update tooltip to reflect new state
+        const newState = e.target.checked ? 'Enabled' : 'Disabled';
+        toggleLabel.title = `${newState} - Click to ${e.target.checked ? 'disable' : 'enable'} limit for ${row.domain}`;
+
+        // Show success feedback
+        toggleLabel.classList.add('toggle-success');
+        setTimeout(() => {
+          toggleLabel.classList.remove('toggle-success');
+        }, 600);
+      } else {
         toggleInput.checked = !e.target.checked;
+        // Show error feedback
+        toggleLabel.classList.add('toggle-error');
+        setTimeout(() => {
+          toggleLabel.classList.remove('toggle-error');
+        }, 600);
       }
+
+      toggleLabel.classList.remove('toggle-loading');
       toggleInput.disabled = false;
     });
 
@@ -752,5 +808,62 @@ function renderSubpathTable(domain, domainData) {
         <th>% of Total</th>
       </tr>
     `;
+  }
+}
+
+/**
+ * Update streak display in header
+ */
+async function updateStreakDisplay() {
+  const streakElement = document.getElementById('current-streak');
+  if (!streakElement) return;
+
+  try {
+    const overallStreak = await calculateOverallStreak();
+    const currentStreak = overallStreak.current || 0;
+
+    streakElement.textContent = currentStreak;
+
+    // Update tooltip with best streak info
+    const streakStat = document.getElementById('streak-stat');
+    if (streakStat) {
+      const bestStreak = overallStreak.best || 0;
+      streakStat.title = `Current: ${currentStreak} day${currentStreak !== 1 ? 's' : ''} | Personal Best: ${bestStreak} day${bestStreak !== 1 ? 's' : ''}`;
+    }
+  } catch (error) {
+    console.error('Error updating streak:', error);
+  }
+}
+
+/**
+ * Update focus score display in header
+ */
+async function updateFocusScoreDisplay() {
+  const focusScoreElement = document.getElementById('focus-score');
+  if (!focusScoreElement) return;
+
+  try {
+    const todayScore = await getTodayFocusScore();
+
+    focusScoreElement.textContent = todayScore;
+
+    // Update tooltip and color based on score
+    const focusScoreStat = document.getElementById('focus-score-stat');
+    if (focusScoreStat) {
+      let rating = 'Good';
+      if (todayScore >= 80) {
+        rating = 'Excellent';
+      } else if (todayScore >= 60) {
+        rating = 'Good';
+      } else if (todayScore >= 40) {
+        rating = 'Fair';
+      } else {
+        rating = 'Needs Improvement';
+      }
+
+      focusScoreStat.title = `Today's Focus Score: ${todayScore}/100 (${rating})`;
+    }
+  } catch (error) {
+    console.error('Error updating focus score:', error);
   }
 }

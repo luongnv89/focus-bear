@@ -477,3 +477,120 @@ export async function getAggregatedStats(range = 'today') {
 
   return aggregated;
 }
+
+/**
+ * Calculate streak for staying under limits
+ * @param {string} domain - Domain to check streak for
+ * @returns {Promise<Object>} - Streak info {current: number, best: number, lastCheckDate: string}
+ */
+export async function calculateLimitStreak(domain) {
+  const data = await chrome.storage.local.get(['visits', 'limits', 'streaks']);
+  const visits = data.visits || {};
+  const limits = data.limits || {};
+  const streaks = data.streaks || {};
+
+  const limitConfig = limits[domain];
+  if (!limitConfig || !limitConfig.enabled || !limitConfig.daily?.enabled) {
+    return { current: 0, best: 0, lastCheckDate: null };
+  }
+
+  const dailyLimit = limitConfig.daily.limit;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Get existing streak data
+  const existingStreak = streaks[domain] || { current: 0, best: 0, lastCheckDate: null };
+
+  // Check consecutive days of staying under limit
+  let currentStreak = 0;
+  let checkDate = new Date(today);
+
+  for (let i = 0; i < 365; i++) {
+    const dateKey = checkDate.toISOString().split('T')[0];
+    const dayVisits = visits[dateKey]?.[domain]?.count || 0;
+
+    if (dayVisits <= dailyLimit) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  const bestStreak = Math.max(currentStreak, existingStreak.best);
+
+  // Save updated streak
+  streaks[domain] = {
+    current: currentStreak,
+    best: bestStreak,
+    lastCheckDate: today.toISOString().split('T')[0],
+  };
+
+  await chrome.storage.local.set({ streaks });
+
+  return streaks[domain];
+}
+
+/**
+ * Get all current streaks
+ * @returns {Promise<Object>} - All streak data
+ */
+export async function getAllStreaks() {
+  const data = await chrome.storage.local.get(['streaks']);
+  return data.streaks || {};
+}
+
+/**
+ * Calculate overall focus streak (days staying under ALL limits)
+ * @returns {Promise<Object>} - Overall streak {current: number, best: number}
+ */
+export async function calculateOverallStreak() {
+  const data = await chrome.storage.local.get(['visits', 'limits', 'overallStreak']);
+  const visits = data.visits || {};
+  const limits = data.limits || {};
+  const existingStreak = data.overallStreak || { current: 0, best: 0 };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let currentStreak = 0;
+  let checkDate = new Date(today);
+
+  // Check if all limits were respected on each day
+  for (let i = 0; i < 365; i++) {
+    const dateKey = checkDate.toISOString().split('T')[0];
+    const dayVisits = visits[dateKey] || {};
+
+    let allLimitsRespected = true;
+
+    // Check each domain with limits
+    for (const [domain, limitConfig] of Object.entries(limits)) {
+      if (!limitConfig?.enabled || !limitConfig.daily?.enabled) continue;
+
+      const visitCount = dayVisits[domain]?.count || 0;
+      if (visitCount > limitConfig.daily.limit) {
+        allLimitsRespected = false;
+        break;
+      }
+    }
+
+    if (allLimitsRespected && Object.keys(limits).length > 0) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  const bestStreak = Math.max(currentStreak, existingStreak.best);
+
+  const overallStreak = {
+    current: currentStreak,
+    best: bestStreak,
+    lastCheckDate: today.toISOString().split('T')[0],
+  };
+
+  await chrome.storage.local.set({ overallStreak });
+
+  return overallStreak;
+}
