@@ -20,7 +20,7 @@
 .dashboard-header {
   background: white;
   border-bottom: 1px solid var(--color-border);
-  padding: 20px 32px;
+  padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -28,18 +28,20 @@
   top: 0;
   z-index: 100;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-height: auto;
 }
 
 .dashboard-header .header-brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .dashboard-header .header-logo {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
 }
 
 .dashboard-header .header-logo img {
@@ -49,16 +51,18 @@
 }
 
 .header-left h1 {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--color-text-dark);
-  margin: 0 0 4px 0;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .header-left .tagline {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--color-text-muted);
   margin: 0;
+  display: none;
 }
 
 .header-right {
@@ -71,21 +75,22 @@
 .view-mode-toggle {
   display: flex;
   background: var(--color-surface);
-  border-radius: 8px;
-  padding: 4px;
-  gap: 4px;
+  border-radius: 6px;
+  padding: 3px;
+  gap: 3px;
 }
 
 .view-mode-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
   background: transparent;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .view-mode-btn:hover {
@@ -100,14 +105,18 @@
 }
 
 .icon-button {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: none;
   background: var(--color-surface);
-  border-radius: 8px;
-  font-size: 18px;
+  border-radius: 6px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .icon-button:hover {
@@ -151,63 +160,66 @@
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 96px); /* Full height minus header */
+  height: calc(100vh - 88px); /* Full height minus compact header + controls */
 }
 
 /* Controls Bar */
 .controls-bar {
   background: white;
-  padding: 16px 32px;
+  padding: 10px 24px;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .controls-left,
 .controls-right {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 .stats-summary {
   display: flex;
-  gap: 24px;
-  padding-left: 24px;
+  gap: 16px;
+  padding-left: 16px;
   border-left: 1px solid var(--color-border);
 }
 
 .stat-item {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .stat-item strong {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .action-button {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: 1px solid var(--color-border);
   background: white;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-dark);
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .action-button:hover {
