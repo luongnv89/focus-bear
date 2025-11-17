@@ -136,8 +136,34 @@ async function loadBlockedPageData() {
   }
 }
 
+/**
+ * Update countdown timer showing time until limit resets (midnight)
+ */
+function updateCountdownTimer() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+
+  const timeRemaining = tomorrow.getTime() - now.getTime();
+  const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
+  const seconds = Math.floor((timeRemaining / 1000) % 60);
+
+  // Format with leading zeros
+  const formatTime = (num) => String(num).padStart(2, '0');
+
+  document.getElementById('countdown-hours').textContent = formatTime(hours);
+  document.getElementById('countdown-minutes').textContent = formatTime(minutes);
+  document.getElementById('countdown-seconds').textContent = formatTime(seconds);
+}
+
 // Load data when page loads
 loadBlockedPageData();
+
+// Start countdown timer and update every second
+updateCountdownTimer();
+setInterval(updateCountdownTimer, 1000);
 
 const container = document.querySelector('.container');
 const settingsHelp = document.createElement('section');
