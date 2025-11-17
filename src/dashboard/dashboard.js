@@ -15,6 +15,7 @@ let currentPage = 1;
 let pageSize = 25;
 let filteredData = [];
 let currentAggregatedData = {};
+let todayAggregatedData = {}; // Separate storage for today's data for status badge
 const tableFilters = {
   query: '',
   sortField: 'count',
@@ -151,6 +152,9 @@ async function handleDataLoaded(aggregatedData) {
   currentBadges = await calculateFocusHeroBadges();
   currentAggregatedData = aggregatedData;
 
+  // Load today's aggregated data separately for status badge calculation
+  todayAggregatedData = await loadTodayAggregatedStats();
+
   // Prepare table data
   currentTableData = prepareTableData(aggregatedData);
 
@@ -169,10 +173,64 @@ function updateStatsSummary(data) {
   if (visitsEl) visitsEl.textContent = totalVisits;
 }
 
+/**
+ * Load aggregated stats for today only
+ * Used to calculate status badge independently from the displayed time range
+ */
+async function loadTodayAggregatedStats() {
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const data = await chrome.storage.local.get(['visits']);
+  const visits = data.visits || {};
+  const aggregated = {};
+
+  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
+    // Parse date string as local date to avoid timezone issues
+    // dateKey format: "YYYY-MM-DD"
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const visitDate = new Date(year, month - 1, day); // month is 0-indexed
+
+    // Only include today's visits
+    if (visitDate.getTime() === today.getTime()) {
+      Object.entries(dateVisits).forEach(([domain, domainData]) => {
+        if (!aggregated[domain]) {
+          aggregated[domain] = {
+            count: 0,
+            lastVisit: domainData.lastVisit,
+            subpaths: {},
+          };
+        }
+        aggregated[domain].count += domainData.count;
+        if (domainData.lastVisit > aggregated[domain].lastVisit) {
+          aggregated[domain].lastVisit = domainData.lastVisit;
+        }
+
+        Object.entries(domainData.subpaths || {}).forEach(([subpath, subpathData]) => {
+          if (!aggregated[domain].subpaths[subpath]) {
+            aggregated[domain].subpaths[subpath] = {
+              count: 0,
+              lastVisit: subpathData.lastVisit,
+            };
+          }
+          aggregated[domain].subpaths[subpath].count += subpathData.count;
+          if (subpathData.lastVisit > aggregated[domain].subpaths[subpath].lastVisit) {
+            aggregated[domain].subpaths[subpath].lastVisit = subpathData.lastVisit;
+          }
+        });
+      });
+    }
+  });
+
+  return aggregated;
+}
+
 function prepareTableData(aggregatedData) {
   return Object.entries(aggregatedData).map(([domain, data]) => ({
     domain,
     count: data.count || 0,
+    todayCount: todayAggregatedData[domain]?.count || 0, // Add today's count for status badge
     subpaths: Object.keys(data.subpaths || {}).length,
     lastVisit: data.lastVisit || 0,
     limit: currentLimits[domain] ? normalizeLimitConfig(currentLimits[domain]) : null,
@@ -283,12 +341,13 @@ function renderTable() {
       statusBadge.classList.add('no-limit');
       statusBadge.textContent = 'No Limit';
     } else {
-      // Check against daily limit for status
+      // Check against daily limit for status using TODAY's count only
+      // This ensures status resets each day regardless of displayed time range
       const dailyLimit = row.limit.daily?.limit;
-      if (dailyLimit && row.count > dailyLimit) {
+      if (dailyLimit && row.todayCount > dailyLimit) {
         statusBadge.classList.add('over-limit');
         statusBadge.textContent = 'Over Limit';
-      } else if (dailyLimit && row.count >= dailyLimit * 0.8) {
+      } else if (dailyLimit && row.todayCount >= dailyLimit * 0.8) {
         statusBadge.classList.add('near-limit');
         statusBadge.textContent = 'Near Limit';
       } else {
