@@ -38,6 +38,9 @@ let domain = urlParams.get('domain') || null;
 let count = urlParams.get('count') || null;
 let limit = urlParams.get('limit') || null;
 let limitType = urlParams.get('limitType') || 'daily';
+const oldestTimestamp = urlParams.get('oldestTimestamp')
+  ? parseInt(urlParams.get('oldestTimestamp'), 10)
+  : null;
 
 // Fetch data from storage if URL params are missing
 async function loadBlockedPageData() {
@@ -137,15 +140,47 @@ async function loadBlockedPageData() {
 }
 
 /**
- * Update countdown timer showing time until limit resets (midnight)
+ * Calculate time until limit resets
+ * For 5-hour limits: time until oldest visit in window + 5 hours
+ * For daily limits: time until midnight
  */
-function updateCountdownTimer() {
-  const now = new Date();
-  const tomorrow = new Date(now);
+function calculateTimeUntilReset() {
+  if (limitType === 'fiveHour' && oldestTimestamp) {
+    // For 5-hour window, reset is 5 hours after the oldest visit in the window
+    const fiveHourMs = 5 * 60 * 60 * 1000;
+    const resetTime = oldestTimestamp + fiveHourMs;
+    return resetTime;
+  }
+  if (limitType === 'fiveHour') {
+    // Fallback if oldestTimestamp is not available: estimate as 5 hours from now
+    const now = new Date();
+    const resetTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+    return resetTime.getTime();
+  }
+  // For daily limit, reset is at midnight
+  const tomorrow = new Date(new Date());
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow.getTime();
+}
 
-  const timeRemaining = tomorrow.getTime() - now.getTime();
+/**
+ * Update countdown timer showing time until limit resets
+ * Supports both 5-hour window and daily limits
+ */
+function updateCountdownTimer() {
+  const now = Date.now();
+  const resetTime = calculateTimeUntilReset();
+  const timeRemaining = resetTime - now;
+
+  // Handle edge case where time has already passed
+  if (timeRemaining < 0) {
+    document.getElementById('countdown-hours').textContent = '00';
+    document.getElementById('countdown-minutes').textContent = '00';
+    document.getElementById('countdown-seconds').textContent = '00';
+    return;
+  }
+
   const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
   const seconds = Math.floor((timeRemaining / 1000) % 60);
@@ -156,6 +191,10 @@ function updateCountdownTimer() {
   document.getElementById('countdown-hours').textContent = formatTime(hours);
   document.getElementById('countdown-minutes').textContent = formatTime(minutes);
   document.getElementById('countdown-seconds').textContent = formatTime(seconds);
+
+  // Update sublabel based on limit type
+  const sublabel = limitType === 'fiveHour' ? 'in your 5-hour window' : 'until midnight';
+  document.getElementById('countdown-sublabel').textContent = sublabel;
 }
 
 // Load data when page loads

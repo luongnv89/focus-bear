@@ -50,6 +50,28 @@ function countVisitsInWindow(timestamps, windowMs) {
 }
 
 /**
+ * Get the oldest timestamp in a time window (for calculating when limit resets)
+ * @param {Array<number>} timestamps - Array of visit timestamps
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {number|null} Oldest timestamp in the window, or null if no visits
+ */
+function getOldestTimestampInWindow(timestamps, windowMs) {
+  if (!timestamps || !Array.isArray(timestamps) || timestamps.length === 0) {
+    return null;
+  }
+
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  const visitsInWindow = timestamps.filter((ts) => ts >= windowStart);
+  if (visitsInWindow.length === 0) {
+    return null;
+  }
+
+  return Math.min(...visitsInWindow);
+}
+
+/**
  * Check if domain has exceeded its limits (5-hour or daily)
  * @param {string} domain - Domain name
  * @returns {Promise<{
@@ -154,9 +176,16 @@ export async function checkLimit(domain) {
  * @param {number} count - Current visit count
  * @param {number} limit - Visit limit
  * @param {string} limitType - Type of limit exceeded ('fiveHour' or 'daily')
+ * @param {number|null} oldestTimestamp - Oldest timestamp in 5-hour window (optional, for 5-hour limits)
  * @returns {string} Blocked page URL
  */
-export function getBlockedPageUrl(domain, count, limit, limitType = 'daily') {
+export function getBlockedPageUrl(
+  domain,
+  count,
+  limit,
+  limitType = 'daily',
+  oldestTimestamp = null,
+) {
   const blockedPageUrl = chrome.runtime.getURL('src/blocked/blocked.html');
   const params = new URLSearchParams({
     domain,
@@ -164,6 +193,12 @@ export function getBlockedPageUrl(domain, count, limit, limitType = 'daily') {
     limit: limit.toString(),
     limitType,
   });
+
+  // Include oldest timestamp for 5-hour limits so we can calculate exact reset time
+  if (limitType === 'fiveHour' && oldestTimestamp) {
+    params.set('oldestTimestamp', oldestTimestamp.toString());
+  }
+
   return `${blockedPageUrl}?${params.toString()}`;
 }
 
@@ -200,11 +235,13 @@ export async function updateBlockingRules() {
       const fiveHourCount = countVisitsInWindow(timestamps, fiveHourMs);
 
       if (normalizedConfig.fiveHour.enabled && fiveHourCount >= normalizedConfig.fiveHour.limit) {
+        const oldestTimestamp = getOldestTimestampInWindow(timestamps, fiveHourMs);
         blockedDomains.push({
           domain,
           count: fiveHourCount,
           limit: normalizedConfig.fiveHour.limit,
           limitType: 'fiveHour',
+          oldestTimestamp,
         });
         return;
       }
@@ -239,7 +276,13 @@ export async function updateBlockingRules() {
 
     // Create new rules for blocked domains
     const newRules = blockedDomains.map((item, index) => {
-      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit, item.limitType);
+      const blockedPageUrl = getBlockedPageUrl(
+        item.domain,
+        item.count,
+        item.limit,
+        item.limitType,
+        item.oldestTimestamp,
+      );
 
       return {
         id: index + 1, // Rule IDs must be positive integers
