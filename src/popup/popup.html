@@ -11,7 +11,10 @@
     <div class="container">
       <header>
         <div class="header-brand">
-          <img src="../../assets/icon.svg" alt="FocusBear logo" class="header-logo" />
+          <picture class="header-logo">
+            <source srcset="../../assets/icon-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="../../assets/icon.svg" alt="FocusBear logo" />
+          </picture>
           <h1>FocusBear</h1>
         </div>
         <button id="settings-btn" aria-label="Settings">⚙️</button>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Dark mode version: light panda on dark background -->
+
+  <!-- Background circle (dark) -->
+  <circle cx="64" cy="64" r="64" fill="#1a1a1a"/>
+
+  <!-- Left ear (white) -->
+  <circle cx="42" cy="38" r="16" fill="#F5F5F5"/>
+
+  <!-- Right ear (white) -->
+  <circle cx="86" cy="38" r="16" fill="#F5F5F5"/>
+
+  <!-- Head (dark) -->
+  <circle cx="64" cy="68" r="36" fill="#1a1a1a"/>
+
+  <!-- Left eye patch (white) -->
+  <ellipse cx="50" cy="64" rx="10" ry="14" fill="#F5F5F5"/>
+
+  <!-- Right eye patch (white) -->
+  <ellipse cx="78" cy="64" rx="10" ry="14" fill="#F5F5F5"/>
+
+  <!-- Left eye (dark) -->
+  <circle cx="50" cy="64" r="4" fill="#1a1a1a"/>
+
+  <!-- Right eye (dark) -->
+  <circle cx="78" cy="64" r="4" fill="#1a1a1a"/>
+
+  <!-- Nose (white) -->
+  <ellipse cx="64" cy="80" rx="6" ry="5" fill="#F5F5F5"/>
+
+  <!-- Smile (white) -->
+  <path d="M 54 86 Q 64 92 74 86" stroke="#F5F5F5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Subtle border for contrast on dark backgrounds -->
+  <circle cx="64" cy="64" r="63" fill="none" stroke="#333333" stroke-width="1"/>
+</svg>
