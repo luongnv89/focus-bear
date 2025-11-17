@@ -11,48 +11,84 @@
   <body class="dashboard-view">
     <div class="dashboard-container">
       <header class="dashboard-header">
-        <div class="header-left">
-          <div class="header-brand">
-            <picture class="header-logo">
-              <source srcset="../../assets/icon-dark.svg" media="(prefers-color-scheme: dark)" />
-              <img src="../../assets/icon.svg" alt="FocusBear logo" />
-            </picture>
-            <div>
-              <h1>FocusBear Dashboard</h1>
-              <p class="tagline">Your attention, mapped with empathy.</p>
-            </div>
-          </div>
+        <!-- Left: Brand -->
+        <div class="header-brand">
+          <picture class="header-logo">
+            <source srcset="../../assets/icon-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="../../assets/icon.svg" alt="FocusBear logo" />
+          </picture>
+          <h1>FocusBear Dashboard</h1>
         </div>
+
+        <!-- Center: Time Filter -->
+        <div class="time-filter" role="tablist" aria-label="Time range filter">
+          <button class="time-filter-btn active" data-range="today" role="tab" aria-selected="true">
+            Today
+          </button>
+          <button class="time-filter-btn" data-range="week" role="tab" aria-selected="false">
+            Week
+          </button>
+          <button class="time-filter-btn" data-range="month" role="tab" aria-selected="false">
+            Month
+          </button>
+        </div>
+
+        <!-- Right: Stats + Actions -->
         <div class="header-right">
-          <div class="view-mode-toggle" role="group" aria-label="View mode">
+          <div class="stats-summary" id="stats-summary">
+            <span class="stat-item">
+              <strong id="total-domains">0</strong>
+              <span class="stat-label">domains</span>
+            </span>
+            <span class="stat-item">
+              <strong id="total-visits">0</strong>
+              <span class="stat-label">visits</span>
+            </span>
+          </div>
+
+          <div class="header-actions">
+            <div class="view-mode-toggle" role="group" aria-label="View mode">
+              <button
+                class="view-mode-btn active"
+                data-view="split"
+                title="Split view (topology + table)"
+                aria-pressed="true"
+              >
+                📊
+              </button>
+              <button
+                class="view-mode-btn"
+                data-view="topology"
+                title="Topology view only"
+                aria-pressed="false"
+              >
+                🌐
+              </button>
+              <button
+                class="view-mode-btn"
+                data-view="table"
+                title="Table view only"
+                aria-pressed="false"
+              >
+                📋
+              </button>
+            </div>
+
             <button
-              class="view-mode-btn active"
-              data-view="split"
-              title="Split view (topology + table)"
-              aria-pressed="true"
+              id="export-graph-btn"
+              class="icon-button"
+              aria-label="Export graph as PNG"
+              title="Export graph as PNG"
             >
-              📊 Split
+              📸
             </button>
-            <button
-              class="view-mode-btn"
-              data-view="topology"
-              title="Topology view only"
-              aria-pressed="false"
-            >
-              🌐 Topology
+            <button id="refresh-btn" class="icon-button" aria-label="Refresh" title="Refresh">
+              🔄
             </button>
-            <button
-              class="view-mode-btn"
-              data-view="table"
-              title="Table view only"
-              aria-pressed="false"
-            >
-              📋 Table
+            <button id="settings-btn" class="icon-button" aria-label="Settings" title="Settings">
+              ⚙️
             </button>
           </div>
-          <button id="settings-btn" class="icon-button" aria-label="Settings" title="Settings">
-            ⚙️
-          </button>
         </div>
       </header>
 
@@ -81,50 +117,6 @@
         </div>
 
         <div id="content" style="display: none" class="dashboard-content">
-          <div class="controls-bar">
-            <div class="controls-left">
-              <div class="time-filter" role="tablist" aria-label="Time range filter">
-                <button
-                  class="time-filter-btn active"
-                  data-range="today"
-                  role="tab"
-                  aria-selected="true"
-                >
-                  Today
-                </button>
-                <button class="time-filter-btn" data-range="week" role="tab" aria-selected="false">
-                  Week
-                </button>
-                <button class="time-filter-btn" data-range="month" role="tab" aria-selected="false">
-                  Month
-                </button>
-              </div>
-              <div class="stats-summary" id="stats-summary">
-                <span class="stat-item">
-                  <strong id="total-domains">0</strong>
-                  <span class="stat-label">domains</span>
-                </span>
-                <span class="stat-item">
-                  <strong id="total-visits">0</strong>
-                  <span class="stat-label">visits</span>
-                </span>
-              </div>
-            </div>
-            <div class="controls-right">
-              <button
-                id="export-graph-btn"
-                class="action-button"
-                aria-label="Export graph as PNG"
-                title="Export graph as PNG"
-              >
-                📸 Export PNG
-              </button>
-              <button id="refresh-btn" class="action-button" aria-label="Refresh" title="Refresh">
-                🔄
-              </button>
-            </div>
-          </div>
-
           <div class="view-container" id="view-container">
             <!-- Topology Panel -->
             <div class="topology-panel" id="topology-panel">
