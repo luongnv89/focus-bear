@@ -10,7 +10,14 @@
  * @param {Object} options - Visualization options
  */
 export function renderRadialGraph(container, data, options = {}) {
-  const { width = 400, height = 450, highlightedDomain = null, badges = {} } = options;
+  // Calculate responsive dimensions based on container
+  const containerRect = container.getBoundingClientRect();
+  const containerWidth = containerRect.width || options.width || 400;
+  const containerHeight = containerRect.height || options.height || 450;
+
+  const { highlightedDomain = null, badges = {} } = options;
+  const width = Math.max(containerWidth - 16, 300); // Subtract 8px padding on each side
+  const height = Math.max(containerHeight - 16, 300);
 
   // Performance monitoring
   const graphPerfStart = performance.now();

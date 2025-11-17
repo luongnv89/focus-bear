@@ -291,7 +291,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 24px;
+  padding: 8px;
 }
 
 .graph-error {
