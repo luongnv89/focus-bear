@@ -5,6 +5,7 @@
 
 import { incrementVisit } from './storage.js';
 import { updateBlockingRules } from './limits.js';
+import { updateDomainBadge } from './badge.js';
 
 /**
  * Extract domain and subpath from URL
@@ -57,6 +58,9 @@ async function trackTabFocus(tabId) {
     const newCount = await incrementVisit(domain, subpath);
 
     console.log(`Focus switch recorded: ${domain}${subpath} (count: ${newCount})`);
+
+    // Update domain counter badge
+    await updateDomainBadge();
 
     // Check if this domain has a limit and show countdown toast
     await showCountdownToastIfNeeded(tabId, domain);

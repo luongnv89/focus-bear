@@ -5,6 +5,7 @@
 
 import { initializeTracking, trackCurrentTab } from './tracking.js';
 import { initializeLimitEnforcement } from './limits.js';
+import { initializeBadge } from './badge.js';
 
 async function openDashboardTab() {
   const dashboardUrl = chrome.runtime.getURL('src/dashboard/index.html');
@@ -49,6 +50,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   // Initialize limit enforcement
   initializeLimitEnforcement();
+
+  // Initialize domain counter badge
+  await initializeBadge();
 });
 
 // Initialize tracking when service worker starts
@@ -57,6 +61,11 @@ initializeTracking();
 
 // Initialize limit enforcement
 initializeLimitEnforcement();
+
+// Initialize domain counter badge
+initializeBadge().catch((error) => {
+  console.error('Error initializing badge on startup:', error);
+});
 
 // Track current tab on startup
 trackCurrentTab().catch((error) => {
