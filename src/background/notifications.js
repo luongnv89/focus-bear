@@ -66,18 +66,16 @@ async function canSendNotification(type) {
   if (preferences.quietHours.enabled) {
     const now = new Date();
     const currentHour = now.getHours();
-    const start = preferences.quietHours.start;
-    const end = preferences.quietHours.end;
+    const { start } = preferences.quietHours;
+    const { end } = preferences.quietHours;
 
     // Handle quiet hours that span midnight
     if (start > end) {
       if (currentHour >= start || currentHour < end) {
         return false;
       }
-    } else {
-      if (currentHour >= start && currentHour < end) {
-        return false;
-      }
+    } else if (currentHour >= start && currentHour < end) {
+      return false;
     }
   }
 
@@ -187,11 +185,11 @@ export async function showStreakMilestone(days) {
 export async function showEncouragement() {
   const encouragements = [
     'Great focus today! Keep it up! 🎯',
-    'You\'re doing amazing! Stay focused! 💪',
+    "You're doing amazing! Stay focused! 💪",
     'Excellent progress! Your focus is improving! ✨',
-    'Way to go! You\'re building great habits! 🌟',
+    "Way to go! You're building great habits! 🌟",
     'Fantastic! Your discipline is paying off! 🚀',
-    'Keep going! You\'re on the right track! 🎉',
+    "Keep going! You're on the right track! 🎉",
   ];
 
   const message = encouragements[Math.floor(Math.random() * encouragements.length)];

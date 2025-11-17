@@ -503,7 +503,7 @@ export async function calculateLimitStreak(domain) {
 
   // Check consecutive days of staying under limit
   let currentStreak = 0;
-  let checkDate = new Date(today);
+  const checkDate = new Date(today);
 
   for (let i = 0; i < 365; i++) {
     const dateKey = checkDate.toISOString().split('T')[0];
@@ -554,7 +554,7 @@ export async function calculateOverallStreak() {
   today.setHours(0, 0, 0, 0);
 
   let currentStreak = 0;
-  let checkDate = new Date(today);
+  const checkDate = new Date(today);
 
   // Check if all limits were respected on each day
   for (let i = 0; i < 365; i++) {

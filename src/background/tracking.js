@@ -102,8 +102,7 @@ async function showCountdownToastIfNeeded(tabId, domain) {
       return;
     }
 
-    const relevantCount =
-      limitStatus.limitType === 'fiveHour' ? limitStatus.fiveHourCount : limitStatus.dailyCount;
+    const relevantCount = limitStatus.limitType === 'fiveHour' ? limitStatus.fiveHourCount : limitStatus.dailyCount;
     const remaining = Math.max(0, limitStatus.limit - relevantCount);
 
     // Send message to content script to show toast

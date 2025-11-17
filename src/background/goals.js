@@ -177,7 +177,10 @@ export async function checkGoalProgress() {
 
       switch (goal.type) {
         case GOAL_TYPES.TOTAL_VISITS: {
-          const totalVisits = Object.values(todayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
+          const totalVisits = Object.values(todayVisits).reduce(
+            (sum, v) => sum + (v.count || 0),
+            0,
+          );
           progress = totalVisits;
           completed = totalVisits <= goal.target;
           break;

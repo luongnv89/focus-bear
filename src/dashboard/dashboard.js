@@ -492,8 +492,7 @@ function setupTableControls() {
   headers.forEach((header) => {
     header.addEventListener('click', () => {
       const field = header.dataset.sort;
-      const currentOrder =
-        tableFilters.sortField === field && tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
+      const currentOrder = tableFilters.sortField === field && tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
       setSort(field, currentOrder);
       currentPage = 1;
       renderTable();
@@ -654,13 +653,13 @@ async function handleDomainDrilldown(event) {
       <div class="drilldown-info">
         <h3>Path Statistics for ${domain}</h3>
         <p class="panel-subtitle">${domainData.count} total visits • ${
-          Object.keys(domainData.subpaths || {}).length
-        } subpaths</p>
+  Object.keys(domainData.subpaths || {}).length
+} subpaths</p>
       </div>
       <div class="drilldown-status">
         ${
-          limitConfig && limitConfig.enabled
-            ? `
+  limitConfig && limitConfig.enabled
+    ? `
           <span class="limit-status-badge limit-enabled">✓ Limits Active</span>
           <span class="limit-details">
             ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
@@ -668,10 +667,10 @@ async function handleDomainDrilldown(event) {
             ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
           </span>
         `
-            : `
+    : `
           <span class="limit-status-badge limit-disabled">No limits</span>
         `
-        }
+}
         <button class="drilldown-edit-btn" data-domain="${domain}">
           Edit Limitation Settings
         </button>

@@ -11,7 +11,16 @@
 function categorizeDomain(domain) {
   const categories = {
     social: {
-      keywords: ['facebook', 'twitter', 'instagram', 'linkedin', 'reddit', 'tiktok', 'snapchat', 'pinterest'],
+      keywords: [
+        'facebook',
+        'twitter',
+        'instagram',
+        'linkedin',
+        'reddit',
+        'tiktok',
+        'snapchat',
+        'pinterest',
+      ],
       name: 'Social Media',
       color: '#ec4899', // Pink
     },
@@ -21,7 +30,15 @@ function categorizeDomain(domain) {
       color: '#10b981', // Green
     },
     development: {
-      keywords: ['github', 'gitlab', 'stackoverflow', 'dev.to', 'codepen', 'codesandbox', 'repl.it'],
+      keywords: [
+        'github',
+        'gitlab',
+        'stackoverflow',
+        'dev.to',
+        'codepen',
+        'codesandbox',
+        'repl.it',
+      ],
       name: 'Development',
       color: '#8b5cf6', // Purple
     },
@@ -45,7 +62,7 @@ function categorizeDomain(domain) {
   const domainLower = domain.toLowerCase();
 
   for (const [key, category] of Object.entries(categories)) {
-    if (category.keywords.some(keyword => domainLower.includes(keyword))) {
+    if (category.keywords.some((keyword) => domainLower.includes(keyword))) {
       return { name: category.name, color: category.color, key };
     }
   }
@@ -435,8 +452,9 @@ export function renderRadialGraph(container, data, options = {}) {
       const subpathCount = Object.keys(d.subpaths).length;
       const lastVisitDate = new Date(d.lastVisit).toLocaleString();
 
-      const drilldownHint =
-        subpathCount > 0 ? '<br/><em style="color: #93c5fd;">💡 Double-click to explore subpaths</em>' : '';
+      const drilldownHint = subpathCount > 0
+        ? '<br/><em style="color: #93c5fd;">💡 Double-click to explore subpaths</em>'
+        : '';
       const badgeInfo = badges[d.id]
         ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
         : '';

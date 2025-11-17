@@ -17,7 +17,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const { limits = {} } = await chrome.storage.local.get('limits');
       return Object.keys(limits).length >= 1;
-    }
+    },
   },
 
   'three-day-streak': {
@@ -29,7 +29,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const overallStreak = await calculateOverallStreak();
       return overallStreak.current >= 3;
-    }
+    },
   },
 
   'week-streak': {
@@ -41,7 +41,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const overallStreak = await calculateOverallStreak();
       return overallStreak.current >= 7;
-    }
+    },
   },
 
   'month-streak': {
@@ -53,7 +53,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const overallStreak = await calculateOverallStreak();
       return overallStreak.current >= 30;
-    }
+    },
   },
 
   // Goal-based achievements
@@ -66,7 +66,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const { limits = {} } = await chrome.storage.local.get('limits');
       return Object.keys(limits).length >= 5;
-    }
+    },
   },
 
   'ten-limits': {
@@ -78,7 +78,7 @@ export const ACHIEVEMENTS = {
     check: async () => {
       const { limits = {} } = await chrome.storage.local.get('limits');
       return Object.keys(limits).length >= 10;
-    }
+    },
   },
 
   // Challenge-based achievements
@@ -105,7 +105,7 @@ export const ACHIEVEMENTS = {
 
       // Must have at least one limit set
       return Object.keys(limits).length > 0;
-    }
+    },
   },
 
   'lightning-focus': {
@@ -120,7 +120,7 @@ export const ACHIEVEMENTS = {
       const todayVisits = visits[today] || {};
       const domainCount = Object.keys(todayVisits).length;
       return domainCount > 0 && domainCount <= 5;
-    }
+    },
   },
 
   // Milestone-based achievements
@@ -139,7 +139,7 @@ export const ACHIEVEMENTS = {
         }
       }
       return totalVisits >= 100;
-    }
+    },
   },
 
   'thousand-visits': {
@@ -157,7 +157,7 @@ export const ACHIEVEMENTS = {
         }
       }
       return totalVisits >= 1000;
-    }
+    },
   },
 
   'week-warrior': {
@@ -188,8 +188,8 @@ export const ACHIEVEMENTS = {
       }
 
       return false;
-    }
-  }
+    },
+  },
 };
 
 /**
@@ -318,7 +318,7 @@ export async function getAllAchievements() {
       ...achievementDef,
       unlocked: isUnlocked,
       progress,
-      unlockedAt: achievements.progress[achievementId]?.unlockedAt || null
+      unlockedAt: achievements.progress[achievementId]?.unlockedAt || null,
     });
   }
 
@@ -345,8 +345,8 @@ export async function initializeAchievements() {
     await chrome.storage.local.set({
       achievements: {
         unlocked: [],
-        progress: {}
-      }
+        progress: {},
+      },
     });
   }
 }

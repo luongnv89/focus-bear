@@ -205,7 +205,7 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
     const domainData = aggregatedData[domain];
     if (!domainData) return;
 
-    const count = domainData.count;
+    const { count } = domainData;
     const dailyLimit = limitConfig.daily?.limit;
 
     if (dailyLimit && limitConfig.daily.enabled) {
@@ -234,7 +234,9 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
     const topList = top3
       .map((d) => `<strong class="summary-highlight">${d.domain}</strong> (${d.count} visits)`)
       .join(', ');
-    parts.push(`Your top ${top3.length === 1 ? 'distraction' : 'distractions'} ${rangeText}: ${topList}`);
+    parts.push(
+      `Your top ${top3.length === 1 ? 'distraction' : 'distractions'} ${rangeText}: ${topList}`,
+    );
   }
 
   // Limit status
@@ -247,7 +249,7 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
       `<span class="summary-warning">You're approaching limits on ${nearLimitCount} ${nearLimitCount === 1 ? 'domain' : 'domains'}</span>`,
     );
   } else if (Object.keys(limits).length > 0) {
-    parts.push(`<span class="summary-success">✓ All limits under control</span>`);
+    parts.push('<span class="summary-success">✓ All limits under control</span>');
   }
 
   // Total domains
@@ -261,8 +263,7 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
       0,
     );
     const visitChange = totalVisits - previousTotalVisits;
-    const changePercent =
-      previousTotalVisits > 0 ? Math.round((visitChange / previousTotalVisits) * 100) : 0;
+    const changePercent = previousTotalVisits > 0 ? Math.round((visitChange / previousTotalVisits) * 100) : 0;
 
     if (visitChange > 0) {
       parts.push(
@@ -277,9 +278,11 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
     }
   }
 
-  parts.push(`Tracked <strong>${totalDomains}</strong> ${totalDomains === 1 ? 'domain' : 'domains'} with <strong>${totalVisits}</strong> total visits`);
+  parts.push(
+    `Tracked <strong>${totalDomains}</strong> ${totalDomains === 1 ? 'domain' : 'domains'} with <strong>${totalVisits}</strong> total visits`,
+  );
 
-  return parts.join('. ') + '.';
+  return `${parts.join('. ')}.`;
 }
 
 /**
@@ -447,10 +450,9 @@ export async function setupVisualizationPage(options = {}) {
         if (normalized.daily.enabled) {
           parts.push(`${normalized.daily.limit} per day`);
         }
-        limitText =
-          parts.length > 0
-            ? parts.join(', ')
-            : '<span style="color: #999;">No limits active</span>';
+        limitText = parts.length > 0
+          ? parts.join(', ')
+          : '<span style="color: #999;">No limits active</span>';
       }
 
       info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
@@ -711,10 +713,9 @@ export async function setupVisualizationPage(options = {}) {
         if (summaryElement) {
           // Load comparison data if toggle is enabled
           const comparisonToggle = document.getElementById('comparison-toggle-input');
-          const previousData =
-            comparisonToggle && comparisonToggle.checked
-              ? await loadPreviousPeriodData(currentRange)
-              : null;
+          const previousData = comparisonToggle && comparisonToggle.checked
+            ? await loadPreviousPeriodData(currentRange)
+            : null;
 
           const summaryText = generateInsightsSummary(
             aggregatedVisits,
@@ -848,16 +849,15 @@ export async function setupVisualizationPage(options = {}) {
 
       // Render achievements grid
       achievementsGrid.innerHTML = achievements
-        .map(
-          (achievement) => {
-            const progress = achievement.progress || { current: 0, target: 1 };
-            const progressPercent = Math.min(100, (progress.current / progress.target) * 100);
-            const unlockedClass = achievement.unlocked ? 'unlocked' : '';
-            const unlockedDate = achievement.unlockedAt
-              ? new Date(achievement.unlockedAt).toLocaleDateString()
-              : '';
+        .map((achievement) => {
+          const progress = achievement.progress || { current: 0, target: 1 };
+          const progressPercent = Math.min(100, (progress.current / progress.target) * 100);
+          const unlockedClass = achievement.unlocked ? 'unlocked' : '';
+          const unlockedDate = achievement.unlockedAt
+            ? new Date(achievement.unlockedAt).toLocaleDateString()
+            : '';
 
-            return `
+          return `
           <div class="achievement-card ${unlockedClass}">
             <div class="achievement-card-header">
               <div class="achievement-icon">${achievement.icon}</div>
@@ -868,8 +868,8 @@ export async function setupVisualizationPage(options = {}) {
             </div>
             <p class="achievement-description">${achievement.description}</p>
             ${
-              !achievement.unlocked
-                ? `
+  !achievement.unlocked
+    ? `
               <div class="achievement-progress">
                 <div class="achievement-progress-bar">
                   <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
@@ -877,14 +877,13 @@ export async function setupVisualizationPage(options = {}) {
                 <div class="achievement-progress-text">${progress.current} / ${progress.target}</div>
               </div>
             `
-                : `
+    : `
               <div class="achievement-unlocked-date">Unlocked ${unlockedDate}</div>
             `
-            }
+}
           </div>
         `;
-          },
-        )
+        })
         .join('');
 
       achievementsPanel.style.display = 'block';
@@ -927,8 +926,10 @@ export async function setupVisualizationPage(options = {}) {
             const progressPercent = goal.type === 'total_visits' || goal.type === 'domains_visited'
               ? Math.min(100, (goal.progress / goal.target) * 100)
               : goal.type === 'focus_score'
-              ? goal.progress
-              : goal.completed ? 100 : 0;
+                ? goal.progress
+                : goal.completed
+                  ? 100
+                  : 0;
 
             const completedClass = goal.completed ? 'completed' : '';
             const statusClass = goal.completed ? 'completed' : 'in-progress';
@@ -976,7 +977,7 @@ export async function setupVisualizationPage(options = {}) {
         // Add event listeners for remove buttons
         goalsList.querySelectorAll('.goal-remove-btn').forEach((btn) => {
           btn.addEventListener('click', async () => {
-            const goalId = btn.dataset.goalId;
+            const { goalId } = btn.dataset;
             await window.removeGoalFromToday(goalId);
             goalsBtn.click(); // Refresh panel
           });
@@ -1001,7 +1002,7 @@ export async function setupVisualizationPage(options = {}) {
       // Add event listeners for suggestions
       suggestionsGrid.querySelectorAll('.suggestion-card').forEach((card) => {
         card.addEventListener('click', async () => {
-          const suggestionId = card.dataset.suggestionId;
+          const { suggestionId } = card.dataset;
           const suggestion = suggestions.find((s) => s.id === suggestionId);
           await window.addGoalToday(suggestion);
           goalsBtn.click(); // Refresh panel
