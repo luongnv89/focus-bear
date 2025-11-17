@@ -159,11 +159,11 @@ export function renderRadialGraph(container, data, options = {}) {
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => sizeScale(d.count) + 14)
-    .attr('fill', '#111827')
+    .attr('fill', '#e5e7eb')
     .attr('font-size', '10px')
     .attr('font-weight', 500)
     .attr('pointer-events', 'none')
-    .style('text-shadow', '0 1px 2px rgba(255,255,255,0.8)')
+    .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
     .text((d) => {
       return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
     });
@@ -458,11 +458,11 @@ export function renderRadialGraph(container, data, options = {}) {
       .append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', (d) => subpathSizeScale(d.count) + 13)
-      .attr('fill', '#111827')
+      .attr('fill', '#e5e7eb')
       .attr('font-size', '9px')
       .attr('font-weight', 500)
       .attr('pointer-events', 'none')
-      .style('text-shadow', '0 1px 2px rgba(255,255,255,0.8)')
+      .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
       .text((d) => {
         const shortPath = d.subpath.length > 12 ? `${d.subpath.substring(0, 10)}...` : d.subpath;
         return shortPath;
