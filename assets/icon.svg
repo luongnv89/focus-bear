@@ -2,36 +2,24 @@
   <!-- Background circle -->
   <circle cx="64" cy="64" r="64" fill="#0E75B6"/>
 
-  <!-- Bear ears -->
-  <circle cx="38" cy="35" r="18" fill="#6C5CE7"/>
-  <circle cx="90" cy="35" r="18" fill="#6C5CE7"/>
+  <!-- Left ear -->
+  <circle cx="42" cy="38" r="16" fill="#6C5CE7"/>
 
-  <!-- Bear face -->
-  <ellipse cx="64" cy="70" rx="42" ry="45" fill="#0E75B6"/>
+  <!-- Right ear -->
+  <circle cx="86" cy="38" r="16" fill="#6C5CE7"/>
 
-  <!-- Inner ear details -->
-  <circle cx="38" cy="35" r="10" fill="#8B7FE8" opacity="0.6"/>
-  <circle cx="90" cy="35" r="10" fill="#8B7FE8" opacity="0.6"/>
+  <!-- Bear head/face -->
+  <circle cx="64" cy="68" r="36" fill="#0E75B6"/>
 
-  <!-- Eyes with focus rings -->
-  <g id="left-eye">
-    <circle cx="50" cy="65" r="12" fill="white"/>
-    <circle cx="50" cy="65" r="8" fill="#2C3E50"/>
-    <circle cx="52" cy="63" r="3" fill="white"/>
-  </g>
+  <!-- Left eye -->
+  <circle cx="52" cy="64" r="5" fill="#2C3E50"/>
 
-  <g id="right-eye">
-    <circle cx="78" cy="65" r="12" fill="white"/>
-    <circle cx="78" cy="65" r="8" fill="#2C3E50"/>
-    <circle cx="80" cy="63" r="3" fill="white"/>
-  </g>
+  <!-- Right eye -->
+  <circle cx="76" cy="64" r="5" fill="#2C3E50"/>
 
   <!-- Nose -->
-  <ellipse cx="64" cy="82" rx="8" ry="6" fill="#2C3E50"/>
+  <circle cx="64" cy="78" r="5" fill="#2C3E50"/>
 
-  <!-- Mouth - friendly smile -->
-  <path d="M 50 90 Q 64 100 78 90" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/>
-
-  <!-- Focus target ring around the bear (optional, can be removed if too busy) -->
-  <circle cx="64" cy="64" r="60" fill="none" stroke="#55EFC4" stroke-width="2" opacity="0.5" stroke-dasharray="8 4"/>
+  <!-- Smile -->
+  <path d="M 54 84 Q 64 90 74 84" stroke="#2C3E50" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 </svg>
