@@ -124,6 +124,15 @@ export async function getTodayVisits() {
 }
 
 /**
+ * Get count of unique domains visited today
+ * @returns {Promise<number>} Number of unique domains
+ */
+export async function getTodayDomainCount() {
+  const todayVisits = await getTodayVisits();
+  return Object.keys(todayVisits).length;
+}
+
+/**
  * Increment visit count for a domain
  * @param {string} domain - Domain name (e.g., "example.com")
  * @param {string} [subpath] - Optional subpath (e.g., "/page1")
