@@ -51,6 +51,12 @@ npm run format
 
 # Run tests
 npm run test
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
 ### Code Quality & CI/CD
