@@ -1022,7 +1022,7 @@
 .dashboard-footer {
   background: var(--color-card);
   border-top: 1px solid var(--color-border);
-  padding: 16px 32px;
+  padding: 8px 24px;
   margin-top: auto;
 }
 
@@ -1033,7 +1033,7 @@
   gap: 8px;
   max-width: 1400px;
   margin: 0 auto;
-  font-size: 13px;
+  font-size: 12px;
   flex-wrap: wrap;
 }
 
@@ -1054,9 +1054,9 @@
 .footer-version {
   font-family: 'Courier New', monospace;
   background: var(--color-surface);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 
