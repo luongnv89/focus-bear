@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle window resize
   window.addEventListener('resize', handleResize);
 
+  // Listen for domain drilldown events from graph
+  window.addEventListener('domainDrilldown', handleDomainDrilldown);
+  window.addEventListener('domainDrilldownExit', handleDrilldownExit);
+
   // Wait for layout to settle before getting dimensions
   setTimeout(() => {
     const graphDimensions = getGraphDimensions();
@@ -43,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup visualization page
     setupVisualizationPage({
+      defaultRange: 'week', // Default to week view to show more data
       fullPage: true,
       graphDimensions,
       listLimit: 50,
@@ -507,4 +512,145 @@ function openDomainDetail(domain) {
   const detailUrl = new URL(chrome.runtime.getURL('src/dashboard/domain.html'));
   detailUrl.searchParams.set('domain', domain);
   window.location.href = detailUrl.toString();
+}
+
+// Handle domain drilldown from graph
+async function handleDomainDrilldown(event) {
+  const { domain, domainData } = event.detail;
+
+  // Update table panel header
+  const panelHeader = document.querySelector('.table-panel .panel-header');
+  if (!panelHeader) return;
+
+  // Get limit config for this domain
+  let limitConfig = null;
+  if (currentLimits[domain]) {
+    limitConfig = normalizeLimitConfig(currentLimits[domain]);
+  }
+
+  // Create header with domain info and limitation status
+  panelHeader.innerHTML = `
+    <div class="drilldown-table-header">
+      <div class="drilldown-info">
+        <h3>Path Statistics for ${domain}</h3>
+        <p class="panel-subtitle">${domainData.count} total visits • ${Object.keys(domainData.subpaths || {}).length} subpaths</p>
+      </div>
+      <div class="drilldown-status">
+        ${limitConfig && limitConfig.enabled ? `
+          <span class="limit-status-badge limit-enabled">✓ Limits Active</span>
+          <span class="limit-details">
+            ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
+            ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
+            ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
+          </span>
+        ` : `
+          <span class="limit-status-badge limit-disabled">No limits</span>
+        `}
+        <button class="drilldown-edit-btn" data-domain="${domain}">
+          Edit Limitation Settings
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Add click handler for edit button
+  const editBtn = panelHeader.querySelector('.drilldown-edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('openDomainSettings', {
+        detail: { domain }
+      }));
+    });
+  }
+
+  // Render subpath table
+  renderSubpathTable(domain, domainData);
+}
+
+// Handle exit from drilldown
+function handleDrilldownExit() {
+  // Restore original table header
+  const panelHeader = document.querySelector('.table-panel .panel-header');
+  if (!panelHeader) return;
+
+  panelHeader.innerHTML = `
+    <h3>Domain Statistics</h3>
+    <p class="panel-subtitle">All tracked domains and visit counts</p>
+    <div class="table-controls">
+      <input
+        type="text"
+        id="table-search"
+        placeholder="Search domains..."
+        aria-label="Search domains"
+      />
+      <select id="table-page-size" aria-label="Items per page">
+        <option value="10">10 per page</option>
+        <option value="25" selected>25 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+      </select>
+    </div>
+  `;
+
+  // Re-setup table controls
+  setupTableControls();
+
+  // Restore domain table
+  renderTable();
+}
+
+// Render subpath table
+function renderSubpathTable(domain, domainData) {
+  const tbody = document.getElementById('table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  // Prepare subpath data
+  const subpaths = Object.entries(domainData.subpaths || {})
+    .map(([path, pathData]) => ({
+      subpath: path,
+      count: pathData.count,
+      lastVisit: pathData.lastVisit,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const totalVisits = subpaths.reduce((sum, sp) => sum + sp.count, 0);
+
+  // Render subpath rows
+  subpaths.forEach((subpath) => {
+    const percentage = ((subpath.count / totalVisits) * 100).toFixed(1);
+    const lastVisitDate = new Date(subpath.lastVisit).toLocaleString();
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="subpath-cell">
+        <span class="subpath-domain">${domain}</span>
+        <span class="subpath-path">${subpath.subpath}</span>
+      </td>
+      <td class="visits-cell">${subpath.count}</td>
+      <td class="date-cell">${lastVisitDate}</td>
+      <td class="percentage-cell">
+        <div class="percentage-bar-container">
+          <div class="percentage-bar" style="width: ${percentage}%"></div>
+          <span class="percentage-text">${percentage}%</span>
+        </div>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  // Update table header for subpaths
+  const thead = tbody.parentElement.querySelector('thead');
+  if (thead) {
+    thead.innerHTML = `
+      <tr>
+        <th>Subpath</th>
+        <th>Visits</th>
+        <th>Last Visit</th>
+        <th>% of Total</th>
+      </tr>
+    `;
+  }
 }

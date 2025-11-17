@@ -1077,3 +1077,50 @@ body.high-contrast .dashboard-header .header-logo {
     gap: 6px;
   }
 }
+
+/* Drilldown Table Header */
+.drilldown-table-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drilldown-info h3 {
+  margin: 0 0 4px 0;
+}
+
+.drilldown-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.drilldown-edit-btn {
+  padding: 6px 14px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.drilldown-edit-btn:hover {
+  background: #0a5a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(14, 117, 182, 0.2);
+}
+
+/* High Contrast Support */
+body.high-contrast .drilldown-table-header {
+  background: #2a2a2a;
+}
+
+body.high-contrast .drilldown-status {
+  border-color: #444;
+}

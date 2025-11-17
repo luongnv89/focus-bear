@@ -54,7 +54,11 @@ async function loadAggregatedStats(range = 'today') {
   const aggregated = {};
 
   Object.entries(visits).forEach(([dateKey, dateVisits]) => {
-    const visitDate = new Date(dateKey);
+    // Parse date string as local date to avoid timezone issues
+    // dateKey format: "YYYY-MM-DD"
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const visitDate = new Date(year, month - 1, day); // month is 0-indexed
+
     if (visitDate >= startDate && visitDate <= now) {
       Object.entries(dateVisits).forEach(([domain, domainData]) => {
         if (!aggregated[domain]) {
@@ -931,6 +935,30 @@ export async function setupVisualizationPage(options = {}) {
       }
     });
   }
+
+  // Listen for custom event to open domain settings from graph drilldown
+  window.addEventListener('openDomainSettings', async (event) => {
+    const { domain } = event.detail || {};
+    if (!domain) return;
+
+    try {
+      await showSettingsView();
+
+      if (limitForm) {
+        const limits = await getLimits();
+        const limitConfig = limits[domain]
+          ? normalizeLimitConfig(limits[domain])
+          : createDefaultLimitConfig();
+        applyLimitConfigToForm(domain, limitConfig);
+
+        // Scroll to form
+        limitForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        limitForm.querySelector('input[name="domain"]')?.focus();
+      }
+    } catch (error) {
+      console.error('Failed to open domain settings:', error);
+    }
+  });
 
   // Performance monitoring
   const perfStart = performance.now();

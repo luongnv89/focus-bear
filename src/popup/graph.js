@@ -226,6 +226,15 @@ export function renderRadialGraph(container, data, options = {}) {
       if (hasSubpaths) {
         drilledDownDomain = d.id;
         currentView = 'subpaths';
+
+        // Dispatch event for dashboard to show subpath table
+        window.dispatchEvent(new CustomEvent('domainDrilldown', {
+          detail: {
+            domain: d.id,
+            domainData: d
+          }
+        }));
+
         renderSubpathView(d.id);
       } else {
         // Show message if no subpaths
@@ -426,7 +435,6 @@ export function renderRadialGraph(container, data, options = {}) {
         if (d.isCenter) {
           return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
         }
-        // Always show subpath name for consistency
         const shortPath = d.subpath.length > 10 ? `${d.subpath.substring(0, 8)}...` : d.subpath;
         return shortPath;
       });
@@ -440,6 +448,10 @@ export function renderRadialGraph(container, data, options = {}) {
       .on('click', () => {
         drilledDownDomain = null;
         currentView = 'domains';
+
+        // Dispatch event to reset table
+        window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+
         renderRadialGraph(container, data, options);
       });
 
@@ -495,6 +507,10 @@ export function renderRadialGraph(container, data, options = {}) {
           // Exit drilldown
           drilledDownDomain = null;
           currentView = 'domains';
+
+          // Dispatch event to reset table
+          window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+
           renderRadialGraph(container, data, options);
         }
       });
