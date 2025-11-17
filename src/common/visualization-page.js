@@ -770,6 +770,10 @@ export async function setupVisualizationPage(options = {}) {
         }
         try {
           await clearAllData();
+
+          // Clear all blocking rules since limits no longer exist
+          await updateBlockingRules();
+
           await updateSettings({
             highContrastMode: false,
             onboardingComplete: false,
