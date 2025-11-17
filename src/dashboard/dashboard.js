@@ -592,6 +592,34 @@ function handleDrilldownExit() {
     </div>
   `;
 
+  // Restore original table column headers
+  const thead = document.querySelector('.data-table thead');
+  if (thead) {
+    thead.innerHTML = `
+      <tr>
+        <th class="sortable" data-sort="domain">
+          Domain
+          <span class="sort-indicator"></span>
+        </th>
+        <th class="sortable" data-sort="count">
+          Visits
+          <span class="sort-indicator"></span>
+        </th>
+        <th class="sortable" data-sort="subpaths">
+          Subpaths
+          <span class="sort-indicator"></span>
+        </th>
+        <th class="sortable" data-sort="lastVisit">
+          Last Visit
+          <span class="sort-indicator"></span>
+        </th>
+        <th>Limit</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    `;
+  }
+
   // Re-setup table controls
   setupTableControls();
 
