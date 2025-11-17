@@ -138,20 +138,34 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('stroke-width', 2)
     .attr('opacity', 0.9);
 
-  // Add labels
+  // Add count labels (weight in center of circle)
   nodeGroup
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => (d.isCenter ? 5 : 4))
     .attr('fill', 'white')
-    .attr('font-size', (d) => (d.isCenter ? '14px' : '10px'))
+    .attr('font-size', (d) => (d.isCenter ? '14px' : '11px'))
     .attr('font-weight', 600)
     .attr('pointer-events', 'none')
     .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
     .text((d) => {
       if (d.isCenter) return 'You';
-      // Always show domain name for consistency
-      return d.id.length > 12 ? `${d.id.substring(0, 10)}...` : d.id;
+      return d.count;
+    });
+
+  // Add domain name labels (below the circle)
+  nodeGroup
+    .filter((d) => !d.isCenter)
+    .append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dy', (d) => sizeScale(d.count) + 14)
+    .attr('fill', '#e5e7eb')
+    .attr('font-size', '10px')
+    .attr('font-weight', 500)
+    .attr('pointer-events', 'none')
+    .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
+    .text((d) => {
+      return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
     });
 
   // Add Focus Hero badges
@@ -421,13 +435,13 @@ export function renderRadialGraph(container, data, options = {}) {
       .attr('stroke-width', 2)
       .attr('opacity', 0.9);
 
-    // Add labels
+    // Add count labels (weight in center of circle)
     subpathNodeGroup
       .append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', (d) => (d.isCenter ? 5 : 4))
       .attr('fill', 'white')
-      .attr('font-size', (d) => (d.isCenter ? '12px' : '9px'))
+      .attr('font-size', (d) => (d.isCenter ? '12px' : '10px'))
       .attr('font-weight', 600)
       .attr('pointer-events', 'none')
       .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
@@ -435,7 +449,22 @@ export function renderRadialGraph(container, data, options = {}) {
         if (d.isCenter) {
           return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
         }
-        const shortPath = d.subpath.length > 10 ? `${d.subpath.substring(0, 8)}...` : d.subpath;
+        return d.count;
+      });
+
+    // Add subpath name labels (below the circle)
+    subpathNodeGroup
+      .filter((d) => !d.isCenter)
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', (d) => subpathSizeScale(d.count) + 13)
+      .attr('fill', '#e5e7eb')
+      .attr('font-size', '9px')
+      .attr('font-weight', 500)
+      .attr('pointer-events', 'none')
+      .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
+      .text((d) => {
+        const shortPath = d.subpath.length > 12 ? `${d.subpath.substring(0, 10)}...` : d.subpath;
         return shortPath;
       });
 
