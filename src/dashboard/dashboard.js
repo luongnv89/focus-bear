@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup visualization page
     setupVisualizationPage({
-      defaultRange: 'week', // Default to week view to show more data
+      defaultRange: 'today', // Default to today view for accurate status
       fullPage: true,
       graphDimensions,
       listLimit: 50,
@@ -296,7 +296,7 @@ function renderTable() {
     // Visits cell
     const visitsTd = document.createElement('td');
     visitsTd.className = 'visits-cell';
-    visitsTd.textContent = row.count;
+    visitsTd.textContent = row.todayCount;
     tr.appendChild(visitsTd);
 
     // Subpaths cell
