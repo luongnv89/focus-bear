@@ -9,6 +9,8 @@
     "format": "prettier --write \"src/**/*.{js,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{js,html,css}\"",
     "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
     "version:update": "bash scripts/update-version.sh",
     "icons:generate": "node scripts/generate-icons.js",
     "build": "npm run version:update && node scripts/build.js",

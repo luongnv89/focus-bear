@@ -10,6 +10,16 @@ import {
   calculateFocusHeroBadges,
   createDefaultLimitConfig,
   deleteDomainData,
+  getAllData,
+  getVisits,
+  getLimits,
+  getLimitForDomain,
+  setLimitForDomain,
+  normalizeLimitConfig,
+  getSettings,
+  updateSettings,
+  clearAllData,
+  getVisitsInRange,
 } from '../src/background/storage.js';
 
 // Mock chrome.storage.local
@@ -330,6 +340,282 @@ describe('Storage Module', () => {
       expect(chrome.storage.local.data.visits[today]['example.com']).toBeUndefined();
       expect(chrome.storage.local.data.visits[today]['other.com']).toBeDefined();
       expect(chrome.storage.local.data.visits[yesterday]).toBeUndefined();
+    });
+  });
+
+  describe('getAllData', () => {
+    test('returns all storage data', async () => {
+      chrome.storage.local.data = {
+        visits: { '2025-11-17': { 'example.com': { count: 5 } } },
+        limits: { 'example.com': createDefaultLimitConfig() },
+        settings: { highContrastMode: true },
+      };
+
+      const data = await getAllData();
+
+      expect(data.visits).toBeDefined();
+      expect(data.limits).toBeDefined();
+      expect(data.settings).toBeDefined();
+    });
+
+    test('returns empty object when storage is empty', async () => {
+      const data = await getAllData();
+      expect(data).toEqual({});
+    });
+  });
+
+  describe('getVisits', () => {
+    test('returns visits object', async () => {
+      const todayKey = getTodayKey();
+      chrome.storage.local.data.visits = {
+        [todayKey]: {
+          'example.com': { count: 5, lastVisit: Date.now(), subpaths: {} },
+        },
+      };
+
+      const visits = await getVisits();
+      expect(visits[todayKey]).toBeDefined();
+      expect(visits[todayKey]['example.com'].count).toBe(5);
+    });
+
+    test('returns empty object when no visits', async () => {
+      const visits = await getVisits();
+      expect(visits).toEqual({});
+    });
+  });
+
+  describe('getLimits', () => {
+    test('returns limits object', async () => {
+      chrome.storage.local.data.limits = {
+        'example.com': createDefaultLimitConfig(),
+        'twitter.com': createDefaultLimitConfig({ daily: { enabled: true, limit: 5 } }),
+      };
+
+      const limits = await getLimits();
+      expect(limits['example.com']).toBeDefined();
+      expect(limits['twitter.com']).toBeDefined();
+      expect(limits['twitter.com'].daily.limit).toBe(5);
+    });
+
+    test('returns empty object when no limits', async () => {
+      const limits = await getLimits();
+      expect(limits).toEqual({});
+    });
+  });
+
+  describe('getLimitForDomain', () => {
+    test('returns limit config for domain', async () => {
+      const config = createDefaultLimitConfig({ daily: { enabled: true, limit: 10 } });
+      chrome.storage.local.data.limits = {
+        'example.com': config,
+      };
+
+      const limit = await getLimitForDomain('example.com');
+      expect(limit).toEqual(config);
+      expect(limit.daily.limit).toBe(10);
+    });
+
+    test('returns null for domain without limit', async () => {
+      chrome.storage.local.data.limits = {};
+      const limit = await getLimitForDomain('example.com');
+      expect(limit).toBeNull();
+    });
+  });
+
+  describe('setLimitForDomain', () => {
+    test('sets limit for domain', async () => {
+      await setLimitForDomain('example.com', {
+        enabled: true,
+        daily: { enabled: true, limit: 15 },
+      });
+
+      const limits = chrome.storage.local.data.limits;
+      expect(limits['example.com']).toBeDefined();
+      expect(limits['example.com'].daily.limit).toBe(15);
+    });
+
+    test('updates existing limit', async () => {
+      chrome.storage.local.data.limits = {
+        'example.com': createDefaultLimitConfig({ daily: { enabled: true, limit: 10 } }),
+      };
+
+      await setLimitForDomain('example.com', {
+        enabled: true,
+        daily: { enabled: true, limit: 20 },
+      });
+
+      expect(chrome.storage.local.data.limits['example.com'].daily.limit).toBe(20);
+    });
+
+    test('removes limit when set to null', async () => {
+      chrome.storage.local.data.limits = {
+        'example.com': createDefaultLimitConfig(),
+      };
+
+      await setLimitForDomain('example.com', null);
+
+      expect(chrome.storage.local.data.limits['example.com']).toBeUndefined();
+    });
+
+    test('normalizes partial config with defaults', async () => {
+      await setLimitForDomain('example.com', {
+        daily: { enabled: true, limit: 5 },
+      });
+
+      const config = chrome.storage.local.data.limits['example.com'];
+      expect(config.enabled).toBe(true);
+      expect(config.fiveHour.enabled).toBe(true);
+      expect(config.fiveHour.limit).toBe(10);
+    });
+  });
+
+  describe('normalizeLimitConfig', () => {
+    test('returns config as-is if already normalized', () => {
+      const config = createDefaultLimitConfig({ daily: { enabled: true, limit: 15 } });
+      const normalized = normalizeLimitConfig(config);
+      expect(normalized).toEqual(config);
+    });
+
+    test('converts legacy number format to new format', () => {
+      const normalized = normalizeLimitConfig(10);
+      expect(normalized.enabled).toBe(true);
+      expect(normalized.daily.enabled).toBe(true);
+      expect(normalized.daily.limit).toBe(10);
+    });
+
+    test('returns default config for invalid input', () => {
+      const normalized = normalizeLimitConfig(null);
+      expect(normalized.enabled).toBe(true);
+      expect(normalized.daily.limit).toBe(20);
+    });
+
+    test('converts legacy number to normalized config', () => {
+      const normalized = normalizeLimitConfig(25);
+      expect(normalized.daily.limit).toBe(25);
+      expect(normalized.fiveHour.enabled).toBe(true);
+    });
+  });
+
+  describe('getSettings', () => {
+    test('returns settings object', async () => {
+      chrome.storage.local.data.settings = {
+        highContrastMode: true,
+        onboardingComplete: true,
+      };
+
+      const settings = await getSettings();
+      expect(settings.highContrastMode).toBe(true);
+      expect(settings.onboardingComplete).toBe(true);
+    });
+
+    test('returns default settings when none exist', async () => {
+      const settings = await getSettings();
+      expect(settings.highContrastMode).toBe(false);
+      expect(settings.onboardingComplete).toBe(false);
+    });
+  });
+
+  describe('updateSettings', () => {
+    test('updates settings', async () => {
+      await updateSettings({ highContrastMode: true });
+
+      expect(chrome.storage.local.data.settings.highContrastMode).toBe(true);
+    });
+
+    test('merges with existing settings', async () => {
+      chrome.storage.local.data.settings = {
+        highContrastMode: false,
+        onboardingComplete: true,
+      };
+
+      await updateSettings({ highContrastMode: true });
+
+      expect(chrome.storage.local.data.settings.highContrastMode).toBe(true);
+      expect(chrome.storage.local.data.settings.onboardingComplete).toBe(true);
+    });
+
+    test('updates multiple settings at once', async () => {
+      await updateSettings({
+        highContrastMode: true,
+        onboardingComplete: true,
+      });
+
+      expect(chrome.storage.local.data.settings.highContrastMode).toBe(true);
+      expect(chrome.storage.local.data.settings.onboardingComplete).toBe(true);
+    });
+  });
+
+  describe('clearAllData', () => {
+    test('clears all storage data', async () => {
+      chrome.storage.local.data = {
+        visits: { '2025-11-17': { 'example.com': { count: 5 } } },
+        limits: { 'example.com': createDefaultLimitConfig() },
+        settings: { highContrastMode: true },
+      };
+
+      await clearAllData();
+
+      expect(chrome.storage.local.data).toEqual({});
+    });
+
+    test('works when storage is already empty', async () => {
+      await clearAllData();
+      expect(chrome.storage.local.data).toEqual({});
+    });
+  });
+
+  describe('getVisitsInRange', () => {
+    test('returns visits within date range', async () => {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      const todayKey = today.toISOString().split('T')[0];
+      const yesterdayKey = yesterday.toISOString().split('T')[0];
+      const twoDaysAgoKey = twoDaysAgo.toISOString().split('T')[0];
+      const threeDaysAgoKey = threeDaysAgo.toISOString().split('T')[0];
+
+      chrome.storage.local.data.visits = {
+        [todayKey]: { 'example.com': { count: 5 } },
+        [yesterdayKey]: { 'example.com': { count: 3 } },
+        [twoDaysAgoKey]: { 'example.com': { count: 2 } },
+        [threeDaysAgoKey]: { 'example.com': { count: 1 } },
+      };
+
+      const visits = await getVisitsInRange(yesterday, today);
+
+      expect(visits[todayKey]).toBeDefined();
+      expect(visits[yesterdayKey]).toBeDefined();
+      expect(visits[twoDaysAgoKey]).toBeUndefined();
+      expect(visits[threeDaysAgoKey]).toBeUndefined();
+    });
+
+    test('returns empty object when no visits in range', async () => {
+      const futureStart = new Date('2099-01-01');
+      const futureEnd = new Date('2099-01-31');
+
+      chrome.storage.local.data.visits = {
+        '2025-11-17': { 'example.com': { count: 5 } },
+      };
+
+      const visits = await getVisitsInRange(futureStart, futureEnd);
+      expect(Object.keys(visits).length).toBe(0);
+    });
+
+    test('handles single day range', async () => {
+      const today = new Date();
+      const todayKey = today.toISOString().split('T')[0];
+
+      chrome.storage.local.data.visits = {
+        [todayKey]: { 'example.com': { count: 5 } },
+      };
+
+      const visits = await getVisitsInRange(today, today);
+      expect(visits[todayKey]).toBeDefined();
     });
   });
 });
