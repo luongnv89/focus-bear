@@ -1,6 +1,18 @@
-# FocusBear
+<div align="center">
+  <img src="assets/icon.svg" alt="FocusBear Logo" width="128" height="128">
 
-A playful, privacy-first Chrome extension that helps you track your focus-switching habits through an interactive D3.js visualization.
+  # FocusBear
+
+  ### Your attention, mapped with empathy
+
+  A playful, privacy-first Chrome extension that helps you track your focus-switching habits through an interactive D3.js visualization.
+
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-yellow.svg)](https://www.google.com/chrome/)
+  [![Privacy First](https://img.shields.io/badge/Privacy-First-green.svg)](#privacy)
+</div>
+
+---
 
 ## Current Status
 
