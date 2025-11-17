@@ -164,17 +164,24 @@ export function renderRadialGraph(container, data, options = {}) {
       return d.count;
     });
 
+  // Detect dark mode preference
+  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const domainTextColor = isDarkMode ? '#e5e7eb' : '#1f2937';
+  const domainTextShadow = isDarkMode
+    ? '0 1px 3px rgba(0,0,0,0.8)'
+    : '0 0 2px rgba(255,255,255,0.8)';
+
   // Add domain name labels (below the circle)
   nodeGroup
     .filter((d) => !d.isCenter)
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => sizeScale(d.count) + 14)
-    .attr('fill', '#1f2937')
+    .attr('fill', domainTextColor)
     .attr('font-size', '11px')
     .attr('font-weight', 600)
     .attr('pointer-events', 'none')
-    .style('text-shadow', '0 0 2px rgba(255,255,255,0.8)')
+    .style('text-shadow', domainTextShadow)
     .text((d) => (d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id));
 
   // Add Focus Hero badges
