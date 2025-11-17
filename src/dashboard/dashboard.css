@@ -165,7 +165,8 @@
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 52px); /* Full height minus compact header */
+  flex: 1;
+  overflow: hidden;
 }
 
 /* Time Filter in Header */
