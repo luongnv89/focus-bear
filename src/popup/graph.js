@@ -170,11 +170,11 @@ export function renderRadialGraph(container, data, options = {}) {
     .append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', (d) => sizeScale(d.count) + 14)
-    .attr('fill', '#e5e7eb')
-    .attr('font-size', '10px')
-    .attr('font-weight', 500)
+    .attr('fill', '#1f2937')
+    .attr('font-size', '11px')
+    .attr('font-weight', 600)
     .attr('pointer-events', 'none')
-    .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
+    .style('text-shadow', '0 0 2px rgba(255,255,255,0.8)')
     .text((d) => (d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id));
 
   // Add Focus Hero badges
