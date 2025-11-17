@@ -3,7 +3,7 @@
  * Tests limit checking and blocking logic
  */
 
-import { checkLimit } from '../src/background/limits.js';
+import { checkLimit, getBlockedPageUrl, updateBlockingRules } from '../src/background/limits.js';
 import { createDefaultLimitConfig } from '../src/background/storage.js';
 
 // Mock chrome APIs
@@ -12,23 +12,26 @@ global.chrome = {
     local: {
       data: {},
       get(keys, callback) {
+        let result;
         if (keys === null || keys === undefined) {
-          callback(this.data);
+          result = this.data;
         } else if (Array.isArray(keys)) {
-          const result = {};
+          result = {};
           keys.forEach((key) => {
             if (this.data[key] !== undefined) {
               result[key] = this.data[key];
             }
           });
-          callback(result);
         } else {
-          callback({ [keys]: this.data[keys] });
+          result = { [keys]: this.data[keys] };
         }
+        if (callback) callback(result);
+        return Promise.resolve(result);
       },
       set(items, callback) {
         Object.assign(this.data, items);
         if (callback) callback();
+        return Promise.resolve();
       },
     },
   },
@@ -38,9 +41,30 @@ global.chrome = {
     },
   },
   declarativeNetRequest: {
-    updateDynamicRules(options, callback) {
+    dynamicRules: [],
+    async updateDynamicRules(options, callback) {
+      // Remove old rules first
+      if (options.removeRuleIds && options.removeRuleIds.length > 0) {
+        this.dynamicRules = this.dynamicRules.filter(
+          (rule) => !options.removeRuleIds.includes(rule.id),
+        );
+      }
+      // Then add new rules
+      if (options.addRules && options.addRules.length > 0) {
+        this.dynamicRules.push(...options.addRules);
+      }
       if (callback) callback();
+      return Promise.resolve();
     },
+    getDynamicRules() {
+      return Promise.resolve([...this.dynamicRules]);
+    },
+  },
+  runtime: {
+    getURL(path) {
+      return `chrome-extension://test-extension-id/${path}`;
+    },
+    id: 'test-extension-id',
   },
 };
 
@@ -243,6 +267,275 @@ describe('Limits Module', () => {
       const result = await checkLimit('example.com');
       expect(result.limit).toBe(7);
       expect(result.limitType).toBe('daily');
+    });
+  });
+
+  describe('getBlockedPageUrl', () => {
+    test('generates blocked page URL with query parameters', () => {
+      const url = getBlockedPageUrl('example.com', 15, 10, 'daily');
+
+      expect(url).toContain('chrome-extension://test-extension-id/src/blocked/blocked.html');
+      expect(url).toContain('domain=example.com');
+      expect(url).toContain('count=15');
+      expect(url).toContain('limit=10');
+      expect(url).toContain('limitType=daily');
+    });
+
+    test('generates URL with fiveHour limit type', () => {
+      const url = getBlockedPageUrl('twitter.com', 5, 3, 'fiveHour');
+
+      expect(url).toContain('domain=twitter.com');
+      expect(url).toContain('count=5');
+      expect(url).toContain('limit=3');
+      expect(url).toContain('limitType=fiveHour');
+    });
+
+    test('uses default limitType of daily if not specified', () => {
+      const url = getBlockedPageUrl('example.com', 10, 5);
+
+      expect(url).toContain('limitType=daily');
+    });
+
+    test('properly URL encodes domain with special characters', () => {
+      const url = getBlockedPageUrl('my-site.co.uk', 10, 5, 'daily');
+
+      expect(url).toContain('domain=my-site.co.uk');
+    });
+
+    test('handles large count and limit numbers', () => {
+      const url = getBlockedPageUrl('example.com', 1000, 999, 'daily');
+
+      expect(url).toContain('count=1000');
+      expect(url).toContain('limit=999');
+    });
+  });
+
+  describe('updateBlockingRules', () => {
+    beforeEach(() => {
+      chrome.storage.local.data = {};
+      chrome.declarativeNetRequest.dynamicRules = [];
+    });
+
+    test('creates blocking rules for domains exceeding daily limit', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 15, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      expect(rules.length).toBeGreaterThan(0);
+
+      const exampleRule = rules.find((r) => r.condition.urlFilter.includes('example.com'));
+      expect(exampleRule).toBeDefined();
+      expect(exampleRule.action.type).toBe('redirect');
+    });
+
+    test('creates rules for both domain and www version', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 12, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      const domainRule = rules.find((r) => r.condition.urlFilter === '*://example.com/*');
+      const wwwRule = rules.find((r) => r.condition.urlFilter === '*://www.example.com/*');
+
+      expect(domainRule).toBeDefined();
+      expect(wwwRule).toBeDefined();
+    });
+
+    test('does not create rules for domains under limit', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 5, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      expect(rules.length).toBe(0);
+    });
+
+    test('removes old rules when updating', async () => {
+      // Add some existing rules for a different domain
+      chrome.declarativeNetRequest.dynamicRules = [
+        {
+          id: 999,
+          action: { type: 'redirect' },
+          condition: { urlFilter: '*://old.com/*', resourceTypes: ['main_frame'] },
+        },
+      ];
+
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 15, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      // Old rules should be removed
+      const oldRule = chrome.declarativeNetRequest.dynamicRules.find(
+        (r) => r.condition.urlFilter === '*://old.com/*',
+      );
+      expect(oldRule).toBeUndefined();
+
+      // New rules for example.com should exist
+      const newRule = chrome.declarativeNetRequest.dynamicRules.find((r) =>
+        r.condition.urlFilter.includes('example.com'),
+      );
+      expect(newRule).toBeDefined();
+    });
+
+    test('blocks domains exceeding five-hour limit before daily limit', async () => {
+      const now = Date.now();
+      // Create 15 timestamps, all within the last 5 hours
+      const timestamps = Array.from({ length: 15 }, (_, i) => now - i * 60 * 1000); // 1 minute apart
+
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': {
+              count: 15,
+              lastVisit: now,
+              subpaths: {},
+              timestamps,
+            },
+          },
+        },
+        limits: {
+          'example.com': createDefaultLimitConfig({
+            fiveHour: { enabled: true, limit: 5 },
+            daily: { enabled: true, limit: 100 },
+          }),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      expect(rules.length).toBeGreaterThan(0);
+
+      const blockedDomainsMap = chrome.storage.local.data.blockedDomains;
+      expect(blockedDomainsMap['example.com']).toBeDefined();
+      expect(blockedDomainsMap['example.com'].limitType).toBe('fiveHour');
+    });
+
+    test('does not block domains when limits are disabled', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 100, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': createDefaultLimitConfig({
+            enabled: false,
+            daily: { enabled: true, limit: 10 },
+          }),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      expect(rules.length).toBe(0);
+    });
+
+    test('stores blocked domains info in storage', async () => {
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 15, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+            'twitter.com': { count: 10, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+          'twitter.com': buildDailyLimit(5),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const blockedDomains = chrome.storage.local.data.blockedDomains;
+      expect(blockedDomains['example.com']).toBeDefined();
+      expect(blockedDomains['twitter.com']).toBeDefined();
+      expect(blockedDomains['example.com'].count).toBe(15);
+      expect(blockedDomains['twitter.com'].count).toBe(10);
+      expect(blockedDomains['example.com'].blockedAt).toBeDefined();
+    });
+
+    test('handles empty visits gracefully', async () => {
+      chrome.storage.local.data = {
+        visits: {},
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      const rules = chrome.declarativeNetRequest.dynamicRules;
+      expect(rules.length).toBe(0);
+    });
+
+    test('handles error during rule update gracefully', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const originalUpdateRules = chrome.declarativeNetRequest.updateDynamicRules;
+
+      chrome.declarativeNetRequest.updateDynamicRules = jest
+        .fn()
+        .mockRejectedValue(new Error('API error'));
+
+      chrome.storage.local.data = {
+        visits: {
+          [todayKey()]: {
+            'example.com': { count: 15, lastVisit: Date.now(), subpaths: {}, timestamps: [] },
+          },
+        },
+        limits: {
+          'example.com': buildDailyLimit(10),
+        },
+      };
+
+      await updateBlockingRules();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error updating blocking rules:',
+        expect.any(Error),
+      );
+
+      // Restore
+      chrome.declarativeNetRequest.updateDynamicRules = originalUpdateRules;
+      consoleErrorSpy.mockRestore();
     });
   });
 });

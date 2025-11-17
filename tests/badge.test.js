@@ -3,7 +3,7 @@
  * Tests extension badge update logic
  */
 
-import { updateDomainBadge } from '../src/background/badge.js';
+import { updateDomainBadge, initializeBadge } from '../src/background/badge.js';
 import { getTodayKey } from '../src/background/storage.js';
 
 // Mock chrome.action and chrome.storage APIs
@@ -211,6 +211,104 @@ describe('Badge Module', () => {
       };
 
       await updateDomainBadge();
+      expect(chrome.action.badgeText).toBe('3');
+    });
+
+    test('handles error when setBadgeText fails', async () => {
+      const todayKey = getTodayKey();
+      chrome.storage.local.data.visits = {
+        [todayKey]: {
+          'example.com': { count: 1, lastVisit: Date.now(), subpaths: {} },
+        },
+      };
+
+      // Mock setBadgeText to throw an error
+      const originalSetBadgeText = chrome.action.setBadgeText;
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      chrome.action.setBadgeText = jest.fn().mockRejectedValue(new Error('API error'));
+
+      await updateDomainBadge();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error updating domain badge:',
+        expect.any(Error),
+      );
+
+      // Restore
+      chrome.action.setBadgeText = originalSetBadgeText;
+      consoleErrorSpy.mockRestore();
+    });
+
+    test('handles error when setBadgeBackgroundColor fails', async () => {
+      const todayKey = getTodayKey();
+      chrome.storage.local.data.visits = {
+        [todayKey]: {
+          'example.com': { count: 1, lastVisit: Date.now(), subpaths: {} },
+        },
+      };
+
+      // Mock setBadgeBackgroundColor to throw an error
+      const originalSetBadgeBackgroundColor = chrome.action.setBadgeBackgroundColor;
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      chrome.action.setBadgeBackgroundColor = jest
+        .fn()
+        .mockRejectedValue(new Error('API error'));
+
+      await updateDomainBadge();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error updating domain badge:',
+        expect.any(Error),
+      );
+
+      // Restore
+      chrome.action.setBadgeBackgroundColor = originalSetBadgeBackgroundColor;
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('initializeBadge', () => {
+    test('calls updateDomainBadge and logs initialization', async () => {
+      const todayKey = getTodayKey();
+      chrome.storage.local.data.visits = {
+        [todayKey]: {
+          'example.com': { count: 5, lastVisit: Date.now(), subpaths: {} },
+        },
+      };
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      await initializeBadge();
+
+      expect(consoleLogSpy).toHaveBeenCalledWith('Initializing domain counter badge...');
+      expect(consoleLogSpy).toHaveBeenCalledWith('Domain counter badge initialized');
+      expect(chrome.action.badgeText).toBe('1');
+      expect(chrome.action.badgeColor).toBe('#0E75B6');
+
+      consoleLogSpy.mockRestore();
+    });
+
+    test('initializes badge with zero domains', async () => {
+      chrome.storage.local.data.visits = {};
+
+      await initializeBadge();
+
+      expect(chrome.action.badgeText).toBe('');
+      expect(chrome.action.badgeColor).toBe('#0E75B6');
+    });
+
+    test('initializes badge with multiple domains', async () => {
+      const todayKey = getTodayKey();
+      chrome.storage.local.data.visits = {
+        [todayKey]: {
+          'example.com': { count: 5, lastVisit: Date.now(), subpaths: {} },
+          'twitter.com': { count: 3, lastVisit: Date.now(), subpaths: {} },
+          'github.com': { count: 8, lastVisit: Date.now(), subpaths: {} },
+        },
+      };
+
+      await initializeBadge();
+
       expect(chrome.action.badgeText).toBe('3');
     });
   });
