@@ -1,23 +1,32 @@
-/* FocusBear Popup Styles */
-/* Brand Colors from brand_kit.md */
+/* FocusBear Dark Mode Theme */
+/* Dark blue optimized design */
 :root {
-  --color-primary: #87ceeb;
-  --color-primary-light: #b3e0f7;
-  --color-primary-lighter: #e0f4ff;
-  --color-primary-dark: #5dade2;
-  --color-secondary: #6c5ce7;
-  --color-secondary-light: #a29bff;
-  --color-secondary-dark: #4b3ac9;
-  --color-warning: #ff9f43;
-  --color-success: #55efc4;
-  --color-error: #d63031;
-  --color-info: #ffdd57;
-  --color-text-dark: #111827;
-  --color-text-muted: #4b5563;
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
-  --color-card: #ffffff;
-  --color-surface: #f3f4f6;
+  /* Primary colors - Dark Blue palette */
+  --color-primary: #3b82f6;
+  --color-primary-light: #60a5fa;
+  --color-primary-lighter: #1e3a8a;
+  --color-primary-dark: #1e40af;
+
+  /* Secondary colors */
+  --color-secondary: #8b5cf6;
+  --color-secondary-light: #a78bfa;
+  --color-secondary-dark: #6d28d9;
+
+  /* Status colors - adjusted for dark mode */
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-info: #0ea5e9;
+
+  /* Dark mode text and surfaces */
+  --color-text-dark: #f1f5f9;
+  --color-text-muted: #cbd5e1;
+
+  /* Dark mode backgrounds */
+  --color-border: #1e293b;
+  --color-border-light: #334155;
+  --color-card: #0f172a;
+  --color-surface: #020617;
 }
 
 * {
@@ -52,7 +61,7 @@ body.dashboard-view .container {
   margin: 32px auto;
   min-height: 80vh;
   border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   background: var(--color-card);
 }
 
@@ -67,23 +76,6 @@ body.dashboard-view main {
 
 body.dashboard-view .graph-container {
   min-height: 600px;
-}
-
-body.high-contrast {
-  --color-card: #0f172a;
-  --color-surface: #020617;
-  --color-text-dark: #f8fafc;
-  --color-text-muted: #cbd5f5;
-  --color-border: #1e293b;
-  --color-border-light: #0f172a;
-  --color-primary: #0ea5e9;
-  --color-primary-light: #38bdf8;
-  --color-primary-lighter: #082f49;
-  --color-primary-dark: #0284c7;
-  --color-secondary: #c084fc;
-  --color-secondary-dark: #a855f7;
-  --color-warning: #fb923c;
-  --color-success: #34d399;
 }
 
 .container {

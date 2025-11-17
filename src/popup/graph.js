@@ -138,13 +138,13 @@ export function renderRadialGraph(container, data, options = {}) {
     .append('circle')
     .attr('r', (d) => (d.isCenter ? 35 : sizeScale(d.count)))
     .attr('fill', (d) => {
-      if (d.isCenter) return '#6C5CE7'; // Focus Purple for center
-      if (highlightedDomain && d.id === highlightedDomain) return '#FF9F43'; // Warning Orange
-      return '#5DADE2'; // Brand Primary dark
+      if (d.isCenter) return '#3b82f6'; // Primary blue for center
+      if (highlightedDomain && d.id === highlightedDomain) return '#f59e0b'; // Warning amber
+      return '#60a5fa'; // Primary light blue for nodes
     })
     .attr('stroke', (d) => {
-      if (highlightedDomain && d.id === highlightedDomain) return '#D63031';
-      return '#E0F4FF';
+      if (highlightedDomain && d.id === highlightedDomain) return '#ef4444';
+      return '#1e40af';
     })
     .attr('stroke-width', 2)
     .attr('opacity', 0.9);
@@ -164,12 +164,9 @@ export function renderRadialGraph(container, data, options = {}) {
       return d.count;
     });
 
-  // Detect dark mode preference
-  const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const domainTextColor = isDarkMode ? '#e5e7eb' : '#1f2937';
-  const domainTextShadow = isDarkMode
-    ? '0 1px 3px rgba(0,0,0,0.8)'
-    : '0 0 2px rgba(255,255,255,0.8)';
+  // Dark mode only - optimized for dark blue theme
+  const domainTextColor = '#e2e8f0'; // Light text for dark mode
+  const domainTextShadow = '0 1px 3px rgba(0,0,0,0.8)'; // Dark shadow for depth
 
   // Add domain name labels (below the circle)
   nodeGroup
