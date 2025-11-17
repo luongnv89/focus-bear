@@ -6,6 +6,7 @@ import {
   normalizeLimitConfig,
   createDefaultLimitConfig,
 } from '../background/storage.js';
+import { updateBlockingRules } from '../background/limits.js';
 
 let currentTableData = [];
 let currentLimits = {};
@@ -498,6 +499,10 @@ async function handleInlineLimitToggle(domain, enabled) {
 
     updatedConfig.enabled = enabled;
     await setLimitForDomain(domain, updatedConfig);
+
+    // Update blocking rules to reflect the limit change
+    await updateBlockingRules();
+
     currentLimits = await getLimits();
     currentTableData = prepareTableData(currentAggregatedData);
     renderTable();
@@ -533,19 +538,25 @@ async function handleDomainDrilldown(event) {
     <div class="drilldown-table-header">
       <div class="drilldown-info">
         <h3>Path Statistics for ${domain}</h3>
-        <p class="panel-subtitle">${domainData.count} total visits • ${Object.keys(domainData.subpaths || {}).length} subpaths</p>
+        <p class="panel-subtitle">${domainData.count} total visits • ${
+          Object.keys(domainData.subpaths || {}).length
+        } subpaths</p>
       </div>
       <div class="drilldown-status">
-        ${limitConfig && limitConfig.enabled ? `
+        ${
+          limitConfig && limitConfig.enabled
+            ? `
           <span class="limit-status-badge limit-enabled">✓ Limits Active</span>
           <span class="limit-details">
             ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
             ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
             ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
           </span>
-        ` : `
+        `
+            : `
           <span class="limit-status-badge limit-disabled">No limits</span>
-        `}
+        `
+        }
         <button class="drilldown-edit-btn" data-domain="${domain}">
           Edit Limitation Settings
         </button>
@@ -557,9 +568,11 @@ async function handleDomainDrilldown(event) {
   const editBtn = panelHeader.querySelector('.drilldown-edit-btn');
   if (editBtn) {
     editBtn.addEventListener('click', () => {
-      window.dispatchEvent(new CustomEvent('openDomainSettings', {
-        detail: { domain }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('openDomainSettings', {
+          detail: { domain },
+        }),
+      );
     });
   }
 

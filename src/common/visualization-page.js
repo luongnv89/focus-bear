@@ -14,6 +14,7 @@ import {
   normalizeLimitConfig,
   createDefaultLimitConfig,
 } from '../background/storage.js';
+import { updateBlockingRules } from '../background/limits.js';
 
 /**
  * Load aggregated stats for a given time range
@@ -559,6 +560,10 @@ export async function setupVisualizationPage(options = {}) {
           limitConfig.enabled = newEnabled;
 
           await setLimitForDomain(domain, limitConfig);
+
+          // Update blocking rules to reflect the limit change
+          await updateBlockingRules();
+
           await refreshLimitList();
           showSettingsToast(`${domain} limits ${newEnabled ? 'enabled' : 'disabled'}`);
         } catch (error) {
@@ -570,6 +575,10 @@ export async function setupVisualizationPage(options = {}) {
       } else if (action === 'remove') {
         try {
           await setLimitForDomain(domain, null);
+
+          // Update blocking rules to reflect the limit removal
+          await updateBlockingRules();
+
           await refreshLimitList();
           showSettingsToast(`Removed limit for ${domain}`);
         } catch (error) {
@@ -621,6 +630,10 @@ export async function setupVisualizationPage(options = {}) {
           limitConfig.enabled = newEnabled;
 
           await setLimitForDomain(domain, limitConfig);
+
+          // Update blocking rules to reflect the limit change
+          await updateBlockingRules();
+
           await renderVisualization(currentRange);
         } catch (error) {
           console.error('Unable to toggle limit:', error);
@@ -728,6 +741,10 @@ export async function setupVisualizationPage(options = {}) {
         };
 
         await setLimitForDomain(normalizedDomain, limitConfig);
+
+        // Update blocking rules to reflect the limit change
+        await updateBlockingRules();
+
         limitForm.reset();
         // Restore default values after reset
         resetLimitFormToDefaults();
