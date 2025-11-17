@@ -226,6 +226,15 @@ export function renderRadialGraph(container, data, options = {}) {
       if (hasSubpaths) {
         drilledDownDomain = d.id;
         currentView = 'subpaths';
+
+        // Dispatch event for dashboard to show subpath table
+        window.dispatchEvent(new CustomEvent('domainDrilldown', {
+          detail: {
+            domain: d.id,
+            domainData: d
+          }
+        }));
+
         renderSubpathView(d.id);
       } else {
         // Show message if no subpaths
@@ -309,7 +318,7 @@ export function renderRadialGraph(container, data, options = {}) {
   }
 
   // Function to render subpath drilldown view
-  async function renderSubpathView(domainId) {
+  function renderSubpathView(domainId) {
     const domainData = topDomains.find((d) => d.id === domainId);
     if (!domainData || !domainData.subpaths) return;
 
@@ -324,7 +333,7 @@ export function renderRadialGraph(container, data, options = {}) {
 
     // Sort by count and limit
     subpaths.sort((a, b) => b.count - a.count);
-    const topSubpaths = subpaths.slice(0, 50); // Increased for table view
+    const topSubpaths = subpaths.slice(0, 20);
 
     if (topSubpaths.length === 0) {
       return; // No subpaths to show
@@ -332,199 +341,7 @@ export function renderRadialGraph(container, data, options = {}) {
 
     // Clear existing visualization
     simulation.stop();
-    container.innerHTML = '';
-
-    // Create drilldown container
-    const drilldownContainer = document.createElement('div');
-    drilldownContainer.className = 'domain-drilldown-view';
-    container.appendChild(drilldownContainer);
-
-    // Fetch limitation data for this domain
-    let limitConfig = null;
-    try {
-      const { getLimitForDomain } = await import('../background/storage.js');
-      limitConfig = await getLimitForDomain(domainId);
-    } catch (error) {
-      console.error('Failed to load limit config:', error);
-    }
-
-    // Render header with limitation status
-    renderDrilldownHeader(drilldownContainer, domainId, domainData, limitConfig);
-
-    // Render subpath table
-    renderSubpathTable(drilldownContainer, topSubpaths, domainId);
-
-    // Render topology view (existing graph)
-    renderSubpathGraph(drilldownContainer, domainId, domainData, topSubpaths);
-  }
-
-  // Function to render drilldown header with limitation status
-  function renderDrilldownHeader(container, domainId, domainData, limitConfig) {
-    const header = document.createElement('div');
-    header.className = 'drilldown-header';
-
-    // Back button
-    const backBtn = document.createElement('button');
-    backBtn.className = 'drilldown-back-btn';
-    backBtn.innerHTML = '← Back';
-    backBtn.setAttribute('aria-label', 'Back to domains view');
-    backBtn.addEventListener('click', () => {
-      drilledDownDomain = null;
-      currentView = 'domains';
-      renderRadialGraph(container.parentElement, data, options);
-    });
-
-    // Domain info
-    const domainInfo = document.createElement('div');
-    domainInfo.className = 'drilldown-domain-info';
-
-    const domainTitle = document.createElement('h2');
-    domainTitle.className = 'drilldown-domain-title';
-    domainTitle.textContent = domainId;
-
-    const domainStats = document.createElement('p');
-    domainStats.className = 'drilldown-domain-stats';
-    const subpathCount = Object.keys(domainData.subpaths || {}).length;
-    domainStats.textContent = `${domainData.count} total visits • ${subpathCount} subpaths`;
-
-    domainInfo.appendChild(domainTitle);
-    domainInfo.appendChild(domainStats);
-
-    // Limitation status
-    const limitStatus = document.createElement('div');
-    limitStatus.className = 'drilldown-limit-status';
-
-    if (limitConfig && limitConfig.enabled) {
-      const statusBadge = document.createElement('span');
-      statusBadge.className = 'limit-status-badge limit-enabled';
-      statusBadge.textContent = '✓ Limits Active';
-
-      const limitDetails = document.createElement('span');
-      limitDetails.className = 'limit-details';
-      const limits = [];
-      if (limitConfig.fiveHour?.enabled) {
-        limits.push(`${limitConfig.fiveHour.limit}/5hr`);
-      }
-      if (limitConfig.daily?.enabled) {
-        limits.push(`${limitConfig.daily.limit}/day`);
-      }
-      limitDetails.textContent = limits.join(' • ');
-
-      limitStatus.appendChild(statusBadge);
-      if (limits.length > 0) {
-        limitStatus.appendChild(limitDetails);
-      }
-    } else {
-      const statusBadge = document.createElement('span');
-      statusBadge.className = 'limit-status-badge limit-disabled';
-      statusBadge.textContent = 'No limits';
-      limitStatus.appendChild(statusBadge);
-    }
-
-    // Edit limitation button
-    const editBtn = document.createElement('button');
-    editBtn.className = 'drilldown-edit-btn';
-    editBtn.textContent = 'Edit Limitation Settings';
-    editBtn.setAttribute('aria-label', `Edit limitation settings for ${domainId}`);
-    editBtn.addEventListener('click', () => {
-      // Trigger settings panel to open with this domain pre-selected
-      const settingsEvent = new CustomEvent('openDomainSettings', {
-        detail: { domain: domainId }
-      });
-      window.dispatchEvent(settingsEvent);
-    });
-
-    header.appendChild(backBtn);
-    header.appendChild(domainInfo);
-    header.appendChild(limitStatus);
-    header.appendChild(editBtn);
-
-    container.appendChild(header);
-  }
-
-  // Function to render subpath table
-  function renderSubpathTable(container, subpaths, domainId) {
-    const tableContainer = document.createElement('div');
-    tableContainer.className = 'drilldown-table-container';
-
-    const tableTitle = document.createElement('h3');
-    tableTitle.className = 'drilldown-section-title';
-    tableTitle.textContent = 'Subpath Details';
-
-    const table = document.createElement('table');
-    table.className = 'drilldown-table';
-
-    // Table header
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-      <tr>
-        <th>Subpath</th>
-        <th>Visits</th>
-        <th>Last Visit</th>
-        <th>% of Total</th>
-      </tr>
-    `;
-    table.appendChild(thead);
-
-    // Table body
-    const tbody = document.createElement('tbody');
-    const totalVisits = subpaths.reduce((sum, sp) => sum + sp.count, 0);
-
-    subpaths.forEach((subpath) => {
-      const tr = document.createElement('tr');
-
-      const percentage = ((subpath.count / totalVisits) * 100).toFixed(1);
-      const lastVisitDate = new Date(subpath.lastVisit).toLocaleString();
-
-      tr.innerHTML = `
-        <td class="subpath-cell">
-          <span class="subpath-domain">${domainId}</span>
-          <span class="subpath-path">${subpath.subpath}</span>
-        </td>
-        <td class="visits-cell">${subpath.count}</td>
-        <td class="date-cell">${lastVisitDate}</td>
-        <td class="percentage-cell">
-          <div class="percentage-bar-container">
-            <div class="percentage-bar" style="width: ${percentage}%"></div>
-            <span class="percentage-text">${percentage}%</span>
-          </div>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-
-    table.appendChild(tbody);
-
-    tableContainer.appendChild(tableTitle);
-    tableContainer.appendChild(table);
-    container.appendChild(tableContainer);
-  }
-
-  // Function to render subpath graph (original visualization)
-  function renderSubpathGraph(container, domainId, domainData, topSubpaths) {
-    const graphContainer = document.createElement('div');
-    graphContainer.className = 'drilldown-graph-container';
-
-    const graphTitle = document.createElement('h3');
-    graphTitle.className = 'drilldown-section-title';
-    graphTitle.textContent = 'Topology View';
-
-    graphContainer.appendChild(graphTitle);
-
-    // Create SVG for graph
-    const graphSvg = document.createElement('div');
-    graphSvg.className = 'drilldown-graph';
-    graphContainer.appendChild(graphSvg);
-    container.appendChild(graphContainer);
-
-    // Create SVG element
-    const svg = d3.select(graphSvg)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', 350)
-      .attr('role', 'img')
-      .attr('aria-label', `Topology view of ${domainId} subpaths`);
+    svg.selectAll('*').remove();
 
     // Create center node (domain)
     const centerNode = {
@@ -533,7 +350,7 @@ export function renderRadialGraph(container, data, options = {}) {
       isCenter: true,
       isDomain: true,
       fx: width / 2,
-      fy: 175, // Center of 350px height
+      fy: height / 2,
     };
 
     // Calculate node sizes for subpaths
@@ -565,7 +382,7 @@ export function renderRadialGraph(container, data, options = {}) {
           .strength(0.6),
       )
       .force('charge', d3.forceManyBody().strength(-100))
-      .force('center', d3.forceCenter(width / 2, 175))
+      .force('center', d3.forceCenter(width / 2, height / 2))
       .force(
         'collision',
         d3.forceCollide().radius((d) => (d.isCenter ? 45 : subpathSizeScale(d.count) + 5)),
@@ -618,26 +435,43 @@ export function renderRadialGraph(container, data, options = {}) {
         if (d.isCenter) {
           return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
         }
-        // Always show subpath name for consistency
         const shortPath = d.subpath.length > 10 ? `${d.subpath.substring(0, 8)}...` : d.subpath;
         return shortPath;
       });
 
-    // Create tooltip for graph
-    const graphTooltip = d3
-      .select(graphSvg)
-      .append('div')
-      .attr('class', 'graph-tooltip')
-      .style('position', 'absolute')
-      .style('visibility', 'hidden')
-      .style('background', '#111827')
-      .style('color', '#f9fafb')
-      .style('padding', '8px 12px')
-      .style('border-radius', '6px')
-      .style('font-size', '12px')
-      .style('pointer-events', 'none')
-      .style('z-index', '1000')
-      .style('box-shadow', '0 8px 30px rgba(15,23,42,0.25)');
+    // Add "Back" button
+    const backBtn = svg
+      .append('g')
+      .attr('class', 'back-button')
+      .attr('transform', `translate(20, 20)`)
+      .style('cursor', 'pointer')
+      .on('click', () => {
+        drilledDownDomain = null;
+        currentView = 'domains';
+
+        // Dispatch event to reset table
+        window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+
+        renderRadialGraph(container, data, options);
+      });
+
+    backBtn
+      .append('rect')
+      .attr('width', 60)
+      .attr('height', 28)
+      .attr('rx', 14)
+      .attr('fill', '#0E75B6')
+      .attr('opacity', 0.9);
+
+    backBtn
+      .append('text')
+      .attr('x', 30)
+      .attr('y', 18)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'white')
+      .attr('font-size', '12px')
+      .attr('font-weight', 600)
+      .text('← Back');
 
     // Tooltips for subpaths
     subpathNodeGroup
@@ -645,27 +479,40 @@ export function renderRadialGraph(container, data, options = {}) {
         d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
 
         if (d.isCenter) {
-          graphTooltip.html(`
+          tooltip.html(`
             <strong>${d.id}</strong><br/>
-            Total visits: ${d.count}
+            Total visits: ${d.count}<br/>
+            Click to return to domains
           `);
         } else {
           const lastVisitDate = new Date(d.lastVisit).toLocaleString();
-          graphTooltip.html(`
+          tooltip.html(`
             <strong>${d.domain}</strong><br/>
             Path: ${d.subpath}<br/>
             Visits: ${d.count}<br/>
             Last visit: ${lastVisitDate}
           `);
         }
-        graphTooltip.style('visibility', 'visible');
+        tooltip.style('visibility', 'visible');
       })
       .on('mousemove', (event) => {
-        graphTooltip.style('top', `${event.pageY - 60}px`).style('left', `${event.pageX + 10}px`);
+        tooltip.style('top', `${event.pageY - 60}px`).style('left', `${event.pageX + 10}px`);
       })
       .on('mouseleave', function () {
         d3.select(this).select('circle').attr('opacity', 0.9).attr('stroke-width', 2);
-        graphTooltip.style('visibility', 'hidden');
+        tooltip.style('visibility', 'hidden');
+      })
+      .on('click', function (event, d) {
+        if (d.isCenter) {
+          // Exit drilldown
+          drilledDownDomain = null;
+          currentView = 'domains';
+
+          // Dispatch event to reset table
+          window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+
+          renderRadialGraph(container, data, options);
+        }
       });
 
     // Update positions on simulation tick
@@ -678,6 +525,9 @@ export function renderRadialGraph(container, data, options = {}) {
 
       subpathNodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
     });
+
+    // Update cleanup to stop subpath simulation
+    simulation.stop = () => subpathSimulation.stop();
   }
 
   // Log performance metrics
