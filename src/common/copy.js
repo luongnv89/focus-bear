@@ -48,7 +48,8 @@ export const COPY = {
     // Limits Section
     limits: {
       title: 'Per-site daily limits',
-      subtitle: "Cap visits to distracting sites. We'll redirect you to the bear wall when you hit the limit.",
+      subtitle:
+        "Cap visits to distracting sites. We'll redirect you to the bear wall when you hit the limit.",
       domainLabel: 'Domain',
       domainPlaceholder: 'example.com',
       limitLabel: 'Daily visits allowed',
@@ -118,7 +119,7 @@ export const COPY = {
       },
       {
         heading: 'Your limit, your rules! 📏',
-        subtext: 'You decided this boundary. Stick with it—you'll thank yourself later.',
+        subtext: "You decided this boundary. Stick with it - you'll thank yourself later.",
       },
     ],
     limitReached: (domain) => `You've hit your daily limit for <strong>${domain}</strong>.`,
@@ -185,7 +186,7 @@ export const COPY = {
  * @returns {Object} Message with heading and subtext
  */
 export function getRandomBlockedMessage() {
-  const messages = COPY.blockedPage.messages;
+  const { messages } = COPY.blockedPage;
   return messages[Math.floor(Math.random() * messages.length)];
 }
 

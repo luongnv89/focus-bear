@@ -15,9 +15,10 @@ export function renderRadialGraph(container, data, options = {}) {
   // Performance monitoring
   const graphPerfStart = performance.now();
 
-  // Drilldown state
-  let drilledDownDomain = null;
-  let currentView = 'domains'; // 'domains' or 'subpaths'
+  // Drilldown state (reserved for future enhancement)
+  let drilledDownDomain = null; // eslint-disable-line no-unused-vars
+  let currentView = 'domains'; // eslint-disable-line no-unused-vars
+  // 'domains' or 'subpaths'
 
   // Clear existing content
   container.innerHTML = '';
@@ -164,9 +165,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('font-weight', 500)
     .attr('pointer-events', 'none')
     .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
-    .text((d) => {
-      return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
-    });
+    .text((d) => (d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id));
 
   // Add Focus Hero badges
   nodeGroup
@@ -201,7 +200,7 @@ export function renderRadialGraph(container, data, options = {}) {
   let focusedNode = null;
 
   nodeGroup
-    .on('click', function (event, d) {
+    .on('click', (event, d) => {
       if (d.isCenter) {
         // Clicking center resets focus
         focusedNode = null;
@@ -227,12 +226,10 @@ export function renderRadialGraph(container, data, options = {}) {
         });
 
         // Dim unrelated links
-        link.attr('stroke-opacity', (l) => {
-          return l.target.id === focusedNode ? 1 : 0.15;
-        });
+        link.attr('stroke-opacity', (l) => (l.target.id === focusedNode ? 1 : 0.15));
       }
     })
-    .on('dblclick', function (event, d) {
+    .on('dblclick', (event, d) => {
       if (d.isCenter) return;
 
       // Double-click triggers subpath drilldown
@@ -242,12 +239,14 @@ export function renderRadialGraph(container, data, options = {}) {
         currentView = 'subpaths';
 
         // Dispatch event for dashboard to show subpath table
-        window.dispatchEvent(new CustomEvent('domainDrilldown', {
-          detail: {
-            domain: d.id,
-            domainData: d
-          }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('domainDrilldown', {
+            detail: {
+              domain: d.id,
+              domainData: d,
+            },
+          }),
+        );
 
         renderSubpathView(d.id);
       } else {
@@ -274,7 +273,8 @@ export function renderRadialGraph(container, data, options = {}) {
       const subpathCount = Object.keys(d.subpaths).length;
       const lastVisitDate = new Date(d.lastVisit).toLocaleString();
 
-      const drilldownHint = subpathCount > 0 ? '<br/><em>Double-click to explore subpaths</em>' : '';
+      const drilldownHint =
+        subpathCount > 0 ? '<br/><em>Double-click to explore subpaths</em>' : '';
       const badgeInfo = badges[d.id]
         ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
         : '';
@@ -358,7 +358,7 @@ export function renderRadialGraph(container, data, options = {}) {
     svg.selectAll('*').remove();
 
     // Create center node (domain)
-    const centerNode = {
+    const domainCenterNode = {
       id: domainId,
       count: domainData.count,
       isCenter: true,
@@ -376,7 +376,7 @@ export function renderRadialGraph(container, data, options = {}) {
       .range([6, 20]);
 
     // Combine center and subpath nodes
-    const subpathNodes = [centerNode, ...topSubpaths.map((s) => ({ ...s, isCenter: false }))];
+    const subpathNodes = [domainCenterNode, ...topSubpaths.map((s) => ({ ...s, isCenter: false }))];
 
     // Create links from domain to all subpaths
     const subpathLinks = topSubpaths.map((s) => ({
@@ -472,7 +472,7 @@ export function renderRadialGraph(container, data, options = {}) {
     const backBtn = svg
       .append('g')
       .attr('class', 'back-button')
-      .attr('transform', `translate(20, 20)`)
+      .attr('transform', 'translate(20, 20)')
       .style('cursor', 'pointer')
       .on('click', () => {
         drilledDownDomain = null;
@@ -531,7 +531,7 @@ export function renderRadialGraph(container, data, options = {}) {
         d3.select(this).select('circle').attr('opacity', 0.9).attr('stroke-width', 2);
         tooltip.style('visibility', 'hidden');
       })
-      .on('click', function (event, d) {
+      .on('click', (event, d) => {
         if (d.isCenter) {
           // Exit drilldown
           drilledDownDomain = null;
@@ -563,9 +563,11 @@ export function renderRadialGraph(container, data, options = {}) {
   const graphPerfEnd = performance.now();
   const graphRenderTime = Math.round(graphPerfEnd - graphPerfStart);
   const nodeCount = nodes.length;
-  console.log(`[FocusBear Performance] Graph render time: ${graphRenderTime}ms for ${nodeCount} nodes`);
+  console.log(
+    `[FocusBear Performance] Graph render time: ${graphRenderTime}ms for ${nodeCount} nodes`,
+  );
   if (graphRenderTime > 1000) {
-    console.warn(`[FocusBear Performance] Graph render time exceeds target of 1000ms`);
+    console.warn('[FocusBear Performance] Graph render time exceeds target of 1000ms');
   }
 
   // Return cleanup function

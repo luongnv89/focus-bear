@@ -197,7 +197,7 @@
 /* Stats Summary in Header */
 .stats-summary {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   padding: 0;
   border: none;
   flex-shrink: 0;
@@ -206,21 +206,21 @@
 .stat-item {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: 2px;
   white-space: nowrap;
 }
 
 .stat-item strong {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--color-primary);
 }
 
 .stat-label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 /* View Container - Split Layout */
@@ -263,19 +263,19 @@
 }
 
 .panel-header {
-  padding: 20px 24px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--color-border);
 }
 
 .panel-header h3 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-dark);
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
 }
 
 .panel-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-muted);
   margin: 0;
 }
@@ -308,16 +308,16 @@
 /* Table Panel */
 .table-controls {
   display: flex;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 #table-search {
   flex: 1;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 5px;
+  font-size: 12px;
   outline: none;
   transition: border-color 0.2s;
 }
@@ -327,10 +327,10 @@
 }
 
 #table-sort {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 5px;
+  font-size: 12px;
   background: white;
   cursor: pointer;
   outline: none;
@@ -347,7 +347,7 @@
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .data-table thead {
@@ -359,12 +359,12 @@
 
 .data-table th {
   text-align: left;
-  padding: 12px 16px;
+  padding: 8px 12px;
   font-weight: 600;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  letter-spacing: 0.4px;
   border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
 }
@@ -380,8 +380,9 @@
 
 .sort-indicator {
   display: inline-block;
-  margin-left: 6px;
+  margin-left: 4px;
   opacity: 0.3;
+  font-size: 9px;
 }
 
 .sort-indicator::after {
@@ -410,13 +411,54 @@
 }
 
 .data-table td {
-  padding: 14px 16px;
+  padding: 10px 12px;
   color: var(--color-text-dark);
 }
 
+/* Column-specific styling for better space management */
+.data-table th:nth-child(1),
 .domain-cell {
+  min-width: 180px;
   font-weight: 500;
   color: var(--color-primary);
+}
+
+.data-table th:nth-child(2),
+.visits-cell {
+  width: 65px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.data-table th:nth-child(3),
+.subpaths-cell {
+  width: 60px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.data-table th:nth-child(4) {
+  width: 90px;
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+  width: 65px;
+  text-align: center;
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  width: 95px;
+  text-align: center;
+}
+
+.data-table th:nth-child(7),
+.actions-cell {
+  width: 40px;
+  text-align: center;
 }
 
 .domain-link {
@@ -434,24 +476,14 @@
   text-decoration: underline;
 }
 
-.visits-cell {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.subpaths-cell {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
 .status-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .status-badge.under-limit {
@@ -496,8 +528,8 @@
 .table-toggle {
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 24px;
+  width: 40px;
+  height: 20px;
   cursor: pointer;
 }
 
@@ -514,15 +546,15 @@
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  border-radius: 24px;
+  border-radius: 20px;
   transition: background-color 0.3s;
 }
 
 .toggle-slider::before {
   content: '';
   position: absolute;
-  height: 18px;
-  width: 18px;
+  height: 14px;
+  width: 14px;
   left: 3px;
   bottom: 3px;
   background-color: white;
@@ -535,7 +567,7 @@
 }
 
 .table-toggle input:checked + .toggle-slider::before {
-  transform: translateX(20px);
+  transform: translateX(16px);
 }
 
 .table-toggle input:focus + .toggle-slider {
@@ -544,9 +576,9 @@
 
 /* Small pill button for table */
 .pill-button-small {
-  padding: 4px 12px;
-  font-size: 12px;
-  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 11px;
+  border-radius: 10px;
   border: 1px solid var(--color-border);
   background: var(--color-card);
   color: var(--color-text-dark);
@@ -591,16 +623,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 16px;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
 }
 
 .pagination-info {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 
@@ -612,18 +644,19 @@
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .pagination-btn {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   color: var(--color-text-dark);
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
   transition: all 0.2s;
+  min-width: 24px;
 }
 
 .pagination-btn:hover:not(:disabled) {
@@ -638,10 +671,10 @@
 }
 
 .pagination-page {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--color-text-dark);
   font-weight: 600;
-  min-width: 60px;
+  min-width: 50px;
   text-align: center;
 }
 
@@ -649,9 +682,9 @@
   background: var(--color-card);
   border: 1px solid var(--color-border);
   color: var(--color-text-dark);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
   cursor: pointer;
 }
 
