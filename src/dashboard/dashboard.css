@@ -265,20 +265,23 @@
 
 .panel-header {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 2px solid var(--color-primary-lighter);
+  background: linear-gradient(to right, #f8faff, transparent);
 }
 
 .panel-header h3 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-dark);
-  margin: 0 0 2px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.2px;
 }
 
 .panel-subtitle {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-muted);
   margin: 0;
+  font-weight: 400;
 }
 
 /* Graph Container - Optimized for larger space */
@@ -360,14 +363,15 @@
 
 .data-table th {
   text-align: left;
-  padding: 8px 12px;
-  font-weight: 600;
-  color: var(--color-text-muted);
+  padding: 10px 12px;
+  font-weight: 700;
+  color: var(--color-primary);
   text-transform: uppercase;
   font-size: 10px;
-  letter-spacing: 0.4px;
-  border-bottom: 2px solid var(--color-border);
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--color-primary-lighter);
   white-space: nowrap;
+  background: linear-gradient(to bottom, #f8faff, transparent);
 }
 
 .data-table th.sortable {
@@ -404,11 +408,14 @@
 
 .data-table tbody tr {
   border-bottom: 1px solid var(--color-border-light);
-  transition: background-color 0.15s;
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .data-table tbody tr:hover {
-  background: var(--color-surface);
+  background: linear-gradient(to right, #f8faff, #fbfcfe);
+  box-shadow: inset 0 0 0 1px rgba(14, 117, 182, 0.05);
 }
 
 .data-table td {
@@ -420,7 +427,7 @@
 .data-table th:nth-child(1),
 .domain-cell {
   min-width: 180px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-primary);
 }
 
@@ -479,32 +486,37 @@
 
 .status-badge {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 9px;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .status-badge.under-limit {
   background: var(--color-success);
   color: #0a4d3c;
+  font-weight: 700;
 }
 
 .status-badge.near-limit {
   background: var(--color-warning);
   color: #7c3900;
+  font-weight: 700;
 }
 
 .status-badge.over-limit {
   background: var(--color-error);
   color: white;
+  font-weight: 700;
 }
 
 .status-badge.no-limit {
-  background: var(--color-border-light);
-  color: var(--color-text-muted);
+  background: #e5e7eb;
+  color: #6b7280;
+  font-weight: 600;
 }
 
 .badge-icon-table {
@@ -529,8 +541,8 @@
 .table-toggle {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 20px;
+  width: 44px;
+  height: 24px;
   cursor: pointer;
 }
 
@@ -546,52 +558,61 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  border-radius: 20px;
-  transition: background-color 0.3s;
+  background-color: #d1d5db;
+  border-radius: 24px;
+  transition:
+    background-color 0.25s,
+    box-shadow 0.25s;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .toggle-slider::before {
   content: '';
   position: absolute;
-  height: 14px;
-  width: 14px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: white;
   border-radius: 50%;
-  transition: transform 0.3s;
+  transition: transform 0.25s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .table-toggle input:checked + .toggle-slider {
   background-color: var(--color-primary);
+  box-shadow: inset 0 1px 2px rgba(14, 117, 182, 0.2);
 }
 
 .table-toggle input:checked + .toggle-slider::before {
-  transform: translateX(16px);
+  transform: translateX(18px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .table-toggle input:focus + .toggle-slider {
-  box-shadow: 0 0 0 2px var(--color-primary-lighter);
+  box-shadow: 0 0 0 3px rgba(14, 117, 182, 0.15);
 }
 
 /* Small pill button for table */
 .pill-button-small {
-  padding: 3px 10px;
+  padding: 4px 12px;
   font-size: 11px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-card);
-  color: var(--color-text-dark);
+  font-weight: 600;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: var(--color-primary);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .pill-button-small:hover {
   background: var(--color-primary);
-  color: #fff;
+  color: white;
   border-color: var(--color-primary);
+  box-shadow: 0 2px 4px rgba(14, 117, 182, 0.2);
 }
 
 /* High contrast mode for table actions */
