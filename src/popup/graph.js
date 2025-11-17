@@ -83,6 +83,9 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('role', 'img')
     .attr('aria-label', 'Radial graph showing focus visit distribution');
 
+  // Create a group for zoom/pan transformations
+  const gZoom = svg.append('g').attr('class', 'zoom-group');
+
   // Create force simulation
   const simulation = d3
     .forceSimulation(nodes)
@@ -102,7 +105,7 @@ export function renderRadialGraph(container, data, options = {}) {
     );
 
   // Create link elements
-  const link = svg
+  const link = gZoom
     .append('g')
     .selectAll('line')
     .data(links)
@@ -113,7 +116,7 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('stroke-opacity', 0.6);
 
   // Create node group
-  const nodeGroup = svg
+  const nodeGroup = gZoom
     .append('g')
     .selectAll('g')
     .data(nodes)
@@ -308,6 +311,132 @@ export function renderRadialGraph(container, data, options = {}) {
       .attr('y2', (d) => d.target.y);
 
     nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
+  });
+
+  // Add zoom behavior
+  const zoomBehavior = d3.zoom().on('zoom', (event) => {
+    gZoom.attr('transform', event.transform);
+  });
+
+  svg.call(zoomBehavior);
+
+  // Add zoom controls (+ and - buttons)
+  const zoomControls = d3
+    .select(container)
+    .append('div')
+    .attr('class', 'graph-zoom-controls')
+    .style('position', 'absolute')
+    .style('top', '8px')
+    .style('right', '8px')
+    .style('display', 'flex')
+    .style('flex-direction', 'column')
+    .style('gap', '6px')
+    .style('z-index', '10');
+
+  // Zoom in button
+  zoomControls
+    .append('button')
+    .attr('class', 'zoom-btn zoom-in-btn')
+    .attr('aria-label', 'Zoom in')
+    .attr('title', 'Zoom in (+)')
+    .style('width', '32px')
+    .style('height', '32px')
+    .style('padding', '0')
+    .style('border', '1px solid #d1d5db')
+    .style('background', 'white')
+    .style('border-radius', '4px')
+    .style('cursor', 'pointer')
+    .style('font-size', '16px')
+    .style('display', 'flex')
+    .style('align-items', 'center')
+    .style('justify-content', 'center')
+    .style('transition', 'all 0.2s')
+    .text('+')
+    .on('mouseover', function () {
+      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
+    })
+    .on('mouseout', function () {
+      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
+    })
+    .on('click', () => {
+      const newScale = svg.property('__zoom').k * 1.2;
+      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
+    });
+
+  // Zoom out button
+  zoomControls
+    .append('button')
+    .attr('class', 'zoom-btn zoom-out-btn')
+    .attr('aria-label', 'Zoom out')
+    .attr('title', 'Zoom out (−)')
+    .style('width', '32px')
+    .style('height', '32px')
+    .style('padding', '0')
+    .style('border', '1px solid #d1d5db')
+    .style('background', 'white')
+    .style('border-radius', '4px')
+    .style('cursor', 'pointer')
+    .style('font-size', '16px')
+    .style('display', 'flex')
+    .style('align-items', 'center')
+    .style('justify-content', 'center')
+    .style('transition', 'all 0.2s')
+    .text('−')
+    .on('mouseover', function () {
+      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
+    })
+    .on('mouseout', function () {
+      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
+    })
+    .on('click', () => {
+      const newScale = svg.property('__zoom').k / 1.2;
+      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
+    });
+
+  // Reset zoom button
+  zoomControls
+    .append('button')
+    .attr('class', 'zoom-btn zoom-reset-btn')
+    .attr('aria-label', 'Reset zoom')
+    .attr('title', 'Reset zoom (R)')
+    .style('width', '32px')
+    .style('height', '32px')
+    .style('padding', '0')
+    .style('border', '1px solid #d1d5db')
+    .style('background', 'white')
+    .style('border-radius', '4px')
+    .style('cursor', 'pointer')
+    .style('font-size', '12px')
+    .style('font-weight', '600')
+    .style('display', 'flex')
+    .style('align-items', 'center')
+    .style('justify-content', 'center')
+    .style('transition', 'all 0.2s')
+    .text('R')
+    .on('mouseover', function () {
+      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
+    })
+    .on('mouseout', function () {
+      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
+    })
+    .on('click', () => {
+      svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
+    });
+
+  // Add keyboard shortcuts for zoom
+  document.addEventListener('keydown', (event) => {
+    if (event.key === '+' || event.key === '=') {
+      event.preventDefault();
+      const newScale = svg.property('__zoom').k * 1.2;
+      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
+    } else if (event.key === '-' || event.key === '_') {
+      event.preventDefault();
+      const newScale = svg.property('__zoom').k / 1.2;
+      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
+    } else if (event.key === 'r' || event.key === 'R') {
+      event.preventDefault();
+      svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
+    }
   });
 
   // Drag functions
