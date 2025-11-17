@@ -36,14 +36,12 @@
  *     }
  *   },
  *   settings: {
- *     highContrastMode: false,
  *     onboardingComplete: false
  *   }
  * }
  */
 
 const defaultSettings = {
-  highContrastMode: false,
   onboardingComplete: false,
 };
 

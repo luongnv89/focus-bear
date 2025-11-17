@@ -1083,54 +1083,6 @@ main {
   min-height: 350px;
 }
 
-/* High Contrast Mode Support */
-body.high-contrast .domain-drilldown-view {
-  background: #1a1a1a;
-}
-
-body.high-contrast .drilldown-header,
-body.high-contrast .drilldown-table-container,
-body.high-contrast .drilldown-graph-container {
-  background: #2a2a2a;
-  border-color: #444;
-}
-
-body.high-contrast .drilldown-table th {
-  background: #1a1a1a;
-  border-color: #444;
-  color: #ccc;
-}
-
-body.high-contrast .drilldown-table tbody tr {
-  border-color: #333;
-}
-
-body.high-contrast .drilldown-table tbody tr:hover {
-  background: #333;
-}
-
-body.high-contrast .drilldown-domain-title {
-  color: white;
-}
-
-body.high-contrast .drilldown-domain-stats,
-body.high-contrast .limit-details,
-body.high-contrast .date-cell {
-  color: #999;
-}
-
-body.high-contrast .subpath-domain {
-  color: #999;
-}
-
-body.high-contrast .subpath-path {
-  color: white;
-}
-
-body.high-contrast .percentage-text {
-  color: #ccc;
-}
-
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   .drilldown-edit-btn:hover {

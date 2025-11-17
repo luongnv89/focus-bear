@@ -5,7 +5,6 @@
 import { renderRadialGraph } from '../popup/graph.js';
 import { isFeatureEnabled } from './feature-flags.js';
 import {
-  getSettings,
   updateSettings,
   getLimits,
   setLimitForDomain,
@@ -132,7 +131,6 @@ export async function setupVisualizationPage(options = {}) {
   const settingsView = document.getElementById('settings-view');
   const settingsBtn = document.getElementById('settings-btn');
   const settingsBackBtn = document.getElementById('settings-back-btn');
-  const highContrastToggle = document.getElementById('high-contrast-toggle');
   const limitForm = document.getElementById('limit-form');
   const limitErrorEl = document.getElementById('limit-error');
   const limitList = document.getElementById('limit-list');
@@ -165,22 +163,6 @@ export async function setupVisualizationPage(options = {}) {
     toastTimeout = setTimeout(() => {
       settingsToast.classList.remove('visible');
     }, 3500);
-  };
-
-  const applyHighContrast = (enabled) => {
-    document.body.classList.toggle('high-contrast', enabled);
-    if (highContrastToggle) {
-      highContrastToggle.checked = enabled;
-    }
-  };
-
-  const loadHighContrastPreference = async () => {
-    try {
-      const settings = await getSettings();
-      applyHighContrast(Boolean(settings.highContrastMode));
-    } catch (error) {
-      console.error('Unable to load settings:', error);
-    }
   };
 
   const refreshLimitList = async () => {
@@ -529,21 +511,6 @@ export async function setupVisualizationPage(options = {}) {
     });
   }
 
-  if (highContrastToggle) {
-    highContrastToggle.addEventListener('change', async (event) => {
-      const enabled = event.target.checked;
-      try {
-        await updateSettings({ highContrastMode: enabled });
-        applyHighContrast(enabled);
-        showSettingsToast(enabled ? 'High contrast mode enabled' : 'High contrast mode disabled');
-      } catch (error) {
-        console.error('Unable to update settings:', error);
-        event.target.checked = !enabled;
-        showSettingsToast('Unable to update accessibility setting.');
-      }
-    });
-  }
-
   if (limitList) {
     limitList.addEventListener('click', async (event) => {
       const { domain, action } = event.target.dataset || {};
@@ -775,11 +742,9 @@ export async function setupVisualizationPage(options = {}) {
           await updateBlockingRules();
 
           await updateSettings({
-            highContrastMode: false,
             onboardingComplete: false,
             defaultTimeRange: 'today',
           });
-          await loadHighContrastPreference();
           await refreshLimitList();
           await renderVisualization(currentRange);
           showSettingsToast('All focus data cleared.');
@@ -985,7 +950,6 @@ export async function setupVisualizationPage(options = {}) {
   const perfStart = performance.now();
 
   try {
-    await loadHighContrastPreference();
     await renderVisualization(currentRange);
     if (loading) {
       loading.style.display = 'none';

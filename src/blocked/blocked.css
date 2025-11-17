@@ -261,26 +261,6 @@ h1 {
   color: var(--color-text-muted);
 }
 
-/* High contrast mode support */
-body.high-contrast {
-  --color-card: #0f172a;
-  --color-primary-lighter: #020617;
-  --color-text-dark: #f8fafc;
-  --color-text-muted: #cbd5f5;
-  --color-border: #1e293b;
-  --color-primary: #0ea5e9;
-  --color-primary-light: #38bdf8;
-  --color-secondary: #c084fc;
-  --color-secondary-dark: #a855f7;
-  --color-warning: #fb923c;
-  --color-success: #34d399;
-  --color-error: #f87171;
-}
-
-body.high-contrast .countdown {
-  background: linear-gradient(135deg, rgba(192, 132, 252, 0.15) 0%, rgba(14, 165, 233, 0.15) 100%);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .bear {
     animation: none;

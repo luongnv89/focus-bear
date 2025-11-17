@@ -33,7 +33,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       visits: {},
       limits: {},
       settings: {
-        highContrastMode: false,
         onboardingComplete: false,
         defaultTimeRange: 'today',
       },

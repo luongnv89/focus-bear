@@ -499,18 +499,15 @@ describe('Storage Module', () => {
   describe('getSettings', () => {
     test('returns settings object', async () => {
       chrome.storage.local.data.settings = {
-        highContrastMode: true,
         onboardingComplete: true,
       };
 
       const settings = await getSettings();
-      expect(settings.highContrastMode).toBe(true);
       expect(settings.onboardingComplete).toBe(true);
     });
 
     test('returns default settings when none exist', async () => {
       const settings = await getSettings();
-      expect(settings.highContrastMode).toBe(false);
       expect(settings.onboardingComplete).toBe(false);
     });
   });

@@ -122,12 +122,6 @@ async function loadBlockedPageData() {
     // Update limit type text
     const limitTypeText = limitType === 'fiveHour' ? '5-hour window' : 'daily';
     document.getElementById('limit-type').textContent = limitTypeText;
-
-    // Apply high contrast mode if enabled
-    const settings = data.settings || {};
-    if (settings.highContrastMode) {
-      document.body.classList.add('high-contrast');
-    }
   } catch (error) {
     console.error('Error loading blocked page data:', error);
     // Fallback to defaults
