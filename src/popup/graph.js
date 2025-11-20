@@ -61,10 +61,15 @@ function categorizeDomain(domain) {
 
   const domainLower = domain.toLowerCase();
 
-  for (const [key, category] of Object.entries(categories)) {
-    if (category.keywords.some((keyword) => domainLower.includes(keyword))) {
-      return { name: category.name, color: category.color, key };
-    }
+  function matchesCategory([, category]) {
+    return category.keywords.some((keyword) => domainLower.includes(keyword));
+  }
+
+  const match = Object.entries(categories).find(matchesCategory);
+
+  if (match) {
+    const [key, category] = match;
+    return { name: category.name, color: category.color, key };
   }
 
   return { name: 'Other', color: '#94a3b8', key: 'other' }; // Gray
@@ -329,7 +334,7 @@ export function renderRadialGraph(container, data, options = {}) {
   }
 
   // Add domain name labels (below the circle) with dynamic visibility
-  const domainLabels = nodeGroup
+  let domainLabels = nodeGroup
     .filter((d) => !d.isCenter)
     .append('text')
     .attr('class', 'domain-label')
@@ -452,9 +457,8 @@ export function renderRadialGraph(container, data, options = {}) {
       const subpathCount = Object.keys(d.subpaths).length;
       const lastVisitDate = new Date(d.lastVisit).toLocaleString();
 
-      const drilldownHint = subpathCount > 0
-        ? '<br/><em style="color: #93c5fd;">💡 Double-click to explore subpaths</em>'
-        : '';
+      const drilldownHintText = '<br/><em>💡 Double-click to explore subpaths</em>';
+      const drilldownHint = subpathCount > 0 ? drilldownHintText : '';
       const badgeInfo = badges[d.id]
         ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
         : '';
@@ -499,6 +503,9 @@ export function renderRadialGraph(container, data, options = {}) {
     nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
   });
 
+  // Track label visibility rules so subpath view can override
+  let labelVisibilityFn = shouldShowLabel;
+
   // Add zoom behavior with label visibility updates
   const zoomBehavior = d3.zoom().on('zoom', (event) => {
     gZoom.attr('transform', event.transform);
@@ -507,7 +514,12 @@ export function renderRadialGraph(container, data, options = {}) {
     currentZoomLevel = event.transform.k;
 
     // Update label visibility based on zoom level
-    domainLabels.style('opacity', (d) => (shouldShowLabel(d, currentZoomLevel) ? 1 : 0));
+    if (domainLabels) {
+      domainLabels.style('opacity', (d) => {
+        if (!labelVisibilityFn) return 1;
+        return labelVisibilityFn(d, currentZoomLevel) ? 1 : 0;
+      });
+    }
 
     // Update legend zoom display
     const zoomLevelEl = document.getElementById('zoom-level');
@@ -680,9 +692,10 @@ export function renderRadialGraph(container, data, options = {}) {
       return; // No subpaths to show
     }
 
-    // Clear existing visualization
+    // Clear existing visualization but keep zoom container and controls
     simulation.stop();
-    svg.selectAll('*').remove();
+    gZoom.selectAll('*').remove();
+    svg.transition().call(zoomBehavior.transform, d3.zoomIdentity);
 
     // Create center node (domain)
     const domainCenterNode = {
@@ -730,7 +743,7 @@ export function renderRadialGraph(container, data, options = {}) {
       );
 
     // Create link elements
-    const subpathLinkEl = svg
+    const subpathLinkEl = gZoom
       .append('g')
       .selectAll('line')
       .data(subpathLinks)
@@ -741,7 +754,7 @@ export function renderRadialGraph(container, data, options = {}) {
       .attr('stroke-opacity', 0.5);
 
     // Create node group
-    const subpathNodeGroup = svg
+    const subpathNodeGroup = gZoom
       .append('g')
       .selectAll('g')
       .data(subpathNodes)
@@ -780,7 +793,7 @@ export function renderRadialGraph(container, data, options = {}) {
       });
 
     // Add subpath name labels (below the circle)
-    subpathNodeGroup
+    domainLabels = subpathNodeGroup
       .filter((d) => !d.isCenter)
       .append('text')
       .attr('text-anchor', 'middle')
@@ -795,8 +808,11 @@ export function renderRadialGraph(container, data, options = {}) {
         return shortPath;
       });
 
+    // Always show labels in subpath view
+    labelVisibilityFn = () => true;
+
     // Add "Back" button
-    const backBtn = svg
+    const backBtn = gZoom
       .append('g')
       .attr('class', 'back-button')
       .attr('transform', 'translate(20, 20)')

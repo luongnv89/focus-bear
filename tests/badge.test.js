@@ -3,7 +3,7 @@
  * Tests extension badge update logic
  */
 
-import { updateDomainBadge, initializeBadge } from '../src/background/badge.js';
+import { updateVisitBadge, initializeBadge } from '../src/background/badge.js';
 import { getTodayKey } from '../src/background/storage.js';
 
 // Mock chrome.action and chrome.storage APIs
@@ -54,17 +54,17 @@ describe('Badge Module', () => {
     chrome.action.badgeColor = '';
   });
 
-  describe('updateDomainBadge', () => {
-    test('sets empty badge when no domains visited', async () => {
+  describe('updateVisitBadge', () => {
+    test('sets empty badge when no visits recorded', async () => {
       chrome.storage.local.data.visits = {};
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
     });
 
-    test('shows domain count when domains visited today', async () => {
+    test('shows total visits when visits recorded today', async () => {
       const todayKey = getTodayKey();
       chrome.storage.local.data.visits = {
         [todayKey]: {
@@ -74,13 +74,13 @@ describe('Badge Module', () => {
         },
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
-      expect(chrome.action.badgeText).toBe('3');
+      expect(chrome.action.badgeText).toBe('16');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
     });
 
-    test('shows correct count for single domain', async () => {
+    test('shows total visits for a single domain', async () => {
       const todayKey = getTodayKey();
       chrome.storage.local.data.visits = {
         [todayKey]: {
@@ -88,13 +88,13 @@ describe('Badge Module', () => {
         },
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
-      expect(chrome.action.badgeText).toBe('1');
+      expect(chrome.action.badgeText).toBe('10');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
     });
 
-    test('ignores domains from previous days', async () => {
+    test('ignores visits from previous days', async () => {
       const todayKey = getTodayKey();
       const yesterdayKey = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
@@ -108,12 +108,12 @@ describe('Badge Module', () => {
         },
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
-      expect(chrome.action.badgeText).toBe('1');
+      expect(chrome.action.badgeText).toBe('5');
     });
 
-    test('handles large domain counts', async () => {
+    test('handles large visit totals', async () => {
       const todayKey = getTodayKey();
       const visits = {};
 
@@ -126,9 +126,9 @@ describe('Badge Module', () => {
         [todayKey]: visits,
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
-      expect(chrome.action.badgeText).toBe('50');
+      expect(chrome.action.badgeText).toBe('1275');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
     });
 
@@ -140,7 +140,7 @@ describe('Badge Module', () => {
         },
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       // Bear Blue from brand guidelines
       expect(chrome.action.badgeColor).toBe('#0E75B6');
@@ -149,7 +149,7 @@ describe('Badge Module', () => {
     test('handles missing visits object gracefully', async () => {
       chrome.storage.local.data = {};
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
@@ -158,12 +158,12 @@ describe('Badge Module', () => {
     test('handles null visits gracefully', async () => {
       chrome.storage.local.data.visits = null;
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('');
     });
 
-    test('shows count for exactly 10 domains', async () => {
+    test('shows count for exactly 10 visits across domains', async () => {
       const todayKey = getTodayKey();
       const visits = {};
 
@@ -175,12 +175,12 @@ describe('Badge Module', () => {
         [todayKey]: visits,
       };
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('10');
     });
 
-    test('updates badge text as domains are added', async () => {
+    test('updates badge text as visits are added', async () => {
       const todayKey = getTodayKey();
 
       // Start with 1 domain
@@ -190,8 +190,8 @@ describe('Badge Module', () => {
         },
       };
 
-      await updateDomainBadge();
-      expect(chrome.action.badgeText).toBe('1');
+      await updateVisitBadge();
+      expect(chrome.action.badgeText).toBe('5');
 
       // Add another domain
       chrome.storage.local.data.visits[todayKey]['twitter.com'] = {
@@ -200,8 +200,8 @@ describe('Badge Module', () => {
         subpaths: {},
       };
 
-      await updateDomainBadge();
-      expect(chrome.action.badgeText).toBe('2');
+      await updateVisitBadge();
+      expect(chrome.action.badgeText).toBe('8');
 
       // Add a third domain
       chrome.storage.local.data.visits[todayKey]['github.com'] = {
@@ -210,8 +210,8 @@ describe('Badge Module', () => {
         subpaths: {},
       };
 
-      await updateDomainBadge();
-      expect(chrome.action.badgeText).toBe('3');
+      await updateVisitBadge();
+      expect(chrome.action.badgeText).toBe('15');
     });
 
     test('handles error when setBadgeText fails', async () => {
@@ -227,10 +227,10 @@ describe('Badge Module', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       chrome.action.setBadgeText = jest.fn().mockRejectedValue(new Error('API error'));
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error updating domain badge:',
+        'Error updating visit badge:',
         expect.any(Error),
       );
 
@@ -254,10 +254,10 @@ describe('Badge Module', () => {
         .fn()
         .mockRejectedValue(new Error('API error'));
 
-      await updateDomainBadge();
+      await updateVisitBadge();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error updating domain badge:',
+        'Error updating visit badge:',
         expect.any(Error),
       );
 
@@ -268,7 +268,7 @@ describe('Badge Module', () => {
   });
 
   describe('initializeBadge', () => {
-    test('calls updateDomainBadge and logs initialization', async () => {
+    test('calls updateVisitBadge and logs initialization', async () => {
       const todayKey = getTodayKey();
       chrome.storage.local.data.visits = {
         [todayKey]: {
@@ -280,15 +280,15 @@ describe('Badge Module', () => {
 
       await initializeBadge();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith('Initializing domain counter badge...');
-      expect(consoleLogSpy).toHaveBeenCalledWith('Domain counter badge initialized');
-      expect(chrome.action.badgeText).toBe('1');
+      expect(consoleLogSpy).toHaveBeenCalledWith('Initializing visit counter badge...');
+      expect(consoleLogSpy).toHaveBeenCalledWith('Visit counter badge initialized');
+      expect(chrome.action.badgeText).toBe('5');
       expect(chrome.action.badgeColor).toBe('#0E75B6');
 
       consoleLogSpy.mockRestore();
     });
 
-    test('initializes badge with zero domains', async () => {
+    test('initializes badge with zero visits', async () => {
       chrome.storage.local.data.visits = {};
 
       await initializeBadge();
@@ -297,7 +297,7 @@ describe('Badge Module', () => {
       expect(chrome.action.badgeColor).toBe('#0E75B6');
     });
 
-    test('initializes badge with multiple domains', async () => {
+    test('initializes badge with multiple domains worth of visits', async () => {
       const todayKey = getTodayKey();
       chrome.storage.local.data.visits = {
         [todayKey]: {
@@ -309,7 +309,7 @@ describe('Badge Module', () => {
 
       await initializeBadge();
 
-      expect(chrome.action.badgeText).toBe('3');
+      expect(chrome.action.badgeText).toBe('16');
     });
   });
 });

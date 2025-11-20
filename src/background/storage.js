@@ -131,6 +131,18 @@ export async function getTodayDomainCount() {
 }
 
 /**
+ * Get total visits recorded today across all domains
+ * @returns {Promise<number>} Total visit count
+ */
+export async function getTodayVisitCount() {
+  const todayVisits = await getTodayVisits();
+  return Object.values(todayVisits).reduce(
+    (total, domainData) => total + (domainData.count || 0),
+    0,
+  );
+}
+
+/**
  * Increment visit count for a domain
  * @param {string} domain - Domain name (e.g., "example.com")
  * @param {string} [subpath] - Optional subpath (e.g., "/page1")
@@ -505,12 +517,12 @@ export async function calculateLimitStreak(domain) {
   let currentStreak = 0;
   const checkDate = new Date(today);
 
-  for (let i = 0; i < 365; i++) {
+  for (let i = 0; i < 365; i += 1) {
     const dateKey = checkDate.toISOString().split('T')[0];
     const dayVisits = visits[dateKey]?.[domain]?.count || 0;
 
     if (dayVisits <= dailyLimit) {
-      currentStreak++;
+      currentStreak += 1;
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
       break;
@@ -557,25 +569,21 @@ export async function calculateOverallStreak() {
   const checkDate = new Date(today);
 
   // Check if all limits were respected on each day
-  for (let i = 0; i < 365; i++) {
+  const limitEntries = Object.entries(limits).filter(
+    ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.enabled,
+  );
+
+  for (let i = 0; i < 365; i += 1) {
     const dateKey = checkDate.toISOString().split('T')[0];
     const dayVisits = visits[dateKey] || {};
 
-    let allLimitsRespected = true;
-
-    // Check each domain with limits
-    for (const [domain, limitConfig] of Object.entries(limits)) {
-      if (!limitConfig?.enabled || !limitConfig.daily?.enabled) continue;
-
+    const allLimitsRespected = limitEntries.every(([domain, limitConfig]) => {
       const visitCount = dayVisits[domain]?.count || 0;
-      if (visitCount > limitConfig.daily.limit) {
-        allLimitsRespected = false;
-        break;
-      }
-    }
+      return visitCount <= limitConfig.daily.limit;
+    });
 
-    if (allLimitsRespected && Object.keys(limits).length > 0) {
-      currentStreak++;
+    if (allLimitsRespected && limitEntries.length > 0) {
+      currentStreak += 1;
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
       break;

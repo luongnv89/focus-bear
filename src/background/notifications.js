@@ -273,16 +273,13 @@ export async function showDailyEncouragement() {
   const { visits = {}, limits = {} } = await chrome.storage.local.get(['visits', 'limits']);
   const todayVisits = visits[today] || {};
 
-  let exceededAny = false;
-  for (const [domain, limitConfig] of Object.entries(limits)) {
-    if (!limitConfig.enabled) continue;
-    const visitData = todayVisits[domain];
-    const visitCount = visitData?.count || 0;
-    if (visitCount > limitConfig.daily.limit) {
-      exceededAny = true;
-      break;
-    }
-  }
+  const activeLimits = Object.entries(limits).filter(
+    ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.limit,
+  );
+  const exceededAny = activeLimits.some(([domain, limitConfig]) => {
+    const visitCount = todayVisits[domain]?.count || 0;
+    return visitCount > limitConfig.daily.limit;
+  });
 
   // Only show encouragement if user hasn't exceeded any limits
   if (!exceededAny && Object.keys(limits).length > 0) {

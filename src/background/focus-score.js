@@ -3,7 +3,29 @@
  * Calculates a daily/weekly focus score based on user behavior
  */
 
-import { getLimits, calculateOverallStreak } from './storage.js';
+import { calculateOverallStreak } from './storage.js';
+
+function getDayTotalVisits(dayData = {}) {
+  return Object.values(dayData).reduce((sum, visitData) => sum + (visitData.count || 0), 0);
+}
+
+function getAverageVisitsForDates(visits, dates) {
+  if (dates.length === 0) return 0;
+
+  const totalVisits = dates.reduce((sum, dateKey) => {
+    const dayVisits = visits[dateKey] || {};
+    return sum + getDayTotalVisits(dayVisits);
+  }, 0);
+
+  return totalVisits / dates.length;
+}
+
+function getCompliantDomainCount(enabledLimits, dayVisits) {
+  return enabledLimits.reduce((count, [domain, limitConfig]) => {
+    const visitCount = dayVisits[domain]?.count || 0;
+    return visitCount <= limitConfig.daily.limit ? count + 1 : count;
+  }, 0);
+}
 
 /**
  * Calculate focus score for a specific date
@@ -25,18 +47,7 @@ export async function calculateDailyFocusScore(date) {
   const enabledLimits = Object.entries(limits).filter(([_, config]) => config.enabled);
 
   if (enabledLimits.length > 0) {
-    let compliantDomains = 0;
-
-    for (const [domain, limitConfig] of enabledLimits) {
-      const visitData = dayVisits[domain];
-      const visitCount = visitData?.count || 0;
-      const dailyLimit = limitConfig.daily.limit;
-
-      if (visitCount <= dailyLimit) {
-        compliantDomains++;
-      }
-    }
-
+    const compliantDomains = getCompliantDomainCount(enabledLimits, dayVisits);
     complianceScore = (compliantDomains / enabledLimits.length) * 40;
   } else {
     // If no limits set, give partial credit for having data
@@ -46,17 +57,9 @@ export async function calculateDailyFocusScore(date) {
   // Factor 2: Total Visits Reduction (30 points)
   // Compare against average of previous 7 days
   const previousDates = getPreviousDates(date, 7);
-  let previousAverage = 0;
+  const previousAverage = getAverageVisitsForDates(visits, previousDates);
 
-  for (const prevDate of previousDates) {
-    const prevDayVisits = visits[prevDate] || {};
-    const prevTotal = Object.values(prevDayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
-    previousAverage += prevTotal;
-  }
-
-  previousAverage = previousDates.length > 0 ? previousAverage / previousDates.length : 0;
-
-  const todayTotal = Object.values(dayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
+  const todayTotal = getDayTotalVisits(dayVisits);
 
   let reductionScore = 0;
   if (previousAverage > 0) {
@@ -110,13 +113,8 @@ export async function calculateDailyFocusScore(date) {
  */
 export async function calculateAverageFocusScore(startDate, endDate) {
   const dates = getDateRange(startDate, endDate);
-  let totalScore = 0;
-
-  for (const date of dates) {
-    const score = await calculateDailyFocusScore(date);
-    totalScore += score;
-  }
-
+  const scores = await Promise.all(dates.map((date) => calculateDailyFocusScore(date)));
+  const totalScore = scores.reduce((sum, score) => sum + score, 0);
   return dates.length > 0 ? Math.round(totalScore / dates.length) : 0;
 }
 
@@ -126,7 +124,7 @@ export async function calculateAverageFocusScore(startDate, endDate) {
  */
 export async function getTodayFocusScore() {
   const today = new Date().toISOString().split('T')[0];
-  return await calculateDailyFocusScore(today);
+  return calculateDailyFocusScore(today);
 }
 
 /**
@@ -136,7 +134,7 @@ export async function getTodayFocusScore() {
 export async function getWeeklyFocusScore() {
   const today = new Date().toISOString().split('T')[0];
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  return await calculateAverageFocusScore(weekAgo, today);
+  return calculateAverageFocusScore(weekAgo, today);
 }
 
 /**
@@ -145,19 +143,18 @@ export async function getWeeklyFocusScore() {
  * @returns {Promise<Array>} Array of {date, score} objects
  */
 export async function getFocusScoreHistory(days = 30) {
-  const history = [];
   const today = new Date();
 
-  for (let i = days - 1; i >= 0; i--) {
+  const dateStrings = Array.from({ length: days }, (_, index) => {
+    const daysAgo = days - 1 - index;
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    date.setDate(date.getDate() - daysAgo);
+    return date.toISOString().split('T')[0];
+  });
 
-    const score = await calculateDailyFocusScore(dateStr);
-    history.push({ date: dateStr, score });
-  }
+  const scores = await Promise.all(dateStrings.map((date) => calculateDailyFocusScore(date)));
 
-  return history;
+  return dateStrings.map((date, index) => ({ date, score: scores[index] }));
 }
 
 /**
@@ -174,14 +171,7 @@ export async function getFocusScoreBreakdown(date) {
   const enabledLimits = Object.entries(limits).filter(([_, config]) => config.enabled);
 
   if (enabledLimits.length > 0) {
-    let compliantDomains = 0;
-    for (const [domain, limitConfig] of enabledLimits) {
-      const visitData = dayVisits[domain];
-      const visitCount = visitData?.count || 0;
-      if (visitCount <= limitConfig.daily.limit) {
-        compliantDomains++;
-      }
-    }
+    const compliantDomains = getCompliantDomainCount(enabledLimits, dayVisits);
     complianceScore = (compliantDomains / enabledLimits.length) * 40;
   } else {
     complianceScore = Object.keys(dayVisits).length > 0 ? 20 : 0;
@@ -189,15 +179,9 @@ export async function getFocusScoreBreakdown(date) {
 
   // Visits reduction
   const previousDates = getPreviousDates(date, 7);
-  let previousAverage = 0;
-  for (const prevDate of previousDates) {
-    const prevDayVisits = visits[prevDate] || {};
-    const prevTotal = Object.values(prevDayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
-    previousAverage += prevTotal;
-  }
-  previousAverage = previousDates.length > 0 ? previousAverage / previousDates.length : 0;
+  const previousAverage = getAverageVisitsForDates(visits, previousDates);
 
-  const todayTotal = Object.values(dayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
+  const todayTotal = getDayTotalVisits(dayVisits);
   let reductionScore = 15;
   if (previousAverage > 0) {
     const reduction = (previousAverage - todayTotal) / previousAverage;
@@ -253,7 +237,7 @@ function getPreviousDates(dateStr, count) {
   const dates = [];
   const date = new Date(dateStr);
 
-  for (let i = 1; i <= count; i++) {
+  for (let i = 1; i <= count; i += 1) {
     const prevDate = new Date(date);
     prevDate.setDate(prevDate.getDate() - i);
     dates.push(prevDate.toISOString().split('T')[0]);

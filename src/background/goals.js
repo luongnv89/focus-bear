@@ -201,15 +201,14 @@ export async function checkGoalProgress() {
         }
 
         case GOAL_TYPES.NO_VIOLATIONS: {
-          let violations = 0;
-          for (const [domain, limitConfig] of Object.entries(limits)) {
-            if (!limitConfig.enabled) continue;
+          const activeLimits = Object.entries(limits).filter(
+            ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.limit,
+          );
+          const violations = activeLimits.reduce((count, [domain, limitConfig]) => {
             const visitData = todayVisits[domain];
             const visitCount = visitData?.count || 0;
-            if (visitCount > limitConfig.daily.limit) {
-              violations++;
-            }
-          }
+            return visitCount > limitConfig.daily.limit ? count + 1 : count;
+          }, 0);
           progress = violations;
           completed = violations === 0 && Object.keys(limits).length > 0;
           break;
@@ -227,6 +226,12 @@ export async function checkGoalProgress() {
           // Custom goals need manual completion
           completed = goal.completed || false;
           progress = completed ? 100 : 0;
+          break;
+        }
+
+        default: {
+          progress = 0;
+          completed = false;
           break;
         }
       }
@@ -277,33 +282,36 @@ export async function markGoalCompleted(goalId) {
 export async function getGoalStats(days = 7) {
   const { dailyGoals = {} } = await chrome.storage.local.get('dailyGoals');
 
-  let totalGoals = 0;
-  let completedGoals = 0;
-  const goalTypeStats = {};
-
   const today = new Date();
-  for (let i = 0; i < days; i++) {
+  const dateKeys = Array.from({ length: days }, (_, index) => {
     const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateKey = date.toISOString().split('T')[0];
+    date.setDate(date.getDate() - index);
+    return date.toISOString().split('T')[0];
+  });
 
-    const dayGoals = dailyGoals[dateKey] || [];
+  const { totalGoals, completedGoals, goalTypeStats } = dateKeys.reduce(
+    (acc, dateKey) => {
+      const dayGoals = dailyGoals[dateKey] || [];
 
-    for (const goal of dayGoals) {
-      totalGoals++;
-      if (goal.completed) {
-        completedGoals++;
-      }
+      dayGoals.forEach((goal) => {
+        acc.totalGoals += 1;
+        if (goal.completed) {
+          acc.completedGoals += 1;
+        }
 
-      if (!goalTypeStats[goal.type]) {
-        goalTypeStats[goal.type] = { total: 0, completed: 0 };
-      }
-      goalTypeStats[goal.type].total++;
-      if (goal.completed) {
-        goalTypeStats[goal.type].completed++;
-      }
-    }
-  }
+        if (!acc.goalTypeStats[goal.type]) {
+          acc.goalTypeStats[goal.type] = { total: 0, completed: 0 };
+        }
+        acc.goalTypeStats[goal.type].total += 1;
+        if (goal.completed) {
+          acc.goalTypeStats[goal.type].completed += 1;
+        }
+      });
+
+      return acc;
+    },
+    { totalGoals: 0, completedGoals: 0, goalTypeStats: {} },
+  );
 
   const completionRate = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
 
@@ -341,25 +349,28 @@ export async function suggestGoals() {
   const suggestions = [];
 
   // Calculate average visits over last 7 days
-  const last7Days = [];
-  for (let i = 1; i <= 7; i++) {
+  const last7Days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateKey = date.toISOString().split('T')[0];
-    last7Days.push(dateKey);
-  }
+    date.setDate(date.getDate() - (index + 1));
+    return date.toISOString().split('T')[0];
+  });
 
-  let totalVisits = 0;
-  let totalDomains = 0;
+  const totals = last7Days.reduce(
+    (acc, dateKey) => {
+      const dayVisits = visits[dateKey] || {};
+      acc.totalVisits += Object.values(dayVisits).reduce(
+        (sum, visitData) => sum + (visitData.count || 0),
+        0,
+      );
+      acc.totalDomains += Object.keys(dayVisits).length;
+      return acc;
+    },
+    { totalVisits: 0, totalDomains: 0 },
+  );
 
-  for (const dateKey of last7Days) {
-    const dayVisits = visits[dateKey] || {};
-    totalVisits += Object.values(dayVisits).reduce((sum, v) => sum + (v.count || 0), 0);
-    totalDomains += Object.keys(dayVisits).length;
-  }
-
-  const avgVisits = Math.round(totalVisits / last7Days.length);
-  const avgDomains = Math.round(totalDomains / last7Days.length);
+  const daysCount = last7Days.length || 1;
+  const avgVisits = Math.round(totals.totalVisits / daysCount);
+  const avgDomains = Math.round(totals.totalDomains / daysCount);
 
   // Suggest visit reduction
   if (avgVisits > 20) {

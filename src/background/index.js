@@ -7,7 +7,7 @@ import { initializeTracking, trackCurrentTab } from './tracking.js';
 import { initializeLimitEnforcement } from './limits.js';
 import { initializeBadge } from './badge.js';
 import { initializeNotifications, showDailyEncouragement } from './notifications.js';
-import { initializeAchievements, checkAchievements } from './achievements.js';
+import { initializeAchievements } from './achievements.js';
 
 async function openDashboardTab() {
   const dashboardUrl = chrome.runtime.getURL('src/dashboard/index.html');
@@ -52,7 +52,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   // Initialize limit enforcement
   initializeLimitEnforcement();
 
-  // Initialize domain counter badge
+  // Initialize visit counter badge
   await initializeBadge();
 
   // Initialize notifications
@@ -69,7 +69,7 @@ initializeTracking();
 // Initialize limit enforcement
 initializeLimitEnforcement();
 
-// Initialize domain counter badge
+// Initialize visit counter badge
 initializeBadge().catch((error) => {
   console.error('Error initializing badge on startup:', error);
 });

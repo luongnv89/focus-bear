@@ -147,7 +147,10 @@ export const COPY = {
   countdownToast: {
     limitReached: (domain) => `<strong>${domain}</strong><br/>Limit reached for today`,
     oneVisitLeft: (domain) => `<strong>${domain}</strong><br/>1 visit left today`,
-    visitsLeft: (domain, remaining) => `<strong>${domain}</strong><br/>${remaining} visits left today`,
+    visitsLeft: (domain, remaining) => {
+      const visitsText = `${remaining} visits left today`;
+      return `<strong>${domain}</strong><br/>${visitsText}`;
+    },
   },
 
   // Graph

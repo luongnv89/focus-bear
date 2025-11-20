@@ -5,8 +5,8 @@
 
 import { incrementVisit } from './storage.js';
 import { updateBlockingRules } from './limits.js';
-import { updateDomainBadge } from './badge.js';
-import { checkLimitWarnings, showLimitExceeded, showAchievementUnlocked } from './notifications.js';
+import { updateVisitBadge } from './badge.js';
+import { checkLimitWarnings, showAchievementUnlocked } from './notifications.js';
 import { checkAchievements } from './achievements.js';
 
 /**
@@ -61,8 +61,8 @@ async function trackTabFocus(tabId) {
 
     console.log(`Focus switch recorded: ${domain}${subpath} (count: ${newCount})`);
 
-    // Update domain counter badge
-    await updateDomainBadge();
+    // Update visit counter badge
+    await updateVisitBadge();
 
     // Check if this domain has a limit and show countdown toast
     await showCountdownToastIfNeeded(tabId, domain);
@@ -102,7 +102,8 @@ async function showCountdownToastIfNeeded(tabId, domain) {
       return;
     }
 
-    const relevantCount = limitStatus.limitType === 'fiveHour' ? limitStatus.fiveHourCount : limitStatus.dailyCount;
+    const isFiveHourLimit = limitStatus.limitType === 'fiveHour';
+    const relevantCount = isFiveHourLimit ? limitStatus.fiveHourCount : limitStatus.dailyCount;
     const remaining = Math.max(0, limitStatus.limit - relevantCount);
 
     // Send message to content script to show toast

@@ -208,13 +208,13 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
     const { count } = domainData;
     const dailyLimit = limitConfig.daily?.limit;
 
-    if (dailyLimit && limitConfig.daily.enabled) {
-      const ratio = count / dailyLimit;
-      if (ratio >= 1) {
-        overLimitCount++;
-      } else if (ratio >= 0.8) {
-        nearLimitCount++;
-      }
+    if (!dailyLimit || !limitConfig.daily.enabled) return;
+
+    const ratio = count / dailyLimit;
+    if (ratio >= 1) {
+      overLimitCount += 1;
+    } else if (ratio >= 0.8) {
+      nearLimitCount += 1;
     }
   });
 
@@ -222,31 +222,33 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
   const parts = [];
 
   // Range prefix
-  const rangeText = {
+  const rangeLabels = {
     hour: 'in the last hour',
     today: 'today',
     week: 'this week',
     month: 'this month',
-  }[range] || 'today';
+  };
+  const rangeText = rangeLabels[range] || 'today';
 
   // Top distractions
   if (top3.length > 0) {
     const topList = top3
       .map((d) => `<strong class="summary-highlight">${d.domain}</strong> (${d.count} visits)`)
       .join(', ');
-    parts.push(
-      `Your top ${top3.length === 1 ? 'distraction' : 'distractions'} ${rangeText}: ${topList}`,
-    );
+    const distractionsLabel = top3.length === 1 ? 'distraction' : 'distractions';
+    parts.push(`Your top ${distractionsLabel} ${rangeText}: ${topList}`);
   }
 
   // Limit status
   if (overLimitCount > 0) {
+    const domainLabel = overLimitCount === 1 ? 'domain' : 'domains';
     parts.push(
-      `<span class="summary-warning">⚠️ You exceeded limits on ${overLimitCount} ${overLimitCount === 1 ? 'domain' : 'domains'}</span>`,
+      `<span class="summary-warning">⚠️ You exceeded limits on ${overLimitCount} ${domainLabel}</span>`,
     );
   } else if (nearLimitCount > 0) {
+    const domainLabel = nearLimitCount === 1 ? 'domain' : 'domains';
     parts.push(
-      `<span class="summary-warning">You're approaching limits on ${nearLimitCount} ${nearLimitCount === 1 ? 'domain' : 'domains'}</span>`,
+      `<span class="summary-warning">You're approaching limits on ${nearLimitCount} ${domainLabel}</span>`,
     );
   } else if (Object.keys(limits).length > 0) {
     parts.push('<span class="summary-success">✓ All limits under control</span>');
@@ -263,23 +265,32 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
       0,
     );
     const visitChange = totalVisits - previousTotalVisits;
-    const changePercent = previousTotalVisits > 0 ? Math.round((visitChange / previousTotalVisits) * 100) : 0;
+    const hasPreviousVisits = previousTotalVisits > 0;
+    const changePercent = hasPreviousVisits
+      ? Math.round((visitChange / previousTotalVisits) * 100)
+      : 0;
 
     if (visitChange > 0) {
-      parts.push(
-        `<span class="summary-warning">📈 ${visitChange} more visits (${changePercent > 0 ? '+' : ''}${changePercent}%) than previous period</span>`,
-      );
+      const prefix = changePercent > 0 ? '+' : '';
+      const warningText = [
+        `📈 ${visitChange} more visits (${prefix}${changePercent}%)`,
+        'than previous period',
+      ].join(' ');
+      parts.push(`<span class="summary-warning">${warningText}</span>`);
     } else if (visitChange < 0) {
-      parts.push(
-        `<span class="summary-success">📉 ${Math.abs(visitChange)} fewer visits (${changePercent}%) than previous period</span>`,
-      );
+      const successText = [
+        `📉 ${Math.abs(visitChange)} fewer visits (${changePercent}%)`,
+        'than previous period',
+      ].join(' ');
+      parts.push(`<span class="summary-success">${successText}</span>`);
     } else {
       parts.push('No change from previous period');
     }
   }
 
+  const totalDomainLabel = totalDomains === 1 ? 'domain' : 'domains';
   parts.push(
-    `Tracked <strong>${totalDomains}</strong> ${totalDomains === 1 ? 'domain' : 'domains'} with <strong>${totalVisits}</strong> total visits`,
+    `Tracked <strong>${totalDomains}</strong> ${totalDomainLabel} with <strong>${totalVisits}</strong> total visits`,
   );
 
   return `${parts.join('. ')}.`;
@@ -304,10 +315,14 @@ function generateWeeklyInsights(weekData, limits) {
 
   // Insight 1: Most visited domain
   const topDomain = sorted[0];
+  const mostVisitedText = [
+    `You visited <span class="insight-stat">${topDomain.domain}</span> the most this week`,
+    `with <span class="insight-stat">${topDomain.count} visits</span>.`,
+  ].join(' ');
   insights.push({
     type: 'info',
     title: '🎯 Most Visited',
-    text: `You visited <span class="insight-stat">${topDomain.domain}</span> the most this week with <span class="insight-stat">${topDomain.count} visits</span>.`,
+    text: mostVisitedText,
   });
 
   // Insight 2: Limit violations
@@ -319,10 +334,16 @@ function generateWeeklyInsights(weekData, limits) {
   });
 
   if (overLimitDomains.length > 0) {
+    const limitTextParts = [
+      `You exceeded daily limits on <span class="insight-stat">${overLimitDomains.length} ${
+        overLimitDomains.length === 1 ? 'domain' : 'domains'
+      }</span> this week.`,
+      'Consider adjusting your limits or reducing usage.',
+    ];
     insights.push({
       type: 'warning',
       title: '⚠️ Limits Exceeded',
-      text: `You exceeded daily limits on <span class="insight-stat">${overLimitDomains.length} ${overLimitDomains.length === 1 ? 'domain' : 'domains'}</span> this week. Consider adjusting your limits or reducing usage.`,
+      text: limitTextParts.join(' '),
     });
   } else if (Object.keys(limits).length > 0) {
     insights.push({
@@ -335,10 +356,14 @@ function generateWeeklyInsights(weekData, limits) {
   // Insight 3: Total focus switches
   const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
   const avgPerDay = Math.round(totalVisits / 7);
+  const activityText = [
+    `You switched focus <span class="insight-stat">${totalVisits} times</span> this week,`,
+    `averaging <span class="insight-stat">${avgPerDay} switches/day</span>.`,
+  ].join(' ');
   insights.push({
     type: 'info',
     title: '📊 Activity Summary',
-    text: `You switched focus <span class="insight-stat">${totalVisits} times</span> this week, averaging <span class="insight-stat">${avgPerDay} switches/day</span>.`,
+    text: activityText,
   });
 
   // Insight 4: Recommendations
@@ -347,10 +372,14 @@ function generateWeeklyInsights(weekData, limits) {
     const percentageOfTotal = Math.round((top3Total / totalVisits) * 100);
 
     if (percentageOfTotal > 60) {
+      const recommendationText = [
+        `Your top 3 sites account for <span class="insight-stat">${percentageOfTotal}%</span>`,
+        'of your focus switches. Consider setting limits to improve focus distribution.',
+      ].join(' ');
       insights.push({
         type: 'warning',
         title: '💡 Recommendation',
-        text: `Your top 3 sites account for <span class="insight-stat">${percentageOfTotal}%</span> of your focus switches. Consider setting limits to improve focus distribution.`,
+        text: recommendationText,
       });
     }
   }
@@ -450,9 +479,11 @@ export async function setupVisualizationPage(options = {}) {
         if (normalized.daily.enabled) {
           parts.push(`${normalized.daily.limit} per day`);
         }
-        limitText = parts.length > 0
-          ? parts.join(', ')
-          : '<span style="color: #999;">No limits active</span>';
+        if (parts.length === 0) {
+          limitText = '<span style="color: #999;">No limits active</span>';
+        } else {
+          limitText = parts.join(', ');
+        }
       }
 
       info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
@@ -713,7 +744,8 @@ export async function setupVisualizationPage(options = {}) {
         if (summaryElement) {
           // Load comparison data if toggle is enabled
           const comparisonToggle = document.getElementById('comparison-toggle-input');
-          const previousData = comparisonToggle && comparisonToggle.checked
+          const isComparisonEnabled = comparisonToggle && comparisonToggle.checked;
+          const previousData = isComparisonEnabled
             ? await loadPreviousPeriodData(currentRange)
             : null;
 
@@ -848,7 +880,7 @@ export async function setupVisualizationPage(options = {}) {
       totalCount.textContent = total;
 
       // Render achievements grid
-      achievementsGrid.innerHTML = achievements
+      const achievementCards = achievements
         .map((achievement) => {
           const progress = achievement.progress || { current: 0, target: 1 };
           const progressPercent = Math.min(100, (progress.current / progress.target) * 100);
@@ -857,34 +889,31 @@ export async function setupVisualizationPage(options = {}) {
             ? new Date(achievement.unlockedAt).toLocaleDateString()
             : '';
 
-          return `
-          <div class="achievement-card ${unlockedClass}">
-            <div class="achievement-card-header">
-              <div class="achievement-icon">${achievement.icon}</div>
-              <div class="achievement-info">
-                <h5 class="achievement-name">${achievement.name}</h5>
-                <div class="achievement-category">${achievement.category}</div>
-              </div>
-            </div>
-            <p class="achievement-description">${achievement.description}</p>
-            ${
-  !achievement.unlocked
-    ? `
-              <div class="achievement-progress">
+          const progressMarkup = achievement.unlocked
+            ? `<div class="achievement-unlocked-date">Unlocked ${unlockedDate}</div>`
+            : `<div class="achievement-progress">
                 <div class="achievement-progress-bar">
                   <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
                 </div>
                 <div class="achievement-progress-text">${progress.current} / ${progress.target}</div>
-              </div>
-            `
-    : `
-              <div class="achievement-unlocked-date">Unlocked ${unlockedDate}</div>
-            `
-}
-          </div>
-        `;
+              </div>`;
+
+          return `
+<div class="achievement-card ${unlockedClass}">
+  <div class="achievement-card-header">
+    <div class="achievement-icon">${achievement.icon}</div>
+    <div class="achievement-info">
+      <h5 class="achievement-name">${achievement.name}</h5>
+      <div class="achievement-category">${achievement.category}</div>
+    </div>
+  </div>
+  <p class="achievement-description">${achievement.description}</p>
+  ${progressMarkup}
+</div>`;
         })
         .join('');
+
+      achievementsGrid.innerHTML = achievementCards;
 
       achievementsPanel.style.display = 'block';
     });
@@ -919,17 +948,23 @@ export async function setupVisualizationPage(options = {}) {
 
       // Render goals list
       if (goals.length === 0) {
-        goalsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px;">No goals set for today. Add one from suggestions below!</p>';
+        const emptyGoalsMessage = [
+          '<p style="text-align: center; color: var(--color-text-muted); padding: 20px;">',
+          'No goals set for today. Add one from suggestions below!',
+          '</p>',
+        ].join('');
+        goalsList.innerHTML = emptyGoalsMessage;
       } else {
         goalsList.innerHTML = goals
           .map((goal) => {
-            const progressPercent = goal.type === 'total_visits' || goal.type === 'domains_visited'
-              ? Math.min(100, (goal.progress / goal.target) * 100)
-              : goal.type === 'focus_score'
-                ? goal.progress
-                : goal.completed
-                  ? 100
-                  : 0;
+            let progressPercent = 0;
+            if (goal.type === 'total_visits' || goal.type === 'domains_visited') {
+              progressPercent = Math.min(100, (goal.progress / goal.target) * 100);
+            } else if (goal.type === 'focus_score') {
+              progressPercent = goal.progress;
+            } else {
+              progressPercent = goal.completed ? 100 : 0;
+            }
 
             const completedClass = goal.completed ? 'completed' : '';
             const statusClass = goal.completed ? 'completed' : 'in-progress';

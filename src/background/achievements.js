@@ -3,7 +3,39 @@
  * Tracks and unlocks achievements based on user behavior
  */
 
-import { calculateOverallStreak, calculateLimitStreak } from './storage.js';
+import { calculateOverallStreak } from './storage.js';
+
+function getTotalVisitCount(visits) {
+  return Object.values(visits).reduce((total, dayData) => {
+    const dayTotal = Object.values(dayData).reduce(
+      (acc, visitData) => acc + (visitData.count || 0),
+      0,
+    );
+    return total + dayTotal;
+  }, 0);
+}
+
+function calculateConsecutiveDays(dates) {
+  if (dates.length === 0) return 0;
+
+  let maxConsecutive = 1;
+  let currentConsecutive = 1;
+
+  for (let i = 1; i < dates.length; i += 1) {
+    const prevDate = new Date(dates[i - 1]);
+    const currDate = new Date(dates[i]);
+    const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+
+    if (dayDiff === 1) {
+      currentConsecutive += 1;
+      maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
+    } else {
+      currentConsecutive = 1;
+    }
+  }
+
+  return Math.max(maxConsecutive, currentConsecutive);
+}
 
 // Achievement definitions
 export const ACHIEVEMENTS = {
@@ -93,18 +125,16 @@ export const ACHIEVEMENTS = {
       const today = new Date().toISOString().split('T')[0];
       const todayVisits = visits[today] || {};
 
-      // Check if any limits were exceeded today
-      for (const [domain, limitConfig] of Object.entries(limits)) {
-        if (!limitConfig.enabled) continue;
-        const visitData = todayVisits[domain];
-        const visitCount = visitData?.count || 0;
-        if (visitCount > limitConfig.daily.limit) {
-          return false;
-        }
-      }
+      const enabledLimits = Object.entries(limits).filter(
+        ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.limit,
+      );
 
-      // Must have at least one limit set
-      return Object.keys(limits).length > 0;
+      const hasViolation = enabledLimits.some(([domain, limitConfig]) => {
+        const visitCount = todayVisits[domain]?.count || 0;
+        return visitCount > limitConfig.daily.limit;
+      });
+
+      return enabledLimits.length > 0 && !hasViolation;
     },
   },
 
@@ -132,13 +162,7 @@ export const ACHIEVEMENTS = {
     category: 'milestone',
     check: async () => {
       const { visits = {} } = await chrome.storage.local.get('visits');
-      let totalVisits = 0;
-      for (const dayData of Object.values(visits)) {
-        for (const visitData of Object.values(dayData)) {
-          totalVisits += visitData.count || 0;
-        }
-      }
-      return totalVisits >= 100;
+      return getTotalVisitCount(visits) >= 100;
     },
   },
 
@@ -150,13 +174,7 @@ export const ACHIEVEMENTS = {
     category: 'milestone',
     check: async () => {
       const { visits = {} } = await chrome.storage.local.get('visits');
-      let totalVisits = 0;
-      for (const dayData of Object.values(visits)) {
-        for (const visitData of Object.values(dayData)) {
-          totalVisits += visitData.count || 0;
-        }
-      }
-      return totalVisits >= 1000;
+      return getTotalVisitCount(visits) >= 1000;
     },
   },
 
@@ -173,21 +191,8 @@ export const ACHIEVEMENTS = {
       if (dates.length < 7) return false;
 
       // Check for 7 consecutive days
-      let consecutiveDays = 1;
-      for (let i = 1; i < dates.length; i++) {
-        const prevDate = new Date(dates[i - 1]);
-        const currDate = new Date(dates[i]);
-        const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-
-        if (dayDiff === 1) {
-          consecutiveDays++;
-          if (consecutiveDays >= 7) return true;
-        } else {
-          consecutiveDays = 1;
-        }
-      }
-
-      return false;
+      const consecutiveDays = calculateConsecutiveDays(dates);
+      return consecutiveDays >= 7;
     },
   },
 };
@@ -197,31 +202,30 @@ export const ACHIEVEMENTS = {
  * @returns {Promise<Array>} Array of newly unlocked achievement IDs
  */
 export async function checkAchievements() {
-  const { achievements = { unlocked: [], progress: {} } } = await chrome.storage.local.get('achievements');
-  const newlyUnlocked = [];
+  const stored = await chrome.storage.local.get('achievements');
+  const achievements = stored.achievements || { unlocked: [], progress: {} };
 
-  for (const [achievementId, achievementDef] of Object.entries(ACHIEVEMENTS)) {
-    // Skip if already unlocked
-    if (achievements.unlocked.includes(achievementId)) {
-      continue;
-    }
+  const entries = Object.entries(ACHIEVEMENTS);
+  const unlockedResults = await Promise.all(
+    entries.map(async ([achievementId, achievementDef]) => {
+      if (achievements.unlocked.includes(achievementId)) {
+        return null;
+      }
 
-    // Check if achievement should be unlocked
-    const isUnlocked = await achievementDef.check();
+      const isUnlocked = await achievementDef.check();
+      if (!isUnlocked) return null;
 
-    if (isUnlocked) {
-      newlyUnlocked.push(achievementId);
+      const progress = achievements.progress[achievementId] || {};
+      progress.unlockedAt = new Date().toISOString();
+      achievements.progress[achievementId] = progress;
       achievements.unlocked.push(achievementId);
 
-      // Record unlock timestamp
-      if (!achievements.progress[achievementId]) {
-        achievements.progress[achievementId] = {};
-      }
-      achievements.progress[achievementId].unlockedAt = new Date().toISOString();
-    }
-  }
+      return achievementId;
+    }),
+  );
 
-  // Save updated achievements
+  const newlyUnlocked = unlockedResults.filter(Boolean);
+
   if (newlyUnlocked.length > 0) {
     await chrome.storage.local.set({ achievements });
   }
@@ -260,12 +264,7 @@ export async function getAchievementProgress(achievementId) {
     case 'hundred-visits':
     case 'thousand-visits': {
       const { visits = {} } = await chrome.storage.local.get('visits');
-      let totalVisits = 0;
-      for (const dayData of Object.values(visits)) {
-        for (const visitData of Object.values(dayData)) {
-          totalVisits += visitData.count || 0;
-        }
-      }
+      const totalVisits = getTotalVisitCount(visits);
       const targets = { 'hundred-visits': 100, 'thousand-visits': 1000 };
       return { current: totalVisits, target: targets[achievementId] };
     }
@@ -274,30 +273,14 @@ export async function getAchievementProgress(achievementId) {
       const { visits = {} } = await chrome.storage.local.get('visits');
       const dates = Object.keys(visits).sort();
 
-      // Find longest consecutive streak
-      let maxConsecutive = 0;
-      let currentConsecutive = 1;
-
-      for (let i = 1; i < dates.length; i++) {
-        const prevDate = new Date(dates[i - 1]);
-        const currDate = new Date(dates[i]);
-        const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-
-        if (dayDiff === 1) {
-          currentConsecutive++;
-          maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
-        } else {
-          currentConsecutive = 1;
-        }
-      }
-
-      return { current: Math.max(maxConsecutive, currentConsecutive), target: 7 };
+      return { current: calculateConsecutiveDays(dates), target: 7 };
     }
 
-    default:
+    default: {
       // For challenge-based achievements, just return 0/1
       const isComplete = await achievement.check();
       return { current: isComplete ? 1 : 0, target: 1 };
+    }
   }
 }
 
@@ -306,21 +289,22 @@ export async function getAchievementProgress(achievementId) {
  * @returns {Promise<Array>} Array of achievement objects with unlock status
  */
 export async function getAllAchievements() {
-  const { achievements = { unlocked: [], progress: {} } } = await chrome.storage.local.get('achievements');
+  const stored = await chrome.storage.local.get('achievements');
+  const achievements = stored.achievements || { unlocked: [], progress: {} };
 
-  const achievementsList = [];
+  const achievementsList = await Promise.all(
+    Object.entries(ACHIEVEMENTS).map(async ([achievementId, achievementDef]) => {
+      const isUnlocked = achievements.unlocked.includes(achievementId);
+      const progress = await getAchievementProgress(achievementId);
 
-  for (const [achievementId, achievementDef] of Object.entries(ACHIEVEMENTS)) {
-    const isUnlocked = achievements.unlocked.includes(achievementId);
-    const progress = await getAchievementProgress(achievementId);
-
-    achievementsList.push({
-      ...achievementDef,
-      unlocked: isUnlocked,
-      progress,
-      unlockedAt: achievements.progress[achievementId]?.unlockedAt || null,
-    });
-  }
+      return {
+        ...achievementDef,
+        unlocked: isUnlocked,
+        progress,
+        unlockedAt: achievements.progress[achievementId]?.unlockedAt || null,
+      };
+    }),
+  );
 
   // Sort: unlocked first (by unlock date), then by category
   achievementsList.sort((a, b) => {

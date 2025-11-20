@@ -102,8 +102,12 @@ if (!window.focusBearToastInjected) {
   // Listen for messages from background script
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'SHOW_COUNTDOWN_TOAST') {
+      // prettier-ignore
       const {
-        domain, remaining, limit, limitType,
+        domain,
+        remaining,
+        limit,
+        limitType,
       } = message;
       showToast(domain, remaining, limit, limitType);
       sendResponse({ success: true });

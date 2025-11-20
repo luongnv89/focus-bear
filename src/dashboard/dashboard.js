@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup footer
   setupFooter();
+  setupBrandReset();
 
   // Handle window resize
   window.addEventListener('resize', handleResize);
@@ -153,6 +154,79 @@ function handleResize() {
     // Graph will auto-resize via D3, but we can trigger a refresh if needed
     console.log('[Dashboard] Resize:', newDimensions);
   }, 250);
+}
+
+function setupBrandReset() {
+  const brandTrigger = document.getElementById('dashboard-home-trigger');
+  if (!brandTrigger) return;
+
+  const activateReset = () => {
+    resetDashboardView();
+  };
+
+  brandTrigger.addEventListener('click', activateReset);
+  brandTrigger.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      activateReset();
+    }
+  });
+}
+
+function resetDashboardView() {
+  // Exit settings view if open
+  const mainView = document.getElementById('main-view');
+  const settingsView = document.getElementById('settings-view');
+  if (settingsView && mainView) {
+    settingsView.hidden = true;
+    settingsView.setAttribute('aria-hidden', 'true');
+    mainView.style.display = 'block';
+  }
+
+  // Reset table header/content state from any drilldown
+  handleDrilldownExit();
+
+  // Restore default table filters and pagination
+  tableFilters.query = '';
+  tableFilters.sortField = 'count';
+  tableFilters.sortOrder = 'desc';
+  currentPage = 1;
+  pageSize = 25;
+
+  const searchInput = document.getElementById('table-search');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+
+  const sortSelect = document.getElementById('table-sort');
+  if (sortSelect) {
+    sortSelect.value = `${tableFilters.sortField}-${tableFilters.sortOrder}`;
+  }
+
+  const paginationSize = document.getElementById('pagination-size');
+  const sizeSelect = paginationSize || document.getElementById('table-page-size');
+  if (sizeSelect) {
+    sizeSelect.value = pageSize.toString();
+  }
+
+  updateSortHeaderState(tableFilters.sortField, tableFilters.sortOrder);
+
+  // Ensure comparison toggle is off
+  const comparisonToggle = document.getElementById('comparison-toggle-input');
+  if (comparisonToggle && comparisonToggle.checked) {
+    comparisonToggle.checked = false;
+    comparisonToggle.dispatchEvent(new Event('change'));
+  }
+
+  // Re-render table with defaults applied
+  currentTableData = prepareTableData(currentAggregatedData);
+  renderTable();
+
+  // Reset visualization to default time range
+  const todayBtn = document.querySelector('.time-filter-btn[data-range="today"]');
+  if (todayBtn) {
+    todayBtn.click();
+  }
 }
 
 async function handleDataLoaded(aggregatedData) {
@@ -370,15 +444,15 @@ function renderTable() {
       if (dailyLimit && todayCount >= dailyLimit) {
         statusBadge.classList.add('over-limit');
         statusBadge.innerHTML = `✗ Over Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `You have exceeded the daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+        statusBadge.title = `Daily limit exceeded (${todayCount}/${dailyLimit} visits today).`;
       } else if (dailyLimit && todayCount >= dailyLimit * 0.8) {
         statusBadge.classList.add('near-limit');
         statusBadge.innerHTML = `⚠️ Near Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `You are approaching the daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+        statusBadge.title = `Approaching daily limit (${todayCount}/${dailyLimit} visits today).`;
       } else if (dailyLimit) {
         statusBadge.classList.add('under-limit');
         statusBadge.innerHTML = `✓ Under Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `Within daily limit of ${dailyLimit} visits. Current count: ${todayCount} visits today.`;
+        statusBadge.title = `Within daily limit (${todayCount}/${dailyLimit} visits today).`;
       } else {
         // Limit is enabled but no daily limit configured
         statusBadge.classList.add('no-limit');
@@ -404,7 +478,8 @@ function renderTable() {
 
     // Add descriptive tooltip
     const currentState = toggleInput.checked ? 'Enabled' : 'Disabled';
-    toggleLabel.title = `${currentState} - Click to ${toggleInput.checked ? 'disable' : 'enable'} limit for ${row.domain}`;
+    const toggleAction = toggleInput.checked ? 'disable' : 'enable';
+    toggleLabel.title = `${currentState} - Click to ${toggleAction} limit for ${row.domain}`;
 
     toggleInput.addEventListener('change', async (e) => {
       toggleInput.disabled = true;
@@ -415,7 +490,8 @@ function renderTable() {
       if (success) {
         // Update tooltip to reflect new state
         const newState = e.target.checked ? 'Enabled' : 'Disabled';
-        toggleLabel.title = `${newState} - Click to ${e.target.checked ? 'disable' : 'enable'} limit for ${row.domain}`;
+        const newAction = e.target.checked ? 'disable' : 'enable';
+        toggleLabel.title = `${newState} - Click to ${newAction} limit for ${row.domain}`;
 
         // Show success feedback
         toggleLabel.classList.add('toggle-success');
@@ -492,7 +568,8 @@ function setupTableControls() {
   headers.forEach((header) => {
     header.addEventListener('click', () => {
       const field = header.dataset.sort;
-      const currentOrder = tableFilters.sortField === field && tableFilters.sortOrder === 'asc' ? 'desc' : 'asc';
+      const isAscending = tableFilters.sortField === field && tableFilters.sortOrder === 'asc';
+      const currentOrder = isAscending ? 'desc' : 'asc';
       setSort(field, currentOrder);
       currentPage = 1;
       renderTable();
@@ -647,36 +724,33 @@ async function handleDomainDrilldown(event) {
     limitConfig = normalizeLimitConfig(currentLimits[domain]);
   }
 
+  const subpathCount = Object.keys(domainData.subpaths || {}).length;
+
+  let limitBadges = '<span class="limit-status-badge limit-disabled">No limits</span>';
+  if (limitConfig && limitConfig.enabled) {
+    limitBadges = `<span class="limit-status-badge limit-enabled">✓ Limits Active</span>
+      <span class="limit-details">
+        ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
+        ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
+        ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
+      </span>`;
+  }
+
   // Create header with domain info and limitation status
   panelHeader.innerHTML = `
-    <div class="drilldown-table-header">
-      <div class="drilldown-info">
-        <h3>Path Statistics for ${domain}</h3>
-        <p class="panel-subtitle">${domainData.count} total visits • ${
-  Object.keys(domainData.subpaths || {}).length
-} subpaths</p>
-      </div>
-      <div class="drilldown-status">
-        ${
-  limitConfig && limitConfig.enabled
-    ? `
-          <span class="limit-status-badge limit-enabled">✓ Limits Active</span>
-          <span class="limit-details">
-            ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
-            ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
-            ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
-          </span>
-        `
-    : `
-          <span class="limit-status-badge limit-disabled">No limits</span>
-        `
-}
-        <button class="drilldown-edit-btn" data-domain="${domain}">
-          Edit Limitation Settings
-        </button>
-      </div>
+  <div class="drilldown-table-header">
+    <div class="drilldown-info">
+      <h3>Path Statistics for ${domain}</h3>
+      <p class="panel-subtitle">${domainData.count} total visits • ${subpathCount} subpaths</p>
     </div>
-  `;
+    <div class="drilldown-status">
+      ${limitBadges}
+      <button class="drilldown-edit-btn" data-domain="${domain}">
+        Edit Limitation Settings
+      </button>
+    </div>
+  </div>
+`;
 
   // Add click handler for edit button
   const editBtn = panelHeader.querySelector('.drilldown-edit-btn');
@@ -827,7 +901,9 @@ async function updateStreakDisplay() {
     const streakStat = document.getElementById('streak-stat');
     if (streakStat) {
       const bestStreak = overallStreak.best || 0;
-      streakStat.title = `Current: ${currentStreak} day${currentStreak !== 1 ? 's' : ''} | Personal Best: ${bestStreak} day${bestStreak !== 1 ? 's' : ''}`;
+      const currentLabel = `${currentStreak} day${currentStreak !== 1 ? 's' : ''}`;
+      const bestLabel = `${bestStreak} day${bestStreak !== 1 ? 's' : ''}`;
+      streakStat.title = `Current: ${currentLabel} | Personal Best: ${bestLabel}`;
     }
   } catch (error) {
     console.error('Error updating streak:', error);
