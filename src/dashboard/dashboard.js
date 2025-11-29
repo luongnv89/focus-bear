@@ -1132,3 +1132,78 @@ async function updateFocusScoreDisplay() {
     console.error('Error updating focus score:', error);
   }
 }
+
+// ========================================
+// Settings Panel - Accessibility Toggles
+// ========================================
+
+// Color Blind Mode Toggle
+const colorBlindToggle = document.getElementById('color-blind-mode');
+if (colorBlindToggle) {
+  // Load saved preference
+  chrome.storage.local.get(['colorBlindMode'], (result) => {
+    if (result.colorBlindMode) {
+      colorBlindToggle.checked = true;
+      document.body.classList.add('color-blind-mode');
+    }
+  });
+
+  // Handle toggle change
+  colorBlindToggle.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.local.set({ colorBlindMode: enabled });
+
+    if (enabled) {
+      document.body.classList.add('color-blind-mode');
+      showToast('Color Blind Mode enabled');
+    } else {
+      document.body.classList.remove('color-blind-mode');
+      showToast('Color Blind Mode disabled');
+    }
+  });
+}
+
+// Dark Mode Toggle
+const darkModeToggle = document.getElementById('dark-mode');
+if (darkModeToggle) {
+  // Load saved preference (default is true/checked)
+  chrome.storage.local.get(['darkMode'], (result) => {
+    const isDarkMode = result.darkMode !== false; // Default to true
+    darkModeToggle.checked = isDarkMode;
+
+    if (!isDarkMode) {
+      document.body.classList.add('light-mode');
+    }
+  });
+
+  // Handle toggle change
+  darkModeToggle.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.local.set({ darkMode: enabled });
+
+    if (enabled) {
+      document.body.classList.remove('light-mode');
+      showToast('Dark Mode enabled');
+    } else {
+      document.body.classList.add('light-mode');
+      showToast('Light Mode enabled');
+    }
+  });
+}
+
+// Toast notification helper
+function showToast(message) {
+  const toast = document.getElementById('settings-toast');
+  if (toast) {
+    toast.textContent = message;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 300);
+    }, 2000);
+  }
+}

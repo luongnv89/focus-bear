@@ -110,6 +110,16 @@
             >
               🛡️
             </a>
+            <a
+              href="../help/help.html"
+              id="help-btn"
+              class="icon-button"
+              aria-label="Help & FAQ"
+              title="Help and frequently asked questions"
+              style="text-decoration: none"
+            >
+              ❓
+            </a>
             <button
               id="settings-btn"
               class="icon-button"
@@ -380,58 +390,104 @@
           >
             ← Back
           </button>
-          <div>
-            <p class="eyebrow">Control center</p>
-            <h2>FocusBear Settings</h2>
+          <div class="settings-header-content">
+            <p class="eyebrow">CONTROL CENTER</p>
+            <h2>Settings</h2>
+            <p class="settings-subtitle">Customize your FocusBear experience</p>
           </div>
         </div>
 
         <div class="settings-grid">
+          <!-- Accessibility Card -->
           <article class="settings-card">
             <div class="card-header">
-              <h3>Accessibility</h3>
-              <p class="card-subtitle">
-                Adjust display and interaction settings for better usability.
-              </p>
+              <div class="card-icon">👁️</div>
+              <div>
+                <h3>Accessibility</h3>
+                <p class="card-subtitle">
+                  Adjust display and interaction settings for better usability.
+                </p>
+              </div>
             </div>
-            <div class="settings-item">
-              <label for="color-blind-mode">Color Blind Mode</label>
-              <input type="checkbox" id="color-blind-mode" />
+            <div class="settings-items">
+              <div class="settings-item">
+                <div class="settings-item-info">
+                  <label for="color-blind-mode">Color Blind Mode</label>
+                  <p class="settings-item-desc">Enhanced contrast for better visibility</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="color-blind-mode" />
+                  <span class="toggle-slider-round"></span>
+                </label>
+              </div>
+              <div class="settings-item">
+                <div class="settings-item-info">
+                  <label for="dark-mode">Dark Mode</label>
+                  <p class="settings-item-desc">Reduce eye strain in low light</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="dark-mode" checked />
+                  <span class="toggle-slider-round"></span>
+                </label>
+              </div>
             </div>
-            <div class="settings-item">
-              <label for="dark-mode">Dark Mode</label>
-              <input type="checkbox" id="dark-mode" />
+          </article>
+
+          <!-- Export Data Card -->
+          <article class="settings-card">
+            <div class="card-header">
+              <div class="card-icon">📥</div>
+              <div>
+                <h3>Export Data</h3>
+                <p class="card-subtitle">
+                  Download your focus tracking data for backup or analysis.
+                </p>
+              </div>
+            </div>
+            <div class="export-buttons">
+              <button id="export-json-btn" class="export-btn">
+                <span class="btn-icon">{ }</span>
+                <div class="btn-content">
+                  <span class="btn-label">Export as JSON</span>
+                  <span class="btn-desc">Machine-readable format</span>
+                </div>
+              </button>
+              <button id="export-csv-btn" class="export-btn">
+                <span class="btn-icon">📊</span>
+                <div class="btn-content">
+                  <span class="btn-label">Export as CSV</span>
+                  <span class="btn-desc">Spreadsheet compatible</span>
+                </div>
+              </button>
+            </div>
+            <div class="info-banner">
+              <span class="info-icon">🔒</span>
+              <span>Your data never leaves your device unless you share it.</span>
+            </div>
+          </article>
+
+          <!-- Data Management Card -->
+          <article class="settings-card danger-card">
+            <div class="card-header">
+              <div class="card-icon danger-icon">⚠️</div>
+              <div>
+                <h3>Data Management</h3>
+                <p class="card-subtitle">
+                  FocusBear stores everything locally. You can reset anytime.
+                </p>
+              </div>
+            </div>
+            <div class="danger-zone">
+              <div class="danger-warning">
+                <strong>⚡ Warning:</strong> This action cannot be undone. All your tracking data,
+                limits, and settings will be permanently deleted.
+              </div>
+              <button id="reset-data-btn" class="pill-button pill-button-danger">
+                <span>🗑️</span> Reset All Focus Data
+              </button>
             </div>
           </article>
         </div>
-
-        <article class="settings-card">
-          <div class="card-header">
-            <h3>Export data</h3>
-            <p class="card-subtitle">Download your focus tracking data for backup or analysis.</p>
-          </div>
-          <div class="export-buttons">
-            <button id="export-json-btn" class="pill-button pill-button-secondary">
-              Export as JSON
-            </button>
-            <button id="export-csv-btn" class="pill-button pill-button-secondary">
-              Export as CSV
-            </button>
-          </div>
-          <p class="muted-copy" style="margin-top: 12px; font-size: 12px">
-            🔒 Your data never leaves your device unless you share it.
-          </p>
-        </article>
-
-        <article class="settings-card danger-card">
-          <div class="card-header">
-            <h3>Data management</h3>
-            <p class="card-subtitle">FocusBear stores everything locally. You can reset anytime.</p>
-          </div>
-          <button id="reset-data-btn" class="pill-button pill-button-danger">
-            Reset all focus data
-          </button>
-        </article>
 
         <div id="settings-toast" class="settings-toast" aria-live="polite"></div>
       </section>
@@ -445,6 +501,8 @@
           <span id="footer-version" class="footer-version">v0.1.0</span>
           <span class="footer-separator">•</span>
           <span class="footer-privacy">🔒 All data stays local</span>
+          <span class="footer-separator">•</span>
+          <a href="../help/help.html" class="footer-link">Help</a>
           <span class="footer-separator">•</span>
           <a
             href="https://github.com/luongnv89/focus-bear"
