@@ -1,112 +1,14 @@
 /**
- * FocusBear D3.js Radial Graph
+ * FocusBear D3.js Bubble Graph
  * Interactive visualization of focus visit data
  */
 
-/**
- * Categorize domain into a group for visual clustering
- * @param {string} domain - Domain name
- * @returns {Object} - Category info {name, color}
- */
-function categorizeDomain(domain) {
-  const categories = {
-    social: {
-      keywords: [
-        'facebook',
-        'twitter',
-        'instagram',
-        'linkedin',
-        'reddit',
-        'tiktok',
-        'snapchat',
-        'pinterest',
-      ],
-      name: 'Social Media',
-      color: '#ec4899', // Pink
-    },
-    productivity: {
-      keywords: ['gmail', 'outlook', 'slack', 'notion', 'trello', 'asana', 'jira', 'confluence'],
-      name: 'Productivity',
-      color: '#10b981', // Green
-    },
-    development: {
-      keywords: [
-        'github',
-        'gitlab',
-        'stackoverflow',
-        'dev.to',
-        'codepen',
-        'codesandbox',
-        'repl.it',
-      ],
-      name: 'Development',
-      color: '#8b5cf6', // Purple
-    },
-    entertainment: {
-      keywords: ['youtube', 'netflix', 'twitch', 'spotify', 'soundcloud', 'hulu', 'disney'],
-      name: 'Entertainment',
-      color: '#f59e0b', // Orange
-    },
-    news: {
-      keywords: ['news', 'cnn', 'bbc', 'nytimes', 'guardian', 'medium', 'substack'],
-      name: 'News & Media',
-      color: '#06b6d4', // Cyan
-    },
-    shopping: {
-      keywords: ['amazon', 'ebay', 'etsy', 'shopify', 'walmart', 'target', 'alibaba'],
-      name: 'Shopping',
-      color: '#f43f5e', // Rose
-    },
-  };
+import { categorizeDomain } from '../common/categories.js';
 
-  const domainLower = domain.toLowerCase();
-
-  function matchesCategory([, category]) {
-    return category.keywords.some((keyword) => domainLower.includes(keyword));
-  }
-
-  const match = Object.entries(categories).find(matchesCategory);
-
-  if (match) {
-    const [key, category] = match;
-    return { name: category.name, color: category.color, key };
-  }
-
-  return { name: 'Other', color: '#94a3b8', key: 'other' }; // Gray
-}
+// Note: getNodeOutlineColor removed - using inline styling instead
 
 /**
- * Helper function to get node outline color based on limit status
- * @param {string} domain - Domain name
- * @param {Object} aggregatedData - Domain visit data
- * @param {Object} limits - User-configured limits
- * @returns {string} - Color hex code
- */
-function getNodeOutlineColor(domain, aggregatedData, limits) {
-  const limitConfig = limits[domain];
-  if (!limitConfig || !limitConfig.enabled) {
-    return '#1e40af'; // Default blue for no limit
-  }
-
-  const domainData = aggregatedData[domain];
-  if (!domainData) return '#1e40af';
-
-  const count = domainData.count || 0;
-  const dailyLimit = limitConfig.daily?.limit;
-
-  if (!dailyLimit || !limitConfig.daily?.enabled) {
-    return '#1e40af'; // Default blue if no daily limit configured
-  }
-
-  const ratio = count / dailyLimit;
-
-  if (ratio >= 1) return '#ef4444'; // Red - over limit
-  if (ratio >= 0.8) return '#f59e0b'; // Orange - near limit
-  return '#10b981'; // Green - under limit
-}
-
-/**
- * Render radial graph visualization
+ * Render bubble graph visualization
  * @param {HTMLElement} container - Container element for graph
  * @param {Object} data - Domain visit data
  * @param {Object} options - Visualization options
@@ -117,17 +19,12 @@ export function renderRadialGraph(container, data, options = {}) {
   const containerWidth = containerRect.width || options.width || 400;
   const containerHeight = containerRect.height || options.height || 450;
 
-  const { highlightedDomain = null, badges = {}, limits = {} } = options;
-  const width = Math.max(containerWidth - 16, 300); // Subtract 8px padding on each side
+  const { badges = {} } = options;
+  const width = Math.max(containerWidth - 16, 300);
   const height = Math.max(containerHeight - 16, 300);
 
   // Performance monitoring
   const graphPerfStart = performance.now();
-
-  // Drilldown state (reserved for future enhancement)
-  let drilledDownDomain = null; // eslint-disable-line no-unused-vars
-  let currentView = 'domains'; // eslint-disable-line no-unused-vars
-  // 'domains' or 'subpaths'
 
   // Clear existing content
   container.innerHTML = '';
@@ -138,59 +35,13 @@ export function renderRadialGraph(container, data, options = {}) {
     return;
   }
 
-  // Import D3 from CDN (loaded in popup.html)
+  // Import D3 from CDN (loaded in popup.html/dashboard.html)
   const { d3 } = window;
   if (!d3) {
     console.error('D3.js not loaded');
     container.innerHTML = '<div class="graph-error">Visualization library not loaded</div>';
     return;
   }
-
-  // Prepare nodes data with category information
-  const domains = Object.entries(data).map(([domain, domainData]) => {
-    const category = categorizeDomain(domain);
-    return {
-      id: domain,
-      count: domainData.count,
-      lastVisit: domainData.lastVisit,
-      subpaths: domainData.subpaths || {},
-      category: category.key,
-      categoryName: category.name,
-      categoryColor: category.color,
-    };
-  });
-
-  // Sort by count and limit to top domains
-  domains.sort((a, b) => b.count - a.count);
-  const maxNodes = 50;
-  const topDomains = domains.slice(0, maxNodes).map((d, index) => ({
-    ...d,
-    rank: index + 1, // Add rank for label visibility logic
-  }));
-
-  // Calculate node sizes based on visit count
-  const maxCount = Math.max(...topDomains.map((d) => d.count));
-  const minCount = Math.min(...topDomains.map((d) => d.count));
-
-  const sizeScale = d3.scaleLinear().domain([minCount, maxCount]).range([8, 30]);
-
-  // Create center node (user)
-  const centerNode = {
-    id: 'you',
-    count: 0,
-    isCenter: true,
-    fx: width / 2,
-    fy: height / 2,
-  };
-
-  // Combine center and domain nodes
-  const nodes = [centerNode, ...topDomains.map((d) => ({ ...d, isCenter: false }))];
-
-  // Create links from center to all domains
-  const links = topDomains.map((d) => ({
-    source: 'you',
-    target: d.id,
-  }));
 
   // Create SVG
   const svg = d3
@@ -199,723 +50,369 @@ export function renderRadialGraph(container, data, options = {}) {
     .attr('width', width)
     .attr('height', height)
     .attr('role', 'img')
-    .attr('aria-label', 'Radial graph showing focus visit distribution');
+    .attr('aria-label', 'Topology graph showing website activity');
 
   // Create a group for zoom/pan transformations
   const gZoom = svg.append('g').attr('class', 'zoom-group');
 
-  // Create category-based grouping force
-  // Position nodes in a circular layout based on category
-  const categoryAngles = {
-    social: 0,
-    productivity: Math.PI / 3,
-    development: (2 * Math.PI) / 3,
-    entertainment: Math.PI,
-    news: (4 * Math.PI) / 3,
-    shopping: (5 * Math.PI) / 3,
-    other: Math.PI / 2,
-  };
-
-  const categoryForce = (alpha) => {
-    nodes.forEach((node) => {
-      if (node.isCenter) return;
-
-      const angle = categoryAngles[node.category] || 0;
-      const radius = 150; // Distance from center for category clustering
-      const targetX = width / 2 + radius * Math.cos(angle);
-      const targetY = height / 2 + radius * Math.sin(angle);
-
-      node.vx += (targetX - node.x) * alpha * 0.1;
-      node.vy += (targetY - node.y) * alpha * 0.1;
-    });
-  };
-
-  // Create force simulation with improved collision detection and category grouping
-  const simulation = d3
-    .forceSimulation(nodes)
-    .force(
-      'link',
-      d3
-        .forceLink(links)
-        .id((d) => d.id)
-        .distance(120) // Increased from 100 for more spacing
-        .strength(0.5),
-    )
-    .force('charge', d3.forceManyBody().strength(-250)) // Increased from -200 for more repulsion
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force(
-      'collision',
-      d3
-        .forceCollide()
-        .radius((d) => (d.isCenter ? 45 : sizeScale(d.count) + 15)) // Increased padding for labels
-        .strength(0.8), // Increased from default 0.7
-    )
-    .force('category', categoryForce); // Add category grouping force
-
-  // Create link elements
-  const link = gZoom
-    .append('g')
-    .selectAll('line')
-    .data(links)
-    .enter()
-    .append('line')
-    .attr('stroke', '#d1d5db')
-    .attr('stroke-width', 1.5)
-    .attr('stroke-opacity', 0.6);
-
-  // Create node group
-  const nodeGroup = gZoom
-    .append('g')
-    .selectAll('g')
-    .data(nodes)
-    .enter()
-    .append('g')
-    .attr('class', 'node')
-    .style('cursor', 'pointer')
-    .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
-
-  // Add circles for nodes with color-coding by limit status
-  nodeGroup
-    .append('circle')
-    .attr('r', (d) => (d.isCenter ? 35 : sizeScale(d.count)))
-    .attr('fill', (d) => {
-      if (d.isCenter) return '#3b82f6'; // Primary blue for center
-      if (highlightedDomain && d.id === highlightedDomain) return '#f59e0b'; // Warning amber
-      return '#60a5fa'; // Primary light blue for nodes
-    })
-    .attr('stroke', (d) => {
-      if (d.isCenter) return '#1e40af';
-      if (highlightedDomain && d.id === highlightedDomain) return '#ef4444';
-      // Color-code by limit status
-      return getNodeOutlineColor(d.id, data, limits);
-    })
-    .attr('stroke-width', 3) // Increased from 2 for better visibility
-    .attr('opacity', 0.9)
-    .attr('class', (d) => {
-      if (d.isCenter) return '';
-      // Add CSS class for potential pulsing animation
-      const limitConfig = limits[d.id];
-      if (limitConfig && limitConfig.enabled && limitConfig.daily?.enabled) {
-        const count = d.count || 0;
-        const dailyLimit = limitConfig.daily.limit;
-        if (count >= dailyLimit) return 'node-over-limit';
-      }
-      return '';
-    });
-
-  // Add count labels (weight in center of circle)
-  nodeGroup
-    .append('text')
-    .attr('text-anchor', 'middle')
-    .attr('dy', (d) => (d.isCenter ? 5 : 4))
-    .attr('fill', 'white')
-    .attr('font-size', (d) => (d.isCenter ? '14px' : '11px'))
-    .attr('font-weight', 600)
-    .attr('pointer-events', 'none')
-    .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
-    .text((d) => {
-      if (d.isCenter) return 'You';
-      return d.count;
-    });
-
-  // Dark mode only - optimized for dark blue theme - improved for readability
-  const domainTextColor = '#f8fafc'; // Brighter text (was #e2e8f0)
-  const domainTextShadow = '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)'; // Enhanced shadow
-
-  // Track current zoom level for label visibility
-  let currentZoomLevel = 1;
-
-  // Helper function to determine label visibility
-  function shouldShowLabel(node, zoomLevel) {
-    if (node.isCenter) return true;
-    // Show top 5 domains by default, reveal all when zoomed in > 150%
-    if (zoomLevel > 1.5) return true;
-    return node.rank <= 5;
-  }
-
-  // Add domain name labels (below the circle) with dynamic visibility
-  let domainLabels = nodeGroup
-    .filter((d) => !d.isCenter)
-    .append('text')
-    .attr('class', 'domain-label')
-    .attr('text-anchor', 'middle')
-    .attr('dy', (d) => sizeScale(d.count) + 16) // Slightly lower for better spacing
-    .attr('fill', domainTextColor)
-    .attr('font-size', (d) => (d.rank <= 5 ? '13px' : '11px')) // Larger for top 5
-    .attr('font-weight', 700) // Heavier weight (was 600)
-    .attr('pointer-events', 'none')
-    .style('text-shadow', domainTextShadow)
-    .style('opacity', (d) => (shouldShowLabel(d, currentZoomLevel) ? 1 : 0))
-    .text((d) => (d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id));
-
-  // Add Focus Hero badges
-  nodeGroup
-    .filter((d) => !d.isCenter && badges[d.id])
-    .append('text')
-    .attr('class', 'badge-icon')
-    .attr('text-anchor', 'middle')
-    .attr('dy', (d) => -sizeScale(d.count) - 8)
-    .attr('font-size', '16px')
-    .attr('pointer-events', 'none')
-    .text('🏆')
-    .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))')
-    .style('animation', 'badge-pulse 2s ease-in-out infinite');
-
-  // Add tooltips
+  // Tooltip
   const tooltip = d3
     .select(container)
     .append('div')
     .attr('class', 'graph-tooltip')
     .style('position', 'absolute')
     .style('visibility', 'hidden')
-    .style('background', '#111827')
-    .style('color', '#f9fafb')
+    .style('background', 'rgba(0, 0, 0, 0.85)')
+    .style('color', '#fff')
     .style('padding', '8px 12px')
-    .style('border-radius', '6px')
+    .style('border-radius', '8px')
     .style('font-size', '12px')
     .style('pointer-events', 'none')
     .style('z-index', '1000')
-    .style('box-shadow', '0 8px 30px rgba(15,23,42,0.25)');
+    .style('backdrop-filter', 'blur(4px)');
 
-  // Track focused node
-  let focusedNode = null;
+  // Back Button
+  const backBtn = document.createElement('button');
+  backBtn.className = 'graph-back-btn';
+  backBtn.innerHTML = '← Back to Universe';
+  backBtn.style.position = 'absolute';
+  backBtn.style.top = '10px';
+  backBtn.style.left = '10px';
+  backBtn.style.zIndex = '100';
+  backBtn.style.padding = '8px 12px';
+  backBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+  backBtn.style.border = '1px solid #ddd';
+  backBtn.style.borderRadius = '20px';
+  backBtn.style.cursor = 'pointer';
+  backBtn.style.fontSize = '12px';
+  backBtn.style.fontWeight = '600';
+  backBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+  backBtn.style.display = 'none'; // Hidden by default
+  backBtn.style.transition = 'all 0.2s ease';
 
-  nodeGroup
-    .on('click', (event, d) => {
-      if (d.isCenter) {
-        // Clicking center resets focus
-        focusedNode = null;
-        nodeGroup.selectAll('circle').attr('opacity', 0.9);
-        link.attr('stroke-opacity', 0.6);
-        return;
-      }
+  backBtn.onmouseenter = () => {
+    backBtn.style.background = '#fff';
+    backBtn.style.transform = 'translateY(-1px)';
+    backBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+  };
+  backBtn.onmouseleave = () => {
+    backBtn.style.background = 'rgba(255, 255, 255, 0.9)';
+    backBtn.style.transform = 'translateY(0)';
+    backBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+  };
 
-      // Toggle focus on clicked node
-      if (focusedNode === d.id) {
-        // Unfocus if clicking the same node
-        focusedNode = null;
-        nodeGroup.selectAll('circle').attr('opacity', 0.9);
-        link.attr('stroke-opacity', 0.6);
-      } else {
-        // Focus on the clicked node
-        focusedNode = d.id;
+  backBtn.onclick = () => {
+    render({ type: 'domains' });
+    window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+  };
 
-        // Dim all nodes
-        nodeGroup.selectAll('circle').attr('opacity', (n) => {
-          if (n.isCenter) return 0.9;
-          return n.id === focusedNode ? 1 : 0.3;
+  container.style.position = 'relative'; // Ensure container is relative for absolute positioning
+  container.appendChild(backBtn);
+
+  let simulation = null;
+
+  // Internal function to render the graph based on state
+  function render(viewState) {
+    // Clear previous graph elements
+    gZoom.selectAll('*').remove();
+    if (simulation) simulation.stop();
+
+    // Handle Back Button visibility
+    if (viewState.type === 'subpaths') {
+      backBtn.style.display = 'block';
+    } else {
+      backBtn.style.display = 'none';
+    }
+
+    const nodes = [];
+    const links = [];
+
+    if (viewState.type === 'domains') {
+      // --- DOMAINS VIEW ---
+      // Center node: You
+      nodes.push({
+        id: 'You',
+        group: 'center',
+        r: 40,
+        fx: width / 2,
+        fy: height / 2,
+      });
+
+      // Domain nodes
+      const domainNodes = Object.entries(data)
+        .filter(([domain]) => domain !== 'localhost' && domain !== '127.0.0.1')
+        .map(([domain, domainData]) => {
+          const category = categorizeDomain(domain);
+          return {
+            id: domain,
+            group: 'domain',
+            count: domainData.count,
+            lastVisit: domainData.lastVisit,
+            subpaths: domainData.subpaths || {},
+            category: category.key,
+            categoryName: category.name,
+            categoryColor: category.color,
+            sentiment: category.sentiment,
+          };
         });
 
-        // Dim unrelated links
-        link.attr('stroke-opacity', (l) => (l.target.id === focusedNode ? 1 : 0.15));
-      }
-    })
-    .on('dblclick', (event, d) => {
-      if (d.isCenter) return;
+      // Sort and limit
+      domainNodes.sort((a, b) => b.count - a.count);
+      const topDomains = domainNodes.slice(0, 40);
 
-      // Double-click triggers subpath drilldown
-      const hasSubpaths = d.subpaths && Object.keys(d.subpaths).length > 0;
-      if (hasSubpaths) {
-        drilledDownDomain = d.id;
-        currentView = 'subpaths';
+      // Scale for domain nodes
+      const maxCount = Math.max(...topDomains.map((d) => d.count), 1);
+      const sizeScale = d3.scaleSqrt().domain([0, maxCount]).range([10, 35]);
 
-        // Dispatch event for dashboard to show subpath table
-        window.dispatchEvent(
-          new CustomEvent('domainDrilldown', {
-            detail: {
-              domain: d.id,
-              domainData: d,
-            },
-          }),
-        );
+      topDomains.forEach((d) => {
+        d.r = sizeScale(d.count);
+        nodes.push(d);
+        links.push({ source: 'You', target: d.id });
+      });
+    } else if (viewState.type === 'subpaths') {
+      // --- SUBPATHS VIEW ---
+      const { domain } = viewState;
+      const domainData = data[domain];
+      const category = categorizeDomain(domain);
 
-        renderSubpathView(d.id);
-      } else {
-        // Show message if no subpaths
-        tooltip.html(`
-          <strong>${d.id}</strong><br/>
-          No subpaths tracked yet
-        `);
-        tooltip.style('visibility', 'visible');
-        setTimeout(() => {
-          tooltip.style('visibility', 'hidden');
-        }, 2000);
-      }
-    })
-    .on('mouseenter', function (event, d) {
-      if (d.isCenter) return;
+      // Center node: The Domain
+      nodes.push({
+        id: domain,
+        group: 'center-domain',
+        r: 45,
+        fx: width / 2,
+        fy: height / 2,
+        categoryColor: category.color,
+        count: domainData.count,
+      });
 
-      // Highlight node (unless focused on a different node)
-      if (!focusedNode || focusedNode === d.id) {
-        d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
-      }
+      // Subpath nodes
+      const subpaths = Object.entries(domainData.subpaths || {}).map(([path, pathData]) => ({
+        id: path,
+        group: 'subpath',
+        count: pathData.count,
+        lastVisit: pathData.lastVisit,
+        domain,
+      }));
 
-      // Always show label on hover for better readability
-      d3.select(this).select('.domain-label').style('opacity', 1);
+      // Sort and limit subpaths
+      subpaths.sort((a, b) => b.count - a.count);
+      const topSubpaths = subpaths.slice(0, 30);
 
-      // Show tooltip with enhanced information
-      const subpathCount = Object.keys(d.subpaths).length;
-      const lastVisitDate = new Date(d.lastVisit).toLocaleString();
+      const maxCount = Math.max(...topSubpaths.map((d) => d.count), 1);
+      const sizeScale = d3.scaleSqrt().domain([0, maxCount]).range([8, 25]);
 
-      const drilldownHintText = '<br/><em>💡 Double-click to explore subpaths</em>';
-      const drilldownHint = subpathCount > 0 ? drilldownHintText : '';
-      const badgeInfo = badges[d.id]
-        ? `<br/><strong style="color: #FFD700;">🏆 Focus Hero (${badges[d.id].streak} days!)</strong>`
-        : '';
-
-      // Enhanced tooltip with full domain name (no truncation)
-      tooltip.html(`
-        <div style="max-width: 300px;">
-          <strong style="font-size: 13px; color: #60a5fa;">${d.id}</strong><br/>
-          <span style="color: #d1d5db;">Visits: <strong style="color: #fff;">${d.count}</strong></span><br/>
-          <span style="color: #d1d5db;">Subpaths: <strong style="color: #fff;">${subpathCount}</strong></span><br/>
-          <span style="color: #d1d5db; font-size: 11px;">Last: ${lastVisitDate}</span>${badgeInfo}${drilldownHint}
-        </div>
-      `);
-      tooltip.style('visibility', 'visible');
-    })
-    .on('mousemove', (event) => {
-      tooltip.style('top', `${event.pageY - 60}px`).style('left', `${event.pageX + 10}px`);
-    })
-    .on('mouseleave', function (event, d) {
-      // Only reset opacity if not focused on this node
-      if (!focusedNode || focusedNode === d.id) {
-        const targetOpacity = focusedNode === d.id ? 1 : 0.9;
-        d3.select(this).select('circle').attr('opacity', targetOpacity).attr('stroke-width', 2);
-      }
-
-      // Reset label opacity based on zoom level and rank
-      d3.select(this)
-        .select('.domain-label')
-        .style('opacity', shouldShowLabel(d, currentZoomLevel) ? 1 : 0);
-
-      tooltip.style('visibility', 'hidden');
-    });
-
-  // Update positions on simulation tick
-  simulation.on('tick', () => {
-    link
-      .attr('x1', (d) => d.source.x)
-      .attr('y1', (d) => d.source.y)
-      .attr('x2', (d) => d.target.x)
-      .attr('y2', (d) => d.target.y);
-
-    nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
-  });
-
-  // Track label visibility rules so subpath view can override
-  let labelVisibilityFn = shouldShowLabel;
-
-  // Add zoom behavior with label visibility updates
-  const zoomBehavior = d3.zoom().on('zoom', (event) => {
-    gZoom.attr('transform', event.transform);
-
-    // Update current zoom level
-    currentZoomLevel = event.transform.k;
-
-    // Update label visibility based on zoom level
-    if (domainLabels) {
-      domainLabels.style('opacity', (d) => {
-        if (!labelVisibilityFn) return 1;
-        return labelVisibilityFn(d, currentZoomLevel) ? 1 : 0;
+      topSubpaths.forEach((d) => {
+        d.r = sizeScale(d.count);
+        nodes.push(d);
+        links.push({ source: domain, target: d.id });
       });
     }
 
-    // Update legend zoom display
-    const zoomLevelEl = document.getElementById('zoom-level');
-    if (zoomLevelEl) {
-      zoomLevelEl.textContent = `${Math.round(currentZoomLevel * 100)}%`;
-    }
-  });
-
-  svg.call(zoomBehavior);
-
-  // Add zoom controls (+ and - buttons)
-  const zoomControls = d3
-    .select(container)
-    .append('div')
-    .attr('class', 'graph-zoom-controls')
-    .style('position', 'absolute')
-    .style('top', '8px')
-    .style('right', '8px')
-    .style('display', 'flex')
-    .style('flex-direction', 'column')
-    .style('gap', '6px')
-    .style('z-index', '10');
-
-  // Zoom in button
-  zoomControls
-    .append('button')
-    .attr('class', 'zoom-btn zoom-in-btn')
-    .attr('aria-label', 'Zoom in')
-    .attr('title', 'Zoom in (+)')
-    .style('width', '32px')
-    .style('height', '32px')
-    .style('padding', '0')
-    .style('border', '1px solid #d1d5db')
-    .style('background', 'white')
-    .style('border-radius', '4px')
-    .style('cursor', 'pointer')
-    .style('font-size', '16px')
-    .style('display', 'flex')
-    .style('align-items', 'center')
-    .style('justify-content', 'center')
-    .style('transition', 'all 0.2s')
-    .text('+')
-    .on('mouseover', function () {
-      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
-    })
-    .on('mouseout', function () {
-      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
-    })
-    .on('click', () => {
-      const newScale = svg.property('__zoom').k * 1.2;
-      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
-    });
-
-  // Zoom out button
-  zoomControls
-    .append('button')
-    .attr('class', 'zoom-btn zoom-out-btn')
-    .attr('aria-label', 'Zoom out')
-    .attr('title', 'Zoom out (−)')
-    .style('width', '32px')
-    .style('height', '32px')
-    .style('padding', '0')
-    .style('border', '1px solid #d1d5db')
-    .style('background', 'white')
-    .style('border-radius', '4px')
-    .style('cursor', 'pointer')
-    .style('font-size', '16px')
-    .style('display', 'flex')
-    .style('align-items', 'center')
-    .style('justify-content', 'center')
-    .style('transition', 'all 0.2s')
-    .text('−')
-    .on('mouseover', function () {
-      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
-    })
-    .on('mouseout', function () {
-      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
-    })
-    .on('click', () => {
-      const newScale = svg.property('__zoom').k / 1.2;
-      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
-    });
-
-  // Reset zoom button
-  zoomControls
-    .append('button')
-    .attr('class', 'zoom-btn zoom-reset-btn')
-    .attr('aria-label', 'Reset zoom')
-    .attr('title', 'Reset zoom (R)')
-    .style('width', '32px')
-    .style('height', '32px')
-    .style('padding', '0')
-    .style('border', '1px solid #d1d5db')
-    .style('background', 'white')
-    .style('border-radius', '4px')
-    .style('cursor', 'pointer')
-    .style('font-size', '12px')
-    .style('font-weight', '600')
-    .style('display', 'flex')
-    .style('align-items', 'center')
-    .style('justify-content', 'center')
-    .style('transition', 'all 0.2s')
-    .text('R')
-    .on('mouseover', function () {
-      d3.select(this).style('background', '#f3f4f6').style('border-color', '#0e75b6');
-    })
-    .on('mouseout', function () {
-      d3.select(this).style('background', 'white').style('border-color', '#d1d5db');
-    })
-    .on('click', () => {
-      svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
-    });
-
-  // Add keyboard shortcuts for zoom
-  document.addEventListener('keydown', (event) => {
-    if (event.key === '+' || event.key === '=') {
-      event.preventDefault();
-      const newScale = svg.property('__zoom').k * 1.2;
-      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
-    } else if (event.key === '-' || event.key === '_') {
-      event.preventDefault();
-      const newScale = svg.property('__zoom').k / 1.2;
-      svg.transition().duration(300).call(zoomBehavior.scaleTo, newScale);
-    } else if (event.key === 'r' || event.key === 'R') {
-      event.preventDefault();
-      svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
-    }
-  });
-
-  // Drag functions
-  function dragstarted(event, d) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-
-  function dragged(event, d) {
-    d.fx = event.x;
-    d.fy = event.y;
-  }
-
-  function dragended(event, d) {
-    if (!event.active) simulation.alphaTarget(0);
-    if (!d.isCenter) {
-      // Allow non-center nodes to float after drag
-      d.fx = null;
-      d.fy = null;
-    }
-  }
-
-  // Function to render subpath drilldown view
-  function renderSubpathView(domainId) {
-    const domainData = topDomains.find((d) => d.id === domainId);
-    if (!domainData || !domainData.subpaths) return;
-
-    const subpaths = Object.entries(domainData.subpaths).map(([path, pathData]) => ({
-      id: `${domainId}${path}`,
-      domain: domainId,
-      subpath: path,
-      count: pathData.count,
-      lastVisit: pathData.lastVisit,
-      isSubpath: true,
-    }));
-
-    // Sort by count and limit
-    subpaths.sort((a, b) => b.count - a.count);
-    const topSubpaths = subpaths.slice(0, 20);
-
-    if (topSubpaths.length === 0) {
-      return; // No subpaths to show
-    }
-
-    // Clear existing visualization but keep zoom container and controls
-    simulation.stop();
-    gZoom.selectAll('*').remove();
-    svg.transition().call(zoomBehavior.transform, d3.zoomIdentity);
-
-    // Create center node (domain)
-    const domainCenterNode = {
-      id: domainId,
-      count: domainData.count,
-      isCenter: true,
-      isDomain: true,
-      fx: width / 2,
-      fy: height / 2,
-    };
-
-    // Calculate node sizes for subpaths
-    const maxSubpathCount = Math.max(...topSubpaths.map((s) => s.count));
-    const minSubpathCount = Math.min(...topSubpaths.map((s) => s.count));
-    const subpathSizeScale = d3
-      .scaleLinear()
-      .domain([minSubpathCount, maxSubpathCount])
-      .range([6, 20]);
-
-    // Combine center and subpath nodes
-    const subpathNodes = [domainCenterNode, ...topSubpaths.map((s) => ({ ...s, isCenter: false }))];
-
-    // Create links from domain to all subpaths
-    const subpathLinks = topSubpaths.map((s) => ({
-      source: domainId,
-      target: s.id,
-    }));
-
-    // Create new simulation for subpaths
-    const subpathSimulation = d3
-      .forceSimulation(subpathNodes)
+    // --- SIMULATION ---
+    simulation = d3
+      .forceSimulation(nodes)
       .force(
         'link',
         d3
-          .forceLink(subpathLinks)
+          .forceLink(links)
           .id((d) => d.id)
-          .distance(80)
-          .strength(0.6),
+          .distance(viewState.type === 'domains' ? 120 : 100),
       )
-      .force('charge', d3.forceManyBody().strength(-100))
-      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('charge', d3.forceManyBody().strength(-300))
       .force(
-        'collision',
-        d3.forceCollide().radius((d) => (d.isCenter ? 45 : subpathSizeScale(d.count) + 5)),
-      );
+        'collide',
+        d3.forceCollide().radius((d) => d.r + 5),
+      )
+      .force('center', d3.forceCenter(width / 2, height / 2));
 
-    // Create link elements
-    const subpathLinkEl = gZoom
+    // --- DRAW LINKS ---
+    const link = gZoom
       .append('g')
+      .attr('class', 'links')
       .selectAll('line')
-      .data(subpathLinks)
+      .data(links)
       .enter()
       .append('line')
-      .attr('stroke', '#d1d5db')
-      .attr('stroke-width', 1)
-      .attr('stroke-opacity', 0.5);
+      .attr('stroke', '#e0e0e0')
+      .attr('stroke-width', 1.5)
+      .attr('opacity', 0.6);
 
-    // Create node group
-    const subpathNodeGroup = gZoom
+    // --- DRAW NODES ---
+    const node = gZoom
       .append('g')
+      .attr('class', 'nodes')
       .selectAll('g')
-      .data(subpathNodes)
+      .data(nodes)
       .enter()
       .append('g')
       .attr('class', 'node')
-      .style('cursor', 'pointer');
-
-    // Add circles for nodes
-    subpathNodeGroup
-      .append('circle')
-      .attr('r', (d) => (d.isCenter ? 40 : subpathSizeScale(d.count)))
-      .attr('fill', (d) => {
-        if (d.isCenter) return '#6C5CE7'; // Focus Purple for domain
-        return '#55EFC4'; // Success Green for subpaths
-      })
-      .attr('stroke', '#E0F4FF')
-      .attr('stroke-width', 2)
-      .attr('opacity', 0.9);
-
-    // Add count labels (weight in center of circle)
-    subpathNodeGroup
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d) => (d.isCenter ? 5 : 4))
-      .attr('fill', 'white')
-      .attr('font-size', (d) => (d.isCenter ? '12px' : '10px'))
-      .attr('font-weight', 600)
-      .attr('pointer-events', 'none')
-      .style('text-shadow', '0 1px 3px rgba(0,0,0,0.5)')
-      .text((d) => {
-        if (d.isCenter) {
-          return d.id.length > 15 ? `${d.id.substring(0, 13)}...` : d.id;
-        }
-        return d.count;
-      });
-
-    // Add subpath name labels (below the circle)
-    domainLabels = subpathNodeGroup
-      .filter((d) => !d.isCenter)
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d) => subpathSizeScale(d.count) + 13)
-      .attr('fill', '#e5e7eb')
-      .attr('font-size', '9px')
-      .attr('font-weight', 500)
-      .attr('pointer-events', 'none')
-      .style('text-shadow', '0 1px 3px rgba(0,0,0,0.8)')
-      .text((d) => {
-        const shortPath = d.subpath.length > 12 ? `${d.subpath.substring(0, 10)}...` : d.subpath;
-        return shortPath;
-      });
-
-    // Always show labels in subpath view
-    labelVisibilityFn = () => true;
-
-    // Add "Back" button
-    const backBtn = gZoom
-      .append('g')
-      .attr('class', 'back-button')
-      .attr('transform', 'translate(20, 20)')
       .style('cursor', 'pointer')
-      .on('click', () => {
-        drilledDownDomain = null;
-        currentView = 'domains';
+      .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended));
 
-        // Dispatch event to reset table
-        window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
+    // Circle
+    node
+      .append('circle')
+      .attr('r', (d) => d.r)
+      .attr('fill', (d) => {
+        if (d.group === 'center') return '#333';
+        if (d.group === 'center-domain') return d.categoryColor;
+        if (d.group === 'domain') return d.categoryColor;
+        return '#888'; // subpath default
+      })
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2)
+      .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))');
 
-        renderRadialGraph(container, data, options);
+    // Count Label (inside circle)
+    node
+      .filter((d) => d.group !== 'center') // Don't show count for "You" node
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '.3em')
+      .attr('fill', 'white')
+      .attr('font-size', (d) => `${Math.min(d.r / 1.5, 12)}px`)
+      .attr('font-weight', 700)
+      .attr('pointer-events', 'none')
+      .style('text-shadow', '0 1px 2px rgba(0,0,0,0.3)')
+      .style('display', (d) => (d.r > 12 ? 'block' : 'none'))
+      .text((d) => d.count);
+
+    // Labels
+    node
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', (d) => d.r + 15)
+      .attr('fill', '#555')
+      .attr('font-size', '11px')
+      .attr('font-weight', 600)
+      .attr('pointer-events', 'none')
+      .text((d) => {
+        if (d.group === 'center') return 'You';
+        if (d.id.length > 15) return `${d.id.substring(0, 13)}...`;
+        return d.id;
       });
 
-    backBtn
-      .append('rect')
-      .attr('width', 60)
-      .attr('height', 28)
-      .attr('rx', 14)
-      .attr('fill', '#0E75B6')
-      .attr('opacity', 0.9);
-
-    backBtn
+    // Badges
+    node
+      .filter((d) => badges[d.id])
       .append('text')
-      .attr('x', 30)
-      .attr('y', 18)
       .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('font-size', '12px')
-      .attr('font-weight', 600)
-      .text('← Back');
+      .attr('dy', (d) => -d.r - 5)
+      .attr('font-size', '14px')
+      .text('🏆');
 
-    // Tooltips for subpaths
-    subpathNodeGroup
+    // --- INTERACTIONS ---
+    node
       .on('mouseenter', function (event, d) {
-        d3.select(this).select('circle').attr('opacity', 1).attr('stroke-width', 3);
+        // eslint-disable-next-line newline-per-chained-call
+        d3.select(this).select('circle').transition().duration(200).attr('transform', 'scale(1.1)');
 
-        if (d.isCenter) {
-          tooltip.html(`
+        let content = '';
+        if (d.group === 'center') {
+          content = '<strong>You</strong><br/>Center of your digital universe';
+        } else if (d.group === 'domain' || d.group === 'center-domain') {
+          const badgeInfo = badges[d.id] ? `<br/>🏆 Focus Hero (${badges[d.id].streak} days!)` : '';
+          content = `
             <strong>${d.id}</strong><br/>
-            Total visits: ${d.count}<br/>
-            Click to return to domains
-          `);
-        } else {
-          const lastVisitDate = new Date(d.lastVisit).toLocaleString();
-          tooltip.html(`
-            <strong>${d.domain}</strong><br/>
-            Path: ${d.subpath}<br/>
-            Visits: ${d.count}<br/>
-            Last visit: ${lastVisitDate}
-          `);
+            <span style="opacity:0.8">${d.categoryName || 'Website'}</span><br/>
+            <strong>${d.count}</strong> visits${badgeInfo}
+          `;
+        } else if (d.group === 'subpath') {
+          content = `
+            <strong>${d.id}</strong><br/>
+            Path on ${d.domain}<br/>
+            <strong>${d.count}</strong> visits
+          `;
         }
-        tooltip.style('visibility', 'visible');
+
+        tooltip.html(content).style('visibility', 'visible');
       })
       .on('mousemove', (event) => {
-        tooltip.style('top', `${event.pageY - 60}px`).style('left', `${event.pageX + 10}px`);
+        tooltip.style('top', `${event.pageY - 40}px`).style('left', `${event.pageX + 10}px`);
       })
       .on('mouseleave', function () {
-        d3.select(this).select('circle').attr('opacity', 0.9).attr('stroke-width', 2);
+        // eslint-disable-next-line newline-per-chained-call
+        d3.select(this).select('circle').transition().duration(200).attr('transform', 'scale(1)');
         tooltip.style('visibility', 'hidden');
       })
       .on('click', (event, d) => {
-        if (d.isCenter) {
-          // Exit drilldown
-          drilledDownDomain = null;
-          currentView = 'domains';
+        if (d.group === 'domain') {
+          // Drilldown to domain
+          render({ type: 'subpaths', domain: d.id });
 
-          // Dispatch event to reset table
+          // Dispatch event for dashboard table
+          window.dispatchEvent(
+            new CustomEvent('domainDrilldown', {
+              detail: {
+                domain: d.id,
+                domainData: data[d.id],
+              },
+            }),
+          );
+        } else if (d.group === 'center-domain') {
+          // Go back to main view
+          render({ type: 'domains' });
+
+          // Dispatch event for dashboard table reset
           window.dispatchEvent(new CustomEvent('domainDrilldownExit'));
-
-          renderRadialGraph(container, data, options);
         }
       });
 
-    // Update positions on simulation tick
-    subpathSimulation.on('tick', () => {
-      subpathLinkEl
+    // Simulation tick
+    simulation.on('tick', () => {
+      link
         .attr('x1', (d) => d.source.x)
         .attr('y1', (d) => d.source.y)
         .attr('x2', (d) => d.target.x)
         .attr('y2', (d) => d.target.y);
 
-      subpathNodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
+      node.attr('transform', (d) => `translate(${d.x},${d.y})`);
     });
 
-    // Update cleanup to stop subpath simulation
-    simulation.stop = () => subpathSimulation.stop();
+    // Drag functions
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      if (d.group !== 'center' && d.group !== 'center-domain') {
+        d.fx = null;
+        d.fy = null;
+      }
+    }
   }
+
+  // Initial render
+  render({ type: 'domains' });
+
+  // Zoom behavior
+  const zoomBehavior = d3
+    .zoom()
+    .scaleExtent([0.1, 4])
+    .on('zoom', (event) => {
+      gZoom.attr('transform', event.transform);
+    });
+
+  svg.call(zoomBehavior);
 
   // Log performance metrics
   const graphPerfEnd = performance.now();
   const graphRenderTime = Math.round(graphPerfEnd - graphPerfStart);
-  const nodeCount = nodes.length;
-  console.log(
-    `[FocusBear Performance] Graph render time: ${graphRenderTime}ms for ${nodeCount} nodes`,
-  );
-  if (graphRenderTime > 1000) {
-    console.warn('[FocusBear Performance] Graph render time exceeds target of 1000ms');
-  }
+  console.log(`[FocusBear Performance] Graph init time: ${graphRenderTime}ms`);
 
   // Return cleanup function
   return () => {
-    simulation.stop();
+    if (simulation) simulation.stop();
     tooltip.remove();
+    backBtn.remove();
   };
 }

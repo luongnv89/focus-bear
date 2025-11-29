@@ -8,11 +8,18 @@
     <link rel="stylesheet" href="./dashboard.css" />
     <script src="../vendor/d3.min.js"></script>
   </head>
+
   <body class="dashboard-view">
     <div class="dashboard-container">
       <header class="dashboard-header">
         <!-- Left: Brand -->
-        <div class="header-brand" id="dashboard-home-trigger" role="button" tabindex="0">
+        <div
+          class="header-brand"
+          id="dashboard-home-trigger"
+          role="button"
+          tabindex="0"
+          title="Return to Dashboard Home"
+        >
           <picture class="header-logo">
             <source srcset="../../assets/icon-dark.svg" media="(prefers-color-scheme: dark)" />
             <img src="../../assets/icon.svg" alt="FocusBear logo" />
@@ -28,13 +35,26 @@
               data-range="today"
               role="tab"
               aria-selected="true"
+              title="View data for today"
             >
               Today
             </button>
-            <button class="time-filter-btn" data-range="week" role="tab" aria-selected="false">
+            <button
+              class="time-filter-btn"
+              data-range="week"
+              role="tab"
+              aria-selected="false"
+              title="View data for the last 7 days"
+            >
               Week
             </button>
-            <button class="time-filter-btn" data-range="month" role="tab" aria-selected="false">
+            <button
+              class="time-filter-btn"
+              data-range="month"
+              role="tab"
+              aria-selected="false"
+              title="View data for the last 30 days"
+            >
               Month
             </button>
           </div>
@@ -51,11 +71,11 @@
         <!-- Right: Stats + Actions -->
         <div class="header-right">
           <div class="stats-summary" id="stats-summary">
-            <span class="stat-item">
+            <span class="stat-item" title="Total unique websites visited in selected period">
               <strong id="total-domains">0</strong>
               <span class="stat-label">domains</span>
             </span>
-            <span class="stat-item">
+            <span class="stat-item" title="Total page visits in selected period">
               <strong id="total-visits">0</strong>
               <span class="stat-label">visits</span>
             </span>
@@ -80,7 +100,22 @@
           </div>
 
           <div class="header-actions">
-            <button id="settings-btn" class="icon-button" aria-label="Settings" title="Settings">
+            <a
+              href="./blocking.html"
+              id="blocking-btn"
+              class="icon-button"
+              aria-label="Blocking Rules"
+              title="Manage blocking rules and limits"
+              style="text-decoration: none"
+            >
+              🛡️
+            </a>
+            <button
+              id="settings-btn"
+              class="icon-button"
+              aria-label="Settings"
+              title="Configure extension settings"
+            >
               ⚙️
             </button>
           </div>
@@ -156,7 +191,7 @@
             <!-- Topology Panel -->
             <div class="topology-panel" id="topology-panel">
               <div class="panel-header">
-                <h3>Focus Topology</h3>
+                <h3>My Attention Map</h3>
                 <p class="panel-subtitle">Interactive visualization of your attention patterns</p>
               </div>
               <div id="graph-container" class="graph-container" role="region">
@@ -170,19 +205,31 @@
                   <div class="legend-title">Legend</div>
                   <div class="legend-items">
                     <div class="legend-item">
-                      <span class="legend-color-box" style="border: 3px solid #10b981"></span>
-                      <span class="legend-label">Under Limit</span>
+                      <span
+                        class="legend-color-box"
+                        style="border: 3px solid var(--color-success)"
+                      ></span>
+                      <span class="legend-label">On Track</span>
                     </div>
                     <div class="legend-item">
-                      <span class="legend-color-box" style="border: 3px solid #f59e0b"></span>
+                      <span
+                        class="legend-color-box"
+                        style="border: 3px solid var(--color-warning)"
+                      ></span>
                       <span class="legend-label">Near Limit</span>
                     </div>
                     <div class="legend-item">
-                      <span class="legend-color-box" style="border: 3px solid #ef4444"></span>
+                      <span
+                        class="legend-color-box"
+                        style="border: 3px solid var(--color-error)"
+                      ></span>
                       <span class="legend-label">Over Limit</span>
                     </div>
                     <div class="legend-item">
-                      <span class="legend-color-box" style="border: 3px solid #1e40af"></span>
+                      <span
+                        class="legend-color-box"
+                        style="border: 3px solid var(--color-secondary)"
+                      ></span>
                       <span class="legend-label">No Limit</span>
                     </div>
                   </div>
@@ -190,24 +237,24 @@
                   <div class="legend-section-title">Categories</div>
                   <div class="legend-categories">
                     <div class="legend-category-item" title="Social media platforms">
-                      <span class="category-dot" style="background: #ec4899"></span>
+                      <span class="category-dot" style="background: #3a3a3a"></span>
                       <span class="category-name">Social</span>
                     </div>
                     <div class="legend-category-item" title="Productivity tools">
-                      <span class="category-dot" style="background: #10b981"></span>
+                      <span class="category-dot" style="background: #555555"></span>
                       <span class="category-name">Work</span>
                     </div>
                     <div class="legend-category-item" title="Development tools">
-                      <span class="category-dot" style="background: #8b5cf6"></span>
+                      <span class="category-dot" style="background: #777777"></span>
                       <span class="category-name">Dev</span>
                     </div>
                     <div class="legend-category-item" title="Entertainment sites">
-                      <span class="category-dot" style="background: #f59e0b"></span>
+                      <span class="category-dot" style="background: #8f8f8f"></span>
                       <span class="category-name">Media</span>
                     </div>
                   </div>
                   <div class="legend-hint">
-                    💡 <span id="legend-hint-text">Domains grouped by category</span>
+                    💡 <span id="legend-hint-text">Larger bubbles = More opens</span>
                   </div>
                   <div class="legend-zoom">Zoom: <span id="zoom-level">100%</span></div>
                 </div>
@@ -251,19 +298,19 @@
             <!-- Table Panel -->
             <div class="table-panel" id="table-panel">
               <div class="panel-header">
-                <h3>Domain Statistics</h3>
+                <h3>Website Activity</h3>
                 <div class="table-controls">
                   <input
                     type="search"
                     id="table-search"
-                    placeholder="Search domains..."
-                    aria-label="Search domains"
+                    placeholder="Search websites..."
+                    aria-label="Search websites"
                   />
                   <select id="table-sort" aria-label="Sort by">
-                    <option value="count-desc">Most visits first</option>
-                    <option value="count-asc">Least visits first</option>
-                    <option value="domain-asc">Domain (A-Z)</option>
-                    <option value="domain-desc">Domain (Z-A)</option>
+                    <option value="count-desc">Most opened first</option>
+                    <option value="count-asc">Least opened first</option>
+                    <option value="domain-asc">Website (A-Z)</option>
+                    <option value="domain-desc">Website (Z-A)</option>
                     <option value="lastVisit-desc">Recently visited</option>
                   </select>
                 </div>
@@ -273,15 +320,11 @@
                   <thead>
                     <tr>
                       <th class="sortable" data-sort="domain">
-                        Domain
+                        Website
                         <span class="sort-indicator"></span>
                       </th>
                       <th class="sortable" data-sort="count">
-                        Visits
-                        <span class="sort-indicator"></span>
-                      </th>
-                      <th class="sortable" data-sort="subpaths">
-                        Subpaths
+                        Times Opened
                         <span class="sort-indicator"></span>
                       </th>
                       <th class="comparison-column" style="display: none">Change</th>
@@ -291,7 +334,6 @@
                       </th>
                       <th>Limit</th>
                       <th>Status</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="table-body">
@@ -317,8 +359,8 @@
                   </button>
                 </div>
                 <select id="pagination-size" class="pagination-size" aria-label="Items per page">
-                  <option value="10">10 per page</option>
-                  <option value="25" selected>25 per page</option>
+                  <option value="10" selected>10 per page</option>
+                  <option value="25">25 per page</option>
                   <option value="50">50 per page</option>
                   <option value="100">100 per page</option>
                 </select>
@@ -347,116 +389,49 @@
         <div class="settings-grid">
           <article class="settings-card">
             <div class="card-header">
-              <h3>Per-site time-based limits</h3>
+              <h3>Accessibility</h3>
               <p class="card-subtitle">
-                Cap visits to distracting sites with rolling 5-hour windows and daily totals.
+                Adjust display and interaction settings for better usability.
               </p>
             </div>
-
-            <form id="limit-form" class="settings-form">
-              <label for="limit-domain">Domain</label>
-              <input
-                id="limit-domain"
-                name="domain"
-                type="text"
-                placeholder="example.com"
-                required
-              />
-
-              <label class="toggle-row" for="limit-enabled">
-                <div>
-                  <span>Enable limits for this domain</span>
-                </div>
-                <input type="checkbox" id="limit-enabled" name="enabled" checked />
-              </label>
-
-              <div id="limit-config-section">
-                <div class="limit-type-section">
-                  <label class="toggle-row" for="five-hour-enabled">
-                    <div>
-                      <span>5-hour window limit</span>
-                      <p class="muted-copy">Max visits in any 5-hour period</p>
-                    </div>
-                    <input type="checkbox" id="five-hour-enabled" name="fiveHourEnabled" checked />
-                  </label>
-
-                  <div id="five-hour-config" class="limit-input-group">
-                    <label for="five-hour-limit">Visits per 5 hours</label>
-                    <input
-                      id="five-hour-limit"
-                      name="fiveHourLimit"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value="10"
-                    />
-                  </div>
-                </div>
-
-                <div class="limit-type-section">
-                  <label class="toggle-row" for="daily-enabled">
-                    <div>
-                      <span>Daily limit</span>
-                      <p class="muted-copy">Max visits per day</p>
-                    </div>
-                    <input type="checkbox" id="daily-enabled" name="dailyEnabled" checked />
-                  </label>
-
-                  <div id="daily-config" class="limit-input-group">
-                    <label for="daily-limit">Visits per day</label>
-                    <input
-                      id="daily-limit"
-                      name="dailyLimit"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value="20"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <p id="limit-error" class="form-error" role="alert"></p>
-              <button type="submit" class="pill-button pill-button-primary">Save limit</button>
-            </form>
-
-            <div class="limit-list-wrapper">
-              <p class="eyebrow">Active limits</p>
-              <p id="limits-empty" class="muted-copy">No limits yet. Add one above.</p>
-              <ul id="limit-list" class="limit-list"></ul>
+            <div class="settings-item">
+              <label for="color-blind-mode">Color Blind Mode</label>
+              <input type="checkbox" id="color-blind-mode" />
             </div>
-          </article>
-
-          <article class="settings-card">
-            <div class="card-header">
-              <h3>Export data</h3>
-              <p class="card-subtitle">Download your focus tracking data for backup or analysis.</p>
+            <div class="settings-item">
+              <label for="dark-mode">Dark Mode</label>
+              <input type="checkbox" id="dark-mode" />
             </div>
-            <div class="export-buttons">
-              <button id="export-json-btn" class="pill-button pill-button-secondary">
-                Export as JSON
-              </button>
-              <button id="export-csv-btn" class="pill-button pill-button-secondary">
-                Export as CSV
-              </button>
-            </div>
-            <p class="muted-copy" style="margin-top: 12px; font-size: 12px">
-              🔒 Your data never leaves your device unless you share it.
-            </p>
-          </article>
-
-          <article class="settings-card danger-card">
-            <div class="card-header">
-              <h3>Data management</h3>
-              <p class="card-subtitle">
-                FocusBear stores everything locally. You can reset anytime.
-              </p>
-            </div>
-            <button id="reset-data-btn" class="pill-button pill-button-danger">
-              Reset all focus data
-            </button>
           </article>
         </div>
+
+        <article class="settings-card">
+          <div class="card-header">
+            <h3>Export data</h3>
+            <p class="card-subtitle">Download your focus tracking data for backup or analysis.</p>
+          </div>
+          <div class="export-buttons">
+            <button id="export-json-btn" class="pill-button pill-button-secondary">
+              Export as JSON
+            </button>
+            <button id="export-csv-btn" class="pill-button pill-button-secondary">
+              Export as CSV
+            </button>
+          </div>
+          <p class="muted-copy" style="margin-top: 12px; font-size: 12px">
+            🔒 Your data never leaves your device unless you share it.
+          </p>
+        </article>
+
+        <article class="settings-card danger-card">
+          <div class="card-header">
+            <h3>Data management</h3>
+            <p class="card-subtitle">FocusBear stores everything locally. You can reset anytime.</p>
+          </div>
+          <button id="reset-data-btn" class="pill-button pill-button-danger">
+            Reset all focus data
+          </button>
+        </article>
 
         <div id="settings-toast" class="settings-toast" aria-live="polite"></div>
       </section>

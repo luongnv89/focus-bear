@@ -214,6 +214,8 @@ export async function updateBlockingRules() {
     const todayKey = getTodayKey();
     const todayVisits = visits[todayKey] || {};
 
+    const escapeForRegex = (domain) => domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     // Get all currently blocked domains
     const blockedDomains = [];
 
@@ -227,6 +229,7 @@ export async function updateBlockingRules() {
 
       // Skip if limits are disabled
       if (!normalizedConfig.enabled) {
+        console.debug('[Limits] Skipping disabled limit', { domain });
         return;
       }
 
@@ -236,6 +239,12 @@ export async function updateBlockingRules() {
 
       if (normalizedConfig.fiveHour.enabled && fiveHourCount >= normalizedConfig.fiveHour.limit) {
         const oldestTimestamp = getOldestTimestampInWindow(timestamps, fiveHourMs);
+        console.info('[Limits] Blocking domain due to 5h limit', {
+          domain,
+          fiveHourCount,
+          fiveHourLimit: normalizedConfig.fiveHour.limit,
+          oldestTimestamp,
+        });
         blockedDomains.push({
           domain,
           count: fiveHourCount,
@@ -248,11 +257,24 @@ export async function updateBlockingRules() {
 
       // Check daily limit
       if (normalizedConfig.daily.enabled && dailyCount >= normalizedConfig.daily.limit) {
+        console.info('[Limits] Blocking domain due to daily limit', {
+          domain,
+          dailyCount,
+          dailyLimit: normalizedConfig.daily.limit,
+        });
         blockedDomains.push({
           domain,
           count: dailyCount,
           limit: normalizedConfig.daily.limit,
           limitType: 'daily',
+        });
+      } else {
+        console.debug('[Limits] Domain under limits', {
+          domain,
+          dailyCount,
+          dailyLimit: normalizedConfig.daily.limit,
+          fiveHourCount,
+          fiveHourLimit: normalizedConfig.fiveHour.limit,
         });
       }
     });
@@ -274,8 +296,8 @@ export async function updateBlockingRules() {
     const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
     const ruleIdsToRemove = existingRules.map((rule) => rule.id);
 
-    // Create new rules for blocked domains
-    const newRules = blockedDomains.map((item, index) => {
+    // Create new rules for blocked domains (cover root + any subdomain)
+    const regexRules = blockedDomains.map((item, index) => {
       const blockedPageUrl = getBlockedPageUrl(
         item.domain,
         item.count,
@@ -283,6 +305,10 @@ export async function updateBlockingRules() {
         item.limitType,
         item.oldestTimestamp,
       );
+      const escapedDomain = escapeForRegex(item.domain);
+      const regexFilter = `^https?://([^/]*\\.)?${escapedDomain}/`;
+
+      console.debug('[Limits] Building regex rule', { domain: item.domain, regexFilter });
 
       return {
         id: index + 1, // Rule IDs must be positive integers
@@ -292,34 +318,50 @@ export async function updateBlockingRules() {
           redirect: { url: blockedPageUrl },
         },
         condition: {
-          urlFilter: `*://${item.domain}/*`,
+          regexFilter,
           resourceTypes: ['main_frame'],
-          // Exclude our blocked page from being blocked
-          excludedInitiatorDomains: [chrome.runtime.id],
         },
       };
     });
 
-    // Also add rules for www. versions
-    const wwwRules = blockedDomains.map((item, index) => {
-      const blockedPageUrl = getBlockedPageUrl(item.domain, item.count, item.limit, item.limitType);
-
-      return {
-        id: index + 1 + 1000, // Offset to avoid ID collision
-        priority: 1,
-        action: {
-          type: 'redirect',
-          redirect: { url: blockedPageUrl },
+    // Provide explicit urlFilter fallbacks for host and www host
+    const explicitHostRules = blockedDomains.flatMap((item, index) => {
+      const blockedPageUrl = getBlockedPageUrl(
+        item.domain,
+        item.count,
+        item.limit,
+        item.limitType,
+        item.oldestTimestamp,
+      );
+      return [
+        {
+          id: 10000 + index + 1,
+          priority: 1,
+          action: {
+            type: 'redirect',
+            redirect: { url: blockedPageUrl },
+          },
+          condition: {
+            urlFilter: `*://${item.domain}/*`,
+            resourceTypes: ['main_frame'],
+          },
         },
-        condition: {
-          urlFilter: `*://www.${item.domain}/*`,
-          resourceTypes: ['main_frame'],
-          excludedInitiatorDomains: [chrome.runtime.id],
+        {
+          id: 20000 + index + 1,
+          priority: 1,
+          action: {
+            type: 'redirect',
+            redirect: { url: blockedPageUrl },
+          },
+          condition: {
+            urlFilter: `*://www.${item.domain}/*`,
+            resourceTypes: ['main_frame'],
+          },
         },
-      };
+      ];
     });
 
-    const allNewRules = [...newRules, ...wwwRules];
+    const allNewRules = [...regexRules, ...explicitHostRules];
 
     // Update dynamic rules
     await chrome.declarativeNetRequest.updateDynamicRules({
@@ -342,4 +384,12 @@ export function initializeLimitEnforcement() {
   updateBlockingRules();
 
   console.log('Limit enforcement initialized (using declarativeNetRequest)');
+
+  // Recompute rules whenever visits or limits change
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes.visits || changes.limits) {
+      updateBlockingRules();
+    }
+  });
 }

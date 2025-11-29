@@ -61,7 +61,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('shows total visits when visits recorded today', async () => {
@@ -77,7 +77,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('16');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('shows total visits for a single domain', async () => {
@@ -91,7 +91,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('10');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('ignores visits from previous days', async () => {
@@ -129,7 +129,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('1275');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('uses Bear Blue brand color for badge background', async () => {
@@ -143,7 +143,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       // Bear Blue from brand guidelines
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('handles missing visits object gracefully', async () => {
@@ -152,7 +152,7 @@ describe('Badge Module', () => {
       await updateVisitBadge();
 
       expect(chrome.action.badgeText).toBe('');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('handles null visits gracefully', async () => {
@@ -283,7 +283,7 @@ describe('Badge Module', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith('Initializing visit counter badge...');
       expect(consoleLogSpy).toHaveBeenCalledWith('Visit counter badge initialized');
       expect(chrome.action.badgeText).toBe('5');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
 
       consoleLogSpy.mockRestore();
     });
@@ -294,7 +294,7 @@ describe('Badge Module', () => {
       await initializeBadge();
 
       expect(chrome.action.badgeText).toBe('');
-      expect(chrome.action.badgeColor).toBe('#0E75B6');
+      expect(chrome.action.badgeColor).toBe('#1BFF6E');
     });
 
     test('initializes badge with multiple domains worth of visits', async () => {

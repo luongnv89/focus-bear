@@ -21,7 +21,7 @@ import { updateBlockingRules } from '../background/limits.js';
  * @param {string} range
  * @returns {Promise<Object>}
  */
-async function loadAggregatedStats(range = 'today') {
+export async function loadAggregatedStats(range = 'today') {
   const now = new Date();
   let startDate;
 
@@ -195,9 +195,13 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
   // Get top 3 domains
   const top3 = sorted.slice(0, 3);
 
-  // Count domains over limit (only considering enabled limits)
+  // Count domains over limit (checking both daily and 5-hour limits)
   let overLimitCount = 0;
   let nearLimitCount = 0;
+
+  // Helper to count visits in last 5 hours
+  const FIVE_HOUR_MS = 5 * 60 * 60 * 1000;
+  const fiveHoursAgo = Date.now() - FIVE_HOUR_MS;
 
   Object.entries(limits).forEach(([domain, limitConfig]) => {
     if (!limitConfig || !limitConfig.enabled) return;
@@ -205,15 +209,27 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
     const domainData = aggregatedData[domain];
     if (!domainData) return;
 
-    const { count } = domainData;
-    const dailyLimit = limitConfig.daily?.limit;
+    const todayCount = domainData.count || 0;
 
-    if (!dailyLimit || !limitConfig.daily.enabled) return;
+    // Check 5-hour limit
+    const fiveHourLimit = limitConfig.fiveHour?.enabled ? limitConfig.fiveHour.limit : null;
+    let fiveHourCount = 0;
+    if (fiveHourLimit && domainData.timestamps) {
+      fiveHourCount = domainData.timestamps.filter((t) => t >= fiveHoursAgo).length;
+    }
 
-    const ratio = count / dailyLimit;
-    if (ratio >= 1) {
+    // Check daily limit
+    const dailyLimit = limitConfig.daily?.enabled ? limitConfig.daily?.limit : null;
+
+    // Determine if over or near limit (check both)
+    const overFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit;
+    const overDaily = dailyLimit && todayCount >= dailyLimit;
+    const nearFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit * 0.8;
+    const nearDaily = dailyLimit && todayCount >= dailyLimit * 0.8;
+
+    if (overFiveHour || overDaily) {
       overLimitCount += 1;
-    } else if (ratio >= 0.8) {
+    } else if (nearFiveHour || nearDaily) {
       nearLimitCount += 1;
     }
   });
@@ -302,7 +318,7 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
  * @param {Object} limits - User-configured limits
  * @returns {Array} - Array of insight objects
  */
-function generateWeeklyInsights(weekData, limits) {
+export function generateWeeklyInsights(weekData, limits) {
   const insights = [];
   const domains = Object.entries(weekData);
 

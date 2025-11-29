@@ -1,5 +1,13 @@
 # todo_list.md
 
+## Recolor rollout (Bright Monochrome)
+
+- [ ] Confirm palette tokens (black/white/gray spectrum, bright green accent) and shadow/border rules
+- [ ] Swap all CSS `:root` palettes to the new tokens (popup, dashboard, domain view, blocked page, toast)
+- [ ] Restyle shared components (buttons, tables, cards, badges, toasts, legends) to use only allowed colors and depth cues
+- [ ] Remove leftover legacy color refs in HTML/JS and adjust any inline styles or assets
+- [ ] Run lint/tests and quick visual sweep across popup, dashboard (main/domain), blocked page, and toast overlays
+
 ## Phase 0: Proof of Concept (POC)
 
 - [x] Task 0.1 – Initialize Chrome Extension Project (MV3 Skeleton)

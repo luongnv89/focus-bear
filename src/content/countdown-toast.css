@@ -26,18 +26,18 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background: white;
+  background: #111111;
   border-radius: 8px;
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.15),
-    0 0 1px rgba(0, 0, 0, 0.2);
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    0 0 1px rgba(0, 0, 0, 0.35);
   min-width: 280px;
   max-width: 360px;
   opacity: 0;
   transform: translateX(400px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
-  border-left: 4px solid #0e75b6; /* Bear Blue */
+  border-left: 4px solid #1bff6e;
 }
 
 .focusbear-toast-visible {
@@ -55,35 +55,35 @@
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  color: #2d3436;
+  color: #1a1a1a;
 }
 
 .focusbear-toast-content strong {
   font-weight: 600;
-  color: #0e75b6; /* Bear Blue */
+  color: #0f9f46;
 }
 
 /* Severity variants */
 .focusbear-toast-info {
-  border-left-color: #0e75b6; /* Bear Blue */
+  border-left-color: #1bff6e;
 }
 
 .focusbear-toast-warning {
-  border-left-color: #ff9f43; /* Warning Orange */
-  background: #fffbf5;
+  border-left-color: #5f5f5f;
+  background: #1a1a1a;
 }
 
 .focusbear-toast-warning .focusbear-toast-content strong {
-  color: #e67e22;
+  color: #3a3a3a;
 }
 
 .focusbear-toast-danger {
-  border-left-color: #d63031; /* Alert Red */
-  background: #fff5f5;
+  border-left-color: #2a2a2a;
+  background: #141414;
 }
 
 .focusbear-toast-danger .focusbear-toast-content strong {
-  color: #d63031;
+  color: #2a2a2a;
 }
 
 /* Accessibility: Reduce motion */

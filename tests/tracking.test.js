@@ -96,11 +96,16 @@ describe('Tracking Module', () => {
     });
 
     test('handles URLs with ports', () => {
-      const result = parseUrl('https://localhost:3000/app');
+      const result = parseUrl('https://example.com:8080/app');
       expect(result).toEqual({
-        domain: 'localhost',
+        domain: 'example.com',
         subpath: '/app',
       });
+    });
+
+    test('returns null for localhost URLs', () => {
+      expect(parseUrl('https://localhost:3000/app')).toBeNull();
+      expect(parseUrl('http://127.0.0.1:8080/test')).toBeNull();
     });
 
     test('handles URLs with subdomains', () => {

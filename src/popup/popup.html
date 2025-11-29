@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="popup.css" />
     <script src="../vendor/d3.min.js"></script>
   </head>
+
   <body>
     <div class="container">
       <header>
@@ -17,7 +18,26 @@
           </picture>
           <h1>FocusBear</h1>
         </div>
-        <button id="settings-btn" aria-label="Settings">⚙️</button>
+        <div style="display: flex; gap: 8px">
+          <a
+            href="../dashboard/blocking.html"
+            target="_blank"
+            id="blocking-btn"
+            aria-label="Blocking Rules"
+            title="Blocking Rules"
+            style="
+              text-decoration: none;
+              font-size: 20px;
+              padding: 6px 10px;
+              border-radius: 8px;
+              border: 1px solid var(--color-border);
+              background: var(--color-card);
+              color: var(--color-text-dark);
+            "
+            >🛡️</a
+          >
+          <button id="settings-btn" aria-label="Settings">⚙️</button>
+        </div>
       </header>
 
       <main id="main-view" role="main">
@@ -99,89 +119,6 @@
         </div>
 
         <div class="settings-grid">
-          <article class="settings-card">
-            <div class="card-header">
-              <h3>Per-site time-based limits</h3>
-              <p class="card-subtitle">
-                Cap visits to distracting sites with 5-hour and daily limits. We'll redirect you to
-                the bear wall when you hit the limit.
-              </p>
-            </div>
-
-            <form id="limit-form" class="settings-form">
-              <label for="limit-domain">Domain</label>
-              <input
-                id="limit-domain"
-                name="domain"
-                type="text"
-                placeholder="example.com"
-                required
-              />
-
-              <label class="toggle-row" for="limit-enabled">
-                <div>
-                  <span>Enable limits for this domain</span>
-                </div>
-                <input type="checkbox" id="limit-enabled" name="enabled" checked />
-              </label>
-
-              <div id="limit-config-section">
-                <div class="limit-type-section">
-                  <label class="toggle-row" for="five-hour-enabled">
-                    <div>
-                      <span>5-hour window limit</span>
-                      <p class="muted-copy">Max visits in any 5-hour period</p>
-                    </div>
-                    <input type="checkbox" id="five-hour-enabled" name="fiveHourEnabled" checked />
-                  </label>
-
-                  <div id="five-hour-config" class="limit-input-group">
-                    <label for="five-hour-limit">Visits per 5 hours</label>
-                    <input
-                      id="five-hour-limit"
-                      name="fiveHourLimit"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value="10"
-                    />
-                  </div>
-                </div>
-
-                <div class="limit-type-section">
-                  <label class="toggle-row" for="daily-enabled">
-                    <div>
-                      <span>Daily limit</span>
-                      <p class="muted-copy">Max visits per day</p>
-                    </div>
-                    <input type="checkbox" id="daily-enabled" name="dailyEnabled" checked />
-                  </label>
-
-                  <div id="daily-config" class="limit-input-group">
-                    <label for="daily-limit">Visits per day</label>
-                    <input
-                      id="daily-limit"
-                      name="dailyLimit"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value="20"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <p id="limit-error" class="form-error" role="alert"></p>
-              <button type="submit" class="pill-button pill-button-primary">Save limit</button>
-            </form>
-
-            <div class="limit-list-wrapper">
-              <p class="eyebrow">Active limits</p>
-              <p id="limits-empty" class="muted-copy">No limits yet. Add one above.</p>
-              <ul id="limit-list" class="limit-list"></ul>
-            </div>
-          </article>
-
           <article class="settings-card">
             <div class="card-header">
               <h3>Accessibility</h3>

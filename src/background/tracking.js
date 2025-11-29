@@ -29,6 +29,11 @@ export function parseUrl(url) {
       domain = domain.substring(4);
     }
 
+    // Skip localhost and 127.0.0.1
+    if (domain === 'localhost' || domain === '127.0.0.1') {
+      return null;
+    }
+
     // Extract subpath (path without query string or hash)
     const subpath = urlObj.pathname;
 

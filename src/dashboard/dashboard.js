@@ -1,4 +1,8 @@
-import { setupVisualizationPage } from '../common/visualization-page.js';
+import {
+  setupVisualizationPage,
+  generateWeeklyInsights,
+  loadAggregatedStats,
+} from '../common/visualization-page.js';
 import {
   getLimits,
   setLimitForDomain,
@@ -9,6 +13,7 @@ import {
 } from '../background/storage.js';
 import { updateBlockingRules } from '../background/limits.js';
 import { getTodayFocusScore } from '../background/focus-score.js';
+import { categorizeDomain } from '../common/categories.js';
 
 let currentTableData = [];
 let currentLimits = {};
@@ -18,10 +23,23 @@ let pageSize = 25;
 let filteredData = [];
 let currentAggregatedData = {};
 let todayAggregatedData = {}; // Separate storage for today's data for status badge
+
+/**
+ * Get color based on percentage (for limit progress bars)
+ * @param {number} percent - Percentage value (0-100+)
+ * @returns {string} CSS color variable
+ */
+function getStatusColor(percent) {
+  if (percent >= 100) return 'var(--color-error)';
+  if (percent > 80) return 'var(--color-warning)';
+  return 'var(--color-success)';
+}
+const FIVE_HOUR_MS = 5 * 60 * 60 * 1000;
 const tableFilters = {
   query: '',
   sortField: 'count',
   sortOrder: 'desc',
+  groupByCategory: true, // Enable grouping by default
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -81,7 +99,37 @@ async function showInsightsPopup() {
     return;
   }
 
-  // Load and display insights content (will be populated by visualization-page.js)
+  // Load and display insights content
+  const insightsContent = document.getElementById('insights-content');
+  if (insightsContent) {
+    try {
+      const weekData = await loadAggregatedStats('week');
+      const limits = await getLimits();
+      const insights = generateWeeklyInsights(weekData, limits);
+
+      if (insights.length === 0) {
+        const msg = 'No insights available for this week yet. Start browsing to see your patterns!';
+        insightsContent.innerHTML = `<div class="insight-card"><div class="insight-card-text">${msg}</div></div>`;
+      } else {
+        insightsContent.innerHTML = insights
+          .map(
+            (insight) => `
+            <div class="insight-card ${insight.type === 'info' ? '' : insight.type}">
+                <div class="insight-card-title">${insight.title}</div>
+                <div class="insight-card-text">${insight.text}</div>
+            </div>
+        `,
+          )
+          .join('');
+      }
+    } catch (error) {
+      console.error('Error generating weekly insights:', error);
+      const errorMsg = 'Unable to load insights at this time.';
+      const errorHtml = `<div class="insight-card warning"><div class="insight-card-text">${errorMsg}</div></div>`;
+      insightsContent.innerHTML = errorHtml;
+    }
+  }
+
   // Show popup after a short delay to let the page load
   setTimeout(() => {
     popup.style.display = 'flex';
@@ -292,27 +340,13 @@ async function loadTodayAggregatedStats() {
         if (!aggregated[domain]) {
           aggregated[domain] = {
             count: 0,
-            lastVisit: domainData.lastVisit,
-            subpaths: {},
+            timestamps: [],
           };
         }
         aggregated[domain].count += domainData.count;
-        if (domainData.lastVisit > aggregated[domain].lastVisit) {
-          aggregated[domain].lastVisit = domainData.lastVisit;
+        if (Array.isArray(domainData.timestamps)) {
+          aggregated[domain].timestamps.push(...domainData.timestamps);
         }
-
-        Object.entries(domainData.subpaths || {}).forEach(([subpath, subpathData]) => {
-          if (!aggregated[domain].subpaths[subpath]) {
-            aggregated[domain].subpaths[subpath] = {
-              count: 0,
-              lastVisit: subpathData.lastVisit,
-            };
-          }
-          aggregated[domain].subpaths[subpath].count += subpathData.count;
-          if (subpathData.lastVisit > aggregated[domain].subpaths[subpath].lastVisit) {
-            aggregated[domain].subpaths[subpath].lastVisit = subpathData.lastVisit;
-          }
-        });
       });
     }
   });
@@ -321,15 +355,30 @@ async function loadTodayAggregatedStats() {
 }
 
 function prepareTableData(aggregatedData) {
-  return Object.entries(aggregatedData).map(([domain, data]) => ({
-    domain,
-    count: data.count || 0,
-    todayCount: todayAggregatedData[domain]?.count || 0, // Add today's count for status badge
-    subpaths: Object.keys(data.subpaths || {}).length,
-    lastVisit: data.lastVisit || 0,
-    limit: currentLimits[domain] ? normalizeLimitConfig(currentLimits[domain]) : null,
-    badge: currentBadges[domain] || null,
-  }));
+  const countVisitsInWindow = (timestamps, windowMs) => {
+    if (!Array.isArray(timestamps) || timestamps.length === 0) return 0;
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    return timestamps.filter((ts) => ts >= windowStart).length;
+  };
+
+  return Object.entries(aggregatedData)
+    .filter(([domain]) => domain !== 'localhost' && domain !== '127.0.0.1')
+    .map(([domain, data]) => {
+      const category = categorizeDomain(domain);
+      return {
+        domain,
+        count: data.count || 0,
+        todayCount: todayAggregatedData[domain]?.count || 0, // Add today's count for status badge
+        fiveHourCount: countVisitsInWindow(todayAggregatedData[domain]?.timestamps, FIVE_HOUR_MS),
+        subpaths: Object.keys(data.subpaths || {}).length,
+        lastVisit: data.lastVisit || 0,
+        limit: currentLimits[domain] ? normalizeLimitConfig(currentLimits[domain]) : null,
+        badge: currentBadges[domain] || null,
+        category: category.name,
+        categoryColor: category.color,
+      };
+    });
 }
 
 function applyTableFilters(data) {
@@ -366,25 +415,82 @@ function renderTable() {
   const pageData = filteredData.slice(startIndex, endIndex);
 
   // Render paginated data
+  let lastCategory = null;
+
   pageData.forEach((row) => {
+    // Insert category header if grouping is enabled and category changed
+    if (tableFilters.groupByCategory && row.category !== lastCategory) {
+      const categoryTr = document.createElement('tr');
+      categoryTr.className = 'category-header-row';
+
+      const categoryTd = document.createElement('td');
+      categoryTd.colSpan = 5; // Span all columns
+      categoryTd.style.padding = '16px 8px 8px';
+      categoryTd.style.fontWeight = '600';
+      categoryTd.style.color = 'var(--color-text-primary)';
+      categoryTd.style.borderBottom = '1px solid var(--color-border)';
+      categoryTd.style.backgroundColor = 'var(--color-bg-subtle)'; // Subtle background
+
+      const categoryContent = document.createElement('div');
+      categoryContent.style.display = 'flex';
+      categoryContent.style.alignItems = 'center';
+      categoryContent.style.gap = '8px';
+
+      const colorDot = document.createElement('span');
+      colorDot.style.width = '8px';
+      colorDot.style.height = '8px';
+      colorDot.style.borderRadius = '50%';
+      colorDot.style.backgroundColor = row.categoryColor || 'var(--color-text-muted)';
+
+      const categoryName = document.createElement('span');
+      categoryName.textContent = row.category;
+
+      categoryContent.appendChild(colorDot);
+      categoryContent.appendChild(categoryName);
+      categoryTd.appendChild(categoryContent);
+      categoryTr.appendChild(categoryTd);
+      tbody.appendChild(categoryTr);
+
+      lastCategory = row.category;
+    }
+
     const tr = document.createElement('tr');
 
-    // Domain cell
+    // Domain cell with Favicon
     const domainTd = document.createElement('td');
     domainTd.className = 'domain-cell';
+
+    const domainContent = document.createElement('div');
+    domainContent.style.display = 'flex';
+    domainContent.style.alignItems = 'center';
+    domainContent.style.gap = '12px';
+
+    const favicon = document.createElement('img');
+    favicon.src = `https://www.google.com/s2/favicons?domain=${row.domain}&sz=32`;
+    favicon.width = 20;
+    favicon.height = 20;
+    favicon.style.borderRadius = '4px';
+    favicon.onerror = () => {
+      favicon.style.display = 'none';
+    };
+    domainContent.appendChild(favicon);
+
     const domainBtn = document.createElement('button');
     domainBtn.type = 'button';
     domainBtn.className = 'domain-link';
     domainBtn.textContent = row.domain;
     domainBtn.addEventListener('click', () => openDomainDetail(row.domain));
-    domainTd.appendChild(domainBtn);
+    domainContent.appendChild(domainBtn);
+
     if (row.badge) {
       const badge = document.createElement('span');
       badge.className = 'badge-icon-table';
       badge.textContent = '🏆';
       badge.title = `Focus Hero (${row.badge.streak} days!)`;
-      domainTd.appendChild(badge);
+      domainContent.appendChild(badge);
     }
+
+    domainTd.appendChild(domainContent);
     tr.appendChild(domainTd);
 
     // Visits cell
@@ -393,11 +499,7 @@ function renderTable() {
     visitsTd.textContent = row.todayCount;
     tr.appendChild(visitsTd);
 
-    // Subpaths cell
-    const subpathsTd = document.createElement('td');
-    subpathsTd.className = 'subpaths-cell';
-    subpathsTd.textContent = row.subpaths;
-    tr.appendChild(subpathsTd);
+    // Subpaths cell removed as per feedback
 
     // Last visit cell
     const lastVisitTd = document.createElement('td');
@@ -410,19 +512,101 @@ function renderTable() {
     }
     tr.appendChild(lastVisitTd);
 
-    // Limit cell
+    // Limit cell - Show both daily and 5-hour limits
     const limitTd = document.createElement('td');
-    if (row.limit) {
-      const limitParts = [];
-      if (row.limit.fiveHour?.enabled && row.limit.fiveHour?.limit) {
-        limitParts.push(`${row.limit.fiveHour.limit}/5h`);
+    limitTd.style.fontSize = '11px';
+
+    if (row.limit && row.limit.enabled) {
+      const dailyLimit = row.limit.daily?.limit;
+      const todayCount = row.todayCount || 0;
+      const fiveHourLimit = row.limit.fiveHour?.enabled ? row.limit.fiveHour.limit : null;
+      const fiveHourCount = row.fiveHourCount || 0;
+
+      const hasDaily = dailyLimit != null;
+      const hasFiveHour = fiveHourLimit != null;
+
+      if (hasDaily || hasFiveHour) {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '6px';
+
+        // 5-hour limit (show first if exists, as it's more restrictive)
+        if (hasFiveHour) {
+          const fiveHourRemaining = Math.max(0, fiveHourLimit - fiveHourCount);
+          const fiveHourPercent = Math.min(100, (fiveHourCount / fiveHourLimit) * 100);
+          const isBlocked = fiveHourCount >= fiveHourLimit;
+
+          const fiveHourDiv = document.createElement('div');
+
+          const fiveHourText = document.createElement('div');
+          fiveHourText.style.fontSize = '11px';
+          fiveHourText.style.color = isBlocked ? 'var(--color-error)' : 'var(--color-text-muted)';
+          fiveHourText.style.fontWeight = isBlocked ? '600' : '400';
+          fiveHourText.textContent = isBlocked ? '🚫 5h: Blocked' : `5h: ${fiveHourRemaining} left`;
+          fiveHourText.title = `5-hour limit: ${fiveHourCount}/${fiveHourLimit} opens`;
+
+          const fiveHourBar = document.createElement('div');
+          fiveHourBar.style.width = '100px';
+          fiveHourBar.style.height = '4px';
+          fiveHourBar.style.background = 'rgba(255,255,255,0.1)';
+          fiveHourBar.style.borderRadius = '2px';
+          fiveHourBar.style.overflow = 'hidden';
+          fiveHourBar.style.marginTop = '2px';
+
+          const fiveHourFill = document.createElement('div');
+          fiveHourFill.style.width = `${fiveHourPercent}%`;
+          fiveHourFill.style.height = '100%';
+          fiveHourFill.style.background = getStatusColor(fiveHourPercent);
+          fiveHourBar.appendChild(fiveHourFill);
+
+          fiveHourDiv.appendChild(fiveHourText);
+          fiveHourDiv.appendChild(fiveHourBar);
+          container.appendChild(fiveHourDiv);
+        }
+
+        // Daily limit
+        if (hasDaily) {
+          const dailyRemaining = Math.max(0, dailyLimit - todayCount);
+          const dailyPercent = Math.min(100, (todayCount / dailyLimit) * 100);
+          const isBlocked = todayCount >= dailyLimit;
+
+          const dailyDiv = document.createElement('div');
+
+          const dailyText = document.createElement('div');
+          dailyText.style.fontSize = '11px';
+          dailyText.style.color = isBlocked ? 'var(--color-error)' : 'var(--color-text-muted)';
+          dailyText.style.fontWeight = isBlocked ? '600' : '400';
+          dailyText.textContent = isBlocked ? '🚫 Daily: Blocked' : `Daily: ${dailyRemaining} left`;
+          dailyText.title = `Daily limit: ${todayCount}/${dailyLimit} opens`;
+
+          const dailyBar = document.createElement('div');
+          dailyBar.style.width = '100px';
+          dailyBar.style.height = '4px';
+          dailyBar.style.background = 'rgba(255,255,255,0.1)';
+          dailyBar.style.borderRadius = '2px';
+          dailyBar.style.overflow = 'hidden';
+          dailyBar.style.marginTop = '2px';
+
+          const dailyFill = document.createElement('div');
+          dailyFill.style.width = `${dailyPercent}%`;
+          dailyFill.style.height = '100%';
+          dailyFill.style.background = getStatusColor(dailyPercent);
+          dailyBar.appendChild(dailyFill);
+
+          dailyDiv.appendChild(dailyText);
+          dailyDiv.appendChild(dailyBar);
+          container.appendChild(dailyDiv);
+        }
+
+        limitTd.appendChild(container);
+      } else {
+        limitTd.textContent = 'Unlimited';
+        limitTd.style.color = 'var(--color-text-muted)';
       }
-      if (row.limit.daily?.enabled && row.limit.daily?.limit) {
-        limitParts.push(`${row.limit.daily.limit}/day`);
-      }
-      limitTd.textContent = limitParts.length > 0 ? limitParts.join(', ') : '—';
     } else {
-      limitTd.textContent = '—';
+      limitTd.textContent = 'Unlimited';
+      limitTd.style.color = 'var(--color-text-muted)';
     }
     tr.appendChild(limitTd);
 
@@ -433,92 +617,42 @@ function renderTable() {
 
     if (!row.limit || !row.limit.enabled) {
       statusBadge.classList.add('no-limit');
-      statusBadge.innerHTML = '∞ No Limit';
+      statusBadge.innerHTML = 'No Limit';
       statusBadge.title = 'No limits configured for this domain';
     } else {
-      // Check against daily limit for status using TODAY's count only
-      // This ensures status resets each day regardless of displayed time range
+      // Evaluate five-hour and daily limits independently using today's data
       const dailyLimit = row.limit.daily?.limit;
       const todayCount = row.todayCount || 0;
+      const fiveHourLimit = row.limit.fiveHour?.enabled ? row.limit.fiveHour.limit : null;
+      const fiveHourCount = row.fiveHourCount || 0;
 
-      if (dailyLimit && todayCount >= dailyLimit) {
+      const overFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit;
+      const overDaily = dailyLimit && todayCount >= dailyLimit;
+      const nearFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit * 0.8;
+      const nearDaily = dailyLimit && todayCount >= dailyLimit * 0.8;
+
+      if (overFiveHour || overDaily) {
         statusBadge.classList.add('over-limit');
-        statusBadge.innerHTML = `✗ Over Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `Daily limit exceeded (${todayCount}/${dailyLimit} visits today).`;
-      } else if (dailyLimit && todayCount >= dailyLimit * 0.8) {
+        statusBadge.innerHTML = 'Blocked';
+        statusBadge.title = 'Limit exceeded';
+      } else if (nearFiveHour || nearDaily) {
         statusBadge.classList.add('near-limit');
-        statusBadge.innerHTML = `⚠️ Near Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `Approaching daily limit (${todayCount}/${dailyLimit} visits today).`;
-      } else if (dailyLimit) {
+        statusBadge.innerHTML = 'Near Limit';
+        statusBadge.title = 'Approaching limit';
+      } else if (dailyLimit || fiveHourLimit) {
         statusBadge.classList.add('under-limit');
-        statusBadge.innerHTML = `✓ Under Limit (${todayCount}/${dailyLimit})`;
-        statusBadge.title = `Within daily limit (${todayCount}/${dailyLimit} visits today).`;
+        statusBadge.innerHTML = 'On Track';
+        statusBadge.title = 'Within limits';
       } else {
         // Limit is enabled but no daily limit configured
         statusBadge.classList.add('no-limit');
-        statusBadge.innerHTML = '∞ No Limit';
-        statusBadge.title = 'Limits are enabled but no daily limit is configured';
+        statusBadge.innerHTML = 'Unlimited';
+        statusBadge.title = 'No active limits';
       }
     }
 
     statusTd.appendChild(statusBadge);
     tr.appendChild(statusTd);
-
-    // Actions cell
-    const actionsTd = document.createElement('td');
-    actionsTd.className = 'actions-cell';
-
-    const toggleLabel = document.createElement('label');
-    toggleLabel.className = 'table-toggle';
-
-    const toggleInput = document.createElement('input');
-    toggleInput.type = 'checkbox';
-    toggleInput.checked = row.limit ? row.limit.enabled !== false : false;
-    toggleInput.dataset.domain = row.domain;
-
-    // Add descriptive tooltip
-    const currentState = toggleInput.checked ? 'Enabled' : 'Disabled';
-    const toggleAction = toggleInput.checked ? 'disable' : 'enable';
-    toggleLabel.title = `${currentState} - Click to ${toggleAction} limit for ${row.domain}`;
-
-    toggleInput.addEventListener('change', async (e) => {
-      toggleInput.disabled = true;
-      toggleLabel.classList.add('toggle-loading');
-
-      const success = await handleInlineLimitToggle(row.domain, e.target.checked);
-
-      if (success) {
-        // Update tooltip to reflect new state
-        const newState = e.target.checked ? 'Enabled' : 'Disabled';
-        const newAction = e.target.checked ? 'disable' : 'enable';
-        toggleLabel.title = `${newState} - Click to ${newAction} limit for ${row.domain}`;
-
-        // Show success feedback
-        toggleLabel.classList.add('toggle-success');
-        setTimeout(() => {
-          toggleLabel.classList.remove('toggle-success');
-        }, 600);
-      } else {
-        toggleInput.checked = !e.target.checked;
-        // Show error feedback
-        toggleLabel.classList.add('toggle-error');
-        setTimeout(() => {
-          toggleLabel.classList.remove('toggle-error');
-        }, 600);
-      }
-
-      toggleLabel.classList.remove('toggle-loading');
-      toggleInput.disabled = false;
-    });
-
-    const toggleSlider = document.createElement('span');
-    toggleSlider.className = 'toggle-slider';
-
-    toggleLabel.appendChild(toggleInput);
-    toggleLabel.appendChild(toggleSlider);
-    actionsTd.appendChild(toggleLabel);
-
-    tr.appendChild(actionsTd);
 
     tbody.appendChild(tr);
   });
@@ -585,6 +719,13 @@ function setupTableControls() {
 
 function sortTableData(data, field, order = 'desc') {
   return data.sort((a, b) => {
+    // Primary sort by category if grouping is enabled
+    if (tableFilters.groupByCategory) {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+    }
+
     let aVal = a[field];
     let bVal = b[field];
 
@@ -671,6 +812,7 @@ function updatePaginationInfo(start, end, total) {
   if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
 }
 
+// eslint-disable-next-line no-unused-vars
 async function handleInlineLimitToggle(domain, enabled) {
   try {
     const limits = await getLimits();
@@ -775,20 +917,20 @@ function handleDrilldownExit() {
   if (!panelHeader) return;
 
   panelHeader.innerHTML = `
-    <h3>Domain Statistics</h3>
-    <p class="panel-subtitle">All tracked domains and visit counts</p>
+    <h3>Website Activity</h3>
     <div class="table-controls">
       <input
-        type="text"
+        type="search"
         id="table-search"
-        placeholder="Search domains..."
-        aria-label="Search domains"
+        placeholder="Search websites..."
+        aria-label="Search websites"
       />
-      <select id="table-page-size" aria-label="Items per page">
-        <option value="10">10 per page</option>
-        <option value="25" selected>25 per page</option>
-        <option value="50">50 per page</option>
-        <option value="100">100 per page</option>
+      <select id="table-sort" aria-label="Sort by">
+        <option value="count-desc">Most opened first</option>
+        <option value="count-asc">Least opened first</option>
+        <option value="domain-asc">Website (A-Z)</option>
+        <option value="domain-desc">Website (Z-A)</option>
+        <option value="lastVisit-desc">Recently visited</option>
       </select>
     </div>
   `;
@@ -816,7 +958,6 @@ function handleDrilldownExit() {
         </th>
         <th>Limit</th>
         <th>Status</th>
-        <th>Actions</th>
       </tr>
     `;
   }
@@ -913,6 +1054,9 @@ async function updateStreakDisplay() {
 /**
  * Update focus score display in header
  */
+/**
+ * Update focus score display in header
+ */
 async function updateFocusScoreDisplay() {
   const focusScoreElement = document.getElementById('focus-score');
   if (!focusScoreElement) return;
@@ -926,17 +1070,63 @@ async function updateFocusScoreDisplay() {
     const focusScoreStat = document.getElementById('focus-score-stat');
     if (focusScoreStat) {
       let rating = 'Good';
+      let icon = '';
+
+      // Reset classes
+      focusScoreStat.classList.remove('score-excellent', 'score-good', 'score-fair', 'score-poor');
+
       if (todayScore >= 80) {
         rating = 'Excellent';
+        icon = ' 🔥';
+        focusScoreStat.classList.add('score-excellent');
+
+        // Add celebration effect if not already present
+        if (!document.getElementById('score-celebration')) {
+          const celebration = document.createElement('div');
+          celebration.id = 'score-celebration';
+          celebration.innerHTML = "🎉 You're on fire!";
+          celebration.style.position = 'absolute';
+          celebration.style.top = '100%';
+          celebration.style.left = '50%';
+          celebration.style.transform = 'translateX(-50%)';
+          celebration.style.background = 'var(--color-primary)';
+          celebration.style.color = 'white';
+          celebration.style.padding = '4px 8px';
+          celebration.style.borderRadius = '4px';
+          celebration.style.fontSize = '12px';
+          celebration.style.whiteSpace = 'nowrap';
+          celebration.style.zIndex = '100';
+          celebration.style.marginTop = '8px';
+          celebration.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+          celebration.style.animation = 'fadeInUp 0.3s ease-out';
+
+          focusScoreStat.style.position = 'relative';
+          focusScoreStat.appendChild(celebration);
+
+          // Remove after 5 seconds
+          setTimeout(() => {
+            celebration.style.opacity = '0';
+            celebration.style.transition = 'opacity 0.5s';
+            setTimeout(() => celebration.remove(), 500);
+          }, 5000);
+        }
       } else if (todayScore >= 60) {
         rating = 'Good';
+        focusScoreStat.classList.add('score-good');
       } else if (todayScore >= 40) {
         rating = 'Fair';
+        focusScoreStat.classList.add('score-fair');
       } else {
         rating = 'Needs Improvement';
+        focusScoreStat.classList.add('score-poor');
       }
 
       focusScoreStat.title = `Today's Focus Score: ${todayScore}/100 (${rating})`;
+
+      // Append icon if high score
+      if (todayScore >= 80 && !focusScoreElement.textContent.includes('🔥')) {
+        focusScoreElement.textContent += icon;
+      }
     }
   } catch (error) {
     console.error('Error updating focus score:', error);

@@ -16,8 +16,8 @@ export async function updateVisitBadge() {
     // Set badge text
     await chrome.action.setBadgeText({ text: badgeText });
 
-    // Set badge background color (Bear Blue from brand guidelines)
-    await chrome.action.setBadgeBackgroundColor({ color: '#0E75B6' });
+    // Set badge background color using bright green accent
+    await chrome.action.setBadgeBackgroundColor({ color: '#1BFF6E' });
 
     console.log(`Badge updated: ${count} visits tracked today`);
   } catch (error) {
