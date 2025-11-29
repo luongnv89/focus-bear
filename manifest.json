@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "FocusBear - Focus Tracker",
   "version": "0.2.0",
-  "version_name": "0.2.0-e25d8dc",
+  "version_name": "0.2.0-c5da50f",
   "description": "Track focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity.",
   "author": "FocusBear Team",
   "homepage_url": "https://github.com/luongnv89/focus-bear",
@@ -37,9 +37,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/countdown-toast.js"],
-      "css": ["src/content/countdown-toast.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content/countdown-toast.js"
+      ],
+      "css": [
+        "src/content/countdown-toast.css"
+      ],
       "run_at": "document_start",
       "all_frames": false
     }

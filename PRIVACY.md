@@ -67,6 +67,7 @@ FocusBear requests the following Chrome permissions:
 | `storage` | To save your visit data, settings, and limits locally |
 | `notifications` | To show countdown alerts when approaching your limits |
 | `declarativeNetRequest` | To block access to sites when daily limits are exceeded |
+| `declarativeNetRequestWithHostAccess` | To dynamically add blocking rules for specific domains |
 | `host_permissions (<all_urls>)` | Required to track visits across all websites you browse |
 
 ## Third-Party Services

@@ -178,6 +178,7 @@ https://github.com/luongnv89/focus-bear/blob/main/PRIVACY.md
 | `storage` | Required to save your visit data, settings, and limits locally on your device. No data is synced externally. |
 | `notifications` | Used to show countdown alerts when you're approaching your configured daily limits. |
 | `declarativeNetRequest` | Required to block access to websites when you exceed your self-configured daily limits. |
+| `declarativeNetRequestWithHostAccess` | Works with declarativeNetRequest to dynamically add blocking rules for specific domains when user-configured limits are exceeded. |
 | `host_permissions (<all_urls>)` | Required to track domain visits across all websites. Only domain names are recorded for visit counting. |
 
 ### Single Purpose Description
