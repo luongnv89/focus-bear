@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "FocusBear",
+  "name": "FocusBear - Focus Tracker",
   "version": "0.2.0",
-  "version_name": "0.2.0-ce2c17b",
-  "description": "Track your focus-switching habits with playful, privacy-first visualizations",
+  "version_name": "0.2.0-e25d8dc",
+  "description": "Track focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity.",
+  "author": "FocusBear Team",
+  "homepage_url": "https://github.com/luongnv89/focus-bear",
   "permissions": [
     "tabs",
     "storage",
@@ -24,7 +26,8 @@
       "32": "assets/icon-32.png",
       "48": "assets/icon-48.png",
       "128": "assets/icon-128.png"
-    }
+    },
+    "default_title": "FocusBear - Track Your Focus"
   },
   "icons": {
     "16": "assets/icon-16.png",
@@ -43,5 +46,7 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  },
+  "offline_enabled": true,
+  "minimum_chrome_version": "100"
 }

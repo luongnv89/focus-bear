@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **FocusBear** is a Chrome extension (Manifest V3) that helps users track focus-switching habits through an interactive D3.js visualization. The extension is privacy-first and local-only with no external API calls or cloud synchronization.
 
-**Current Status:** Planning/specification phase. Documentation complete; implementation beginning with Phase 0 (POC).
+**Current Status:** v0.2.0 - Ready for Chrome Web Store submission. Core features implemented.
 
 **Tech Stack:** Vanilla JavaScript (ES modules), D3.js v7, Chrome APIs (tabs, storage, webRequest, notifications), HTML5/CSS3
 
@@ -72,18 +72,40 @@ Block Page
 }
 ```
 
-### Core Modules (to be created in `/src/`)
+### Core Modules (in `/src/`)
 
-- **`background/tracking.js`** - tabs.onActivated/onUpdated handlers, domain extraction, visit counting
-- **`background/storage.js`** - Data model helpers, chrome.storage.local queries
-- **`background/limits.js`** - Limit checking, enforcement, webRequest interception
-- **`background/index.js`** - Service worker entry point
-- **`popup/popup.html`** - Popup UI structure
-- **`popup/popup.js`** - Popup initialization and event handlers
-- **`popup/graph.js`** - D3.js radial graph rendering and interaction
-- **`popup/settings.js`** - Settings panel UI and persistence
-- **`content/countdown-bubble.js`** - Toast notification rendering
-- **`blocked/blocked.html`** - Block page template
+- **`background/`** - Service worker scripts
+  - `index.js` - Service worker entry point
+  - `tracking.js` - Tab event handlers, domain extraction, visit counting
+  - `storage.js` - Data model helpers, chrome.storage.local queries
+  - `limits.js` - Limit checking and enforcement
+  - `focus-score.js` - Focus score calculation algorithm
+  - `badge.js` - Extension badge management
+- **`dashboard/`** - Full-page dashboard UI
+  - `index.html` - Dashboard page structure
+  - `dashboard.js` - Dashboard logic and interactions
+  - `dashboard.css` - Dashboard styles
+  - `blocking.html/js` - Blocking rules management page
+  - `domain.html/js` - Domain detail view
+- **`popup/`** - Popup UI (compact view)
+  - `popup.html` - Popup structure
+  - `popup.js` - Popup initialization
+  - `popup.css` - Shared styles (also used by dashboard)
+  - `graph.js` - D3.js radial graph rendering
+- **`blocked/`** - Block page
+  - `blocked.html` - Block page template
+  - `blocked.js` - Block page logic
+  - `blocked.css` - Block page styles
+- **`help/`** - Help & FAQ page
+  - `help.html` - Help page structure
+  - `help.js` - FAQ accordion functionality
+  - `help.css` - Help page styles
+- **`content/`** - Content scripts
+  - `countdown-toast.js` - Toast notification rendering
+  - `countdown-toast.css` - Toast styles
+- **`common/`** - Shared utilities
+  - `feature-flags.js` - Feature flag management
+  - `visualization-page.js` - Shared visualization helpers
 
 ## Development Guidelines
 
@@ -199,8 +221,10 @@ chrome.storage.local.get(null, (data) => console.log(data))
 
 ## Important Files & References
 
-- **`tasks.md`** - Detailed task breakdown by sprint and phase
-- **`todo-list.md`** - Checklist of all tasks
+- **`README.md`** - Project overview and installation instructions
+- **`PRIVACY.md`** - Privacy policy (required for Chrome Web Store)
+- **`STORE_LISTING.md`** - Chrome Web Store listing details and assets checklist
+- **`LICENSE`** - MIT License
 - **`phase-1-requirements/prd.md`** - Complete product requirements
 - **`phase-1-requirements/ux_design.md`** - UI/UX wireframes and user flows
 - **`phase-1-requirements/brand_kit.md`** - Brand guidelines, colors, typography

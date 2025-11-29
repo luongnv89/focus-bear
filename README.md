@@ -5,138 +5,194 @@
 
   ### Your attention, mapped with empathy
 
-  A playful, privacy-first Chrome extension that helps you track your focus-switching habits through an interactive D3.js visualization.
+  A playful, privacy-first Chrome extension that helps you track focus-switching habits through beautiful D3.js visualizations.
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-yellow.svg)](https://www.google.com/chrome/)
-  [![Privacy First](https://img.shields.io/badge/Privacy-First-green.svg)](#privacy)
+  [![Privacy First](https://img.shields.io/badge/Privacy-100%25%20Local-green.svg)](#privacy)
+  [![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](manifest.json)
 </div>
 
 ---
 
-## Current Status
+## What is FocusBear?
 
-**Phase 0 (POC)** - In Development
+FocusBear helps you understand and improve your browsing habits by tracking how often you switch between websites. Unlike time trackers, FocusBear focuses on **attention switches** — each time you navigate to a different domain counts as a "focus switch."
 
-## Using FocusBear
+**Key insight:** Frequent context-switching is one of the biggest productivity killers. FocusBear helps you see the pattern and build better habits.
 
-- Click the FocusBear toolbar icon to open the full FocusBear Dashboard in a new tab.
-- Interact with the radial graph, switch the time filters, and refresh data directly from that page—no cramped popup required.
-- The extension still runs entirely locally; the dashboard is just another extension page with more breathing room for D3.
+## Features
 
-## Development Setup
+- **Interactive Dashboard** — Beautiful D3.js radial graph showing your attention patterns
+- **Focus Score** — Daily 0-100 score based on limit compliance, visit reduction, and streaks
+- **Streaks** — Track consecutive days of staying within your limits
+- **Site Limits** — Set daily visit limits for distracting websites
+- **Block Page** — Friendly reminder when you exceed limits
+- **Time Filters** — View data by today, week, or month
+- **Dark/Light Mode** — Easy on the eyes, day or night
+- **Data Export** — Download your data as JSON or CSV anytime
+- **100% Private** — All data stays on your device, always
+
+## Installation
+
+### From Chrome Web Store (Coming Soon)
+<!-- [Install FocusBear](https://chrome.google.com/webstore/detail/focusbear/YOUR_EXTENSION_ID) -->
+
+### Manual Installation (Developer Mode)
+
+1. Download or clone this repository
+   ```bash
+   git clone https://github.com/luongnv89/focus-bear.git
+   cd focus-bear
+   npm install
+   npm run build
+   ```
+
+2. Open Chrome and go to `chrome://extensions/`
+
+3. Enable **Developer mode** (toggle in top right)
+
+4. Click **Load unpacked**
+
+5. Select the `dist/` folder (or project root)
+
+6. Click the FocusBear icon in your toolbar to start!
+
+## How It Works
+
+1. **Browse normally** — FocusBear quietly tracks domain switches in the background
+2. **Open the dashboard** — Click the toolbar icon to see your attention map
+3. **Set limits** — Configure daily limits for distracting sites
+4. **Build streaks** — Stay under limits to build consecutive day streaks
+5. **Improve focus** — Watch your focus score improve over time
+
+## Screenshots
+
+<div align="center">
+  <p><em>Dashboard with attention visualization</em></p>
+  <!-- Add screenshots here -->
+  <!-- <img src="docs/screenshots/dashboard.png" width="600" alt="Dashboard"> -->
+</div>
+
+## Privacy
+
+**FocusBear is 100% local-only.** Your data never leaves your device.
+
+- ✅ All data stored locally in Chrome's storage
+- ✅ No external servers or API calls
+- ✅ No analytics or tracking
+- ✅ No account required
+- ✅ Open source — verify yourself
+
+Read our full [Privacy Policy](PRIVACY.md).
+
+## Key Concepts
+
+### Focus Score (0-100)
+
+Your daily focus score is calculated from:
+- **Limits Compliance (40%)** — Staying within your set limits
+- **Visit Reduction (30%)** — Reducing visits vs. previous week
+- **Streak Bonus (20%)** — Longer streaks = higher contribution
+- **Domain Focus (10%)** — Fewer unique sites = better focus
+
+### Streaks
+
+Consecutive days where you stayed within ALL your configured limits. Exceed any limit and the streak resets to 0.
+
+## Development
 
 ### Prerequisites
 
 - Node.js 18+ and npm
 - Chrome browser (version 100+)
 
-### Installation
+### Setup
 
 ```bash
-# Install dependencies (also sets up pre-commit hooks)
+# Install dependencies
 npm install
 
-# Development mode
+# Development mode (watch for changes)
 npm run dev
 
 # Build for production
 npm run build
 
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
 # Run tests
 npm run test
 
-# Run tests with coverage report
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
+# Lint and format
+npm run lint
+npm run format
 ```
-
-### Code Quality & CI/CD
-
-This project uses automated quality checks to maintain code standards:
-
-**Pre-commit Hooks** (via Husky + lint-staged):
-- Automatically runs on `git commit`
-- Lints and formats staged files
-- Runs tests for changed files
-- Validates build succeeds
-
-**GitHub Actions CI**:
-- Runs on every push and pull request
-- Tests on Node.js 18.x and 20.x
-- Checks: ESLint, Prettier, Jest tests, build validation
-- Generates code coverage reports
-
-See [.github/README.md](.github/README.md) for detailed CI/CD documentation.
-
-### Loading the Extension in Chrome
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (toggle in top right)
-3. Click "Load unpacked"
-4. Select the project root directory (or `dist/` after building)
 
 ### Project Structure
 
 ```
 focus-bear/
 ├── src/
-│   ├── background/     # Service worker scripts
-│   ├── popup/          # Shared popup styles/components (still used by dashboard)
-│   ├── dashboard/      # Full-page dashboard UI
+│   ├── background/     # Service worker (tracking, limits)
+│   ├── popup/          # Popup styles
+│   ├── dashboard/      # Main dashboard UI
 │   ├── blocked/        # Block page
-│   └── content/        # Content scripts
+│   ├── help/           # Help & FAQ page
+│   └── content/        # Content scripts (toast notifications)
 ├── assets/             # Icons and images
 ├── scripts/            # Build scripts
-├── phase-1-requirements/  # Product requirements
+├── tests/              # Jest tests
 ├── manifest.json       # Chrome extension manifest (MV3)
-└── package.json        # Node dependencies
+└── package.json
 ```
 
-## Documentation
+### Code Quality
 
-- [Product Requirements](./phase-1-requirements/prd.md)
-- [UX Design](./phase-1-requirements/ux_design.md)
-- [Brand Kit](./phase-1-requirements/brand_kit.md)
-- [Tasks](./tasks.md)
-- [Todo List](./todo-list.md)
-- [Claude Instructions](./CLAUDE.md)
-
-## Features (Planned)
-
-### Phase 0 - POC
-- [x] Chrome Extension MV3 skeleton
-- [ ] Focus-switch tracking
-- [ ] Basic popup UI with domain list
-
-### Phase 1 - MVP
-- [ ] D3.js radial graph visualization
-- [ ] Time range filters
-- [ ] Per-site daily limits
-- [ ] Block page with humor
-- [ ] Settings panel
-- [ ] Accessibility compliance (WCAG 2.1 AA)
+- **ESLint** — Code linting
+- **Prettier** — Code formatting
+- **Jest** — Unit testing
+- **Husky** — Pre-commit hooks
+- **GitHub Actions** — CI/CD pipeline
 
 ## Tech Stack
 
 - **Frontend:** Vanilla JavaScript (ES modules), D3.js v7, HTML5, CSS3
-- **Backend:** Chrome Extension APIs (tabs, storage, webRequest, notifications)
-- **Build:** Node.js scripts, ESLint, Prettier
-- **Testing:** Jest
-- **CI/CD:** GitHub Actions, Husky, lint-staged
+- **Storage:** Chrome Storage API (local)
+- **APIs:** Chrome Tabs, Notifications, DeclarativeNetRequest
+- **Build:** Node.js, ESLint, Prettier, Jest
+- **CI/CD:** GitHub Actions
 
-## Privacy
+## Contributing
 
-FocusBear is **100% local-only**. No data ever leaves your device. No analytics, no tracking, no cloud sync.
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Support
+
+- **Bug Reports:** [GitHub Issues](https://github.com/luongnv89/focus-bear/issues)
+- **Feature Requests:** [GitHub Issues](https://github.com/luongnv89/focus-bear/issues)
+- **Help & FAQ:** Available in the extension's Help page
 
 ## License
 
-MIT
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- D3.js for beautiful data visualizations
+- The Chrome Extensions team for Manifest V3
+- All contributors and users who help improve FocusBear
+
+---
+
+<div align="center">
+  <strong>FocusBear</strong> — Track your focus, privacy-first 🐻
+  <br><br>
+  <a href="https://github.com/luongnv89/focus-bear">GitHub</a> •
+  <a href="PRIVACY.md">Privacy Policy</a> •
+  <a href="LICENSE">License</a>
+</div>
