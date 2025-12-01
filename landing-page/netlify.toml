@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm run build"
+  command = "npm ci && npm run build"
   publish = "dist"
 
 # SPA Redirect - all routes serve index.html
@@ -47,6 +47,6 @@
 
 # Context-Specific
 [context.production]
-  command = "npm install && npm run build"
+  command = "npm ci && npm run build"
   [context.production.environment]
     NODE_ENV = "production"
