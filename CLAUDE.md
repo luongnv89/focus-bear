@@ -273,3 +273,10 @@ chrome.storage.local.get(null, (data) => console.log(data))
 - **Data deletion** - Users can clear all tracking data via Chrome's extension settings
 - **Testing environments** - Use test suites and manual testing with multiple tab/domain scenarios
 
+
+## Active Technologies
+- JavaScript ES2020+ (React 18.x, Vite 5.x) + React 18, React Router 6, TailwindCSS 3, Lucide Icons, react-medium-image-zoom or similar lightbox library (001-landing-page)
+- N/A (static site, no backend storage) (001-landing-page)
+
+## Recent Changes
+- 001-landing-page: Added JavaScript ES2020+ (React 18.x, Vite 5.x) + React 18, React Router 6, TailwindCSS 3, Lucide Icons, react-medium-image-zoom or similar lightbox library
