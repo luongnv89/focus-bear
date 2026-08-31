@@ -52,5 +52,8 @@
     "privacy"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
 }
