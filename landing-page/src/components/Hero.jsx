@@ -14,7 +14,9 @@ function Hero() {
         <div className="text-center max-w-4xl mx-auto">
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight animate-fade-in">
-            <span className="text-white">{heroContent.headline.split(',')[0]},</span>
+            <span className="text-white">
+              {heroContent.headline.split(',')[0]},
+            </span>
             <br />
             <span className="text-accent">
               {heroContent.headline.split(',')[1]?.trim()}

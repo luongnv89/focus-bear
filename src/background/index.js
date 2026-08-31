@@ -25,12 +25,12 @@ async function openDashboardTab() {
 
 console.log('FocusBear service worker initialized');
 
-// Listen for extension installation
+// Listen for extension installation — seed first-run data only; listeners are registered top-level
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     console.log('FocusBear installed - welcome!');
 
-    // Initialize storage with empty data
+    // Initialize storage with empty data (first-run seeding only)
     await chrome.storage.local.set({
       visits: {},
       limits: {},
@@ -44,22 +44,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   } else if (details.reason === 'update') {
     console.log('FocusBear updated to version', chrome.runtime.getManifest().version);
   }
-
-  // Initialize tracking after installation/update
-  initializeTracking();
-  await trackCurrentTab();
-
-  // Initialize limit enforcement
-  initializeLimitEnforcement();
-
-  // Initialize visit counter badge
-  await initializeBadge();
-
-  // Initialize notifications
-  await initializeNotifications();
-
-  // Initialize achievements
-  await initializeAchievements();
 });
 
 // Initialize tracking when service worker starts

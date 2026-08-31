@@ -3,7 +3,7 @@
  * Handles motivational notifications, limit warnings, and achievement celebrations
  */
 
-import { getLimits } from './storage.js';
+import { getLimits, normalizeLimitConfig } from './storage.js';
 import { ACHIEVEMENTS } from './achievements.js';
 
 // Notification types
@@ -270,8 +270,14 @@ export async function showDailyEncouragement() {
   if (lastEncouragementDate === today) return;
 
   // Check if user is doing well (no limits exceeded today)
-  const { visits = {}, limits = {} } = await chrome.storage.local.get(['visits', 'limits']);
+  const { visits = {}, limits: rawLimits = {} } = await chrome.storage.local.get([
+    'visits',
+    'limits',
+  ]);
   const todayVisits = visits[today] || {};
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
 
   const activeLimits = Object.entries(limits).filter(
     ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.limit,

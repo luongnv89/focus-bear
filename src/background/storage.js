@@ -202,13 +202,18 @@ export async function incrementVisit(domain, subpath = null) {
 }
 
 /**
- * Get limits configuration
- * @returns {Promise<Object>} Limits object
+ * Get limits configuration — normalizes legacy numeric limits at the getter boundary
+ * @returns {Promise<Object>} Limits object with normalized configs
  */
 export async function getLimits() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['limits'], (data) => {
-      resolve(data.limits || {});
+      const raw = data.limits || {};
+      const normalized = {};
+      Object.entries(raw).forEach(([domain, cfg]) => {
+        normalized[domain] = normalizeLimitConfig(cfg);
+      });
+      resolve(normalized);
     });
   });
 }
@@ -498,7 +503,10 @@ export async function getAggregatedStats(range = 'today') {
 export async function calculateLimitStreak(domain) {
   const data = await chrome.storage.local.get(['visits', 'limits', 'streaks']);
   const visits = data.visits || {};
-  const limits = data.limits || {};
+  const rawLimits = data.limits || {};
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
   const streaks = data.streaks || {};
 
   const limitConfig = limits[domain];
@@ -559,7 +567,10 @@ export async function getAllStreaks() {
 export async function calculateOverallStreak() {
   const data = await chrome.storage.local.get(['visits', 'limits', 'overallStreak']);
   const visits = data.visits || {};
-  const limits = data.limits || {};
+  const rawLimits = data.limits || {};
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
   const existingStreak = data.overallStreak || { current: 0, best: 0 };
 
   const today = new Date();

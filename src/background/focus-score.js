@@ -3,7 +3,7 @@
  * Calculates a daily/weekly focus score based on user behavior
  */
 
-import { calculateOverallStreak } from './storage.js';
+import { calculateOverallStreak, normalizeLimitConfig } from './storage.js';
 
 function getDayTotalVisits(dayData = {}) {
   return Object.values(dayData).reduce((sum, visitData) => sum + (visitData.count || 0), 0);
@@ -39,8 +39,15 @@ function getCompliantDomainCount(enabledLimits, dayVisits) {
  * @returns {Promise<number>} Focus score (0-100)
  */
 export async function calculateDailyFocusScore(date) {
-  const { visits = {}, limits = {} } = await chrome.storage.local.get(['visits', 'limits']);
+  const { visits = {}, limits: rawLimits = {} } = await chrome.storage.local.get([
+    'visits',
+    'limits',
+  ]);
   const dayVisits = visits[date] || {};
+  // Normalize legacy numeric limits at the boundary
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
 
   // Factor 1: Limits Compliance (40 points)
   let complianceScore = 0;
@@ -163,8 +170,14 @@ export async function getFocusScoreHistory(days = 30) {
  * @returns {Promise<Object>} Breakdown of score components
  */
 export async function getFocusScoreBreakdown(date) {
-  const { visits = {}, limits = {} } = await chrome.storage.local.get(['visits', 'limits']);
+  const { visits = {}, limits: rawLimits = {} } = await chrome.storage.local.get([
+    'visits',
+    'limits',
+  ]);
   const dayVisits = visits[date] || {};
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
 
   // Calculate each component
   let complianceScore = 0;

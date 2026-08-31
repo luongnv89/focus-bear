@@ -48,7 +48,9 @@ function renderContent(content) {
         // Numbered list
         const text = trimmed.replace(/^\d+\.\s/, '');
         if (index > 0 && !lines[index - 1].trim().match(/^\d+\.\s/)) {
-          result.push('<ol class="list-decimal list-inside space-y-1 text-gray-400">');
+          result.push(
+            '<ol class="list-decimal list-inside space-y-1 text-gray-400">'
+          );
         }
         result.push(`<li>${text}</li>`);
         if (
@@ -102,7 +104,12 @@ function renderTable(content) {
 
   const beforeTable = content.split('|')[0].trim();
   const afterTableIndex = content.lastIndexOf('|');
-  const afterTable = content.substring(afterTableIndex).split('\n').slice(1).join('\n').trim();
+  const afterTable = content
+    .substring(afterTableIndex)
+    .split('\n')
+    .slice(1)
+    .join('\n')
+    .trim();
 
   return (
     <div className="space-y-4">
