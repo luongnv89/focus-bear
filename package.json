@@ -44,6 +44,9 @@
     "prettier": "^3.0.3",
     "sharp": "^0.34.5"
   },
+  "overrides": {
+    "eslint": "^9.39.5"
+  },
   "dependencies": {
     "d3": "^7.8.5"
   },
