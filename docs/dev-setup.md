@@ -4,6 +4,8 @@ This document describes how to set up a runnable development environment for Foc
 
 > **Baseline status: RED at audit (2026-08-30, commit `7d5299f`).**
 > A clean `npm ci` checkout builds in an isolated probe, but the local test suite could not start (`jest: command not found`) and lint/format tooling was not installed locally; the last CI run (2025-12-01, run 19828167779) was green. Until **Task 0.1 — Restore a runnable, recorded baseline** lands and records the new pass rate, the commands below may still fail locally. Follow the steps exactly, then run `0.1` fixes to reach green. See `MODERNIZATION_PLAN.md` Task 0.1, `MODERNIZATION_REPORT.md` (Baseline: RED), and `docs/tasks.md`.
+>
+> **Update 2026-08-31 — Task 0.1 landed (PR #59 + follow-up):** `npm ci` → `npm run build` green, `npm test -- --ci` now runs locally: **6 suites, 119 tests, 0 failures** (114 original + 5 smoke: popup DOM load + SW `onInstalled`/`onActivated` wiring). This is the recorded floor (≥) for all later P0–P4 tasks. `npm run lint` and `npm run format:check` also pass clean (ESLint 8, Prettier 3). Landing `cd landing-page && npm ci && npm run build` green as before. Milestone ME → M0 progression unblocked.
 
 ---
 
