@@ -6,6 +6,10 @@ This document describes how to set up a runnable development environment for Foc
 > A clean `npm ci` checkout builds in an isolated probe, but the local test suite could not start (`jest: command not found`) and lint/format tooling was not installed locally; the last CI run (2025-12-01, run 19828167779) was green. Until **Task 0.1 — Restore a runnable, recorded baseline** lands and records the new pass rate, the commands below may still fail locally. Follow the steps exactly, then run `0.1` fixes to reach green. See `MODERNIZATION_PLAN.md` Task 0.1, `MODERNIZATION_REPORT.md` (Baseline: RED), and `docs/tasks.md`.
 >
 > **Update 2026-08-31 — Task 0.1 landed (PR #59 + follow-up):** `npm ci` → `npm run build` green, `npm test -- --ci` now runs locally: **6 suites, 119 tests, 0 failures** (114 original + 5 smoke: popup DOM load + SW `onInstalled`/`onActivated` wiring). This is the recorded floor (≥) for all later P0–P4 tasks. `npm run lint` and `npm run format:check` also pass clean (ESLint 8, Prettier 3). Landing `cd landing-page && npm ci && npm run build` green as before. Milestone ME → M0 progression unblocked.
+>
+> **Update 2026-08-31 — P0 remainder landed (PR #61):** 0.2 legacy-limit normalization + single `initializeTracking`, 0.3 deterministic build (`dist/manifest.json` stamping), 0.4 landing CI gate — now 7 suites, 126 tests (added `legacy-limits.test.js`); floor remains ≥119.
+>
+> **Update 2026-08-31 — P1 W1/W2 landed (this PR):** root `npm audit fix` cleared W1/W2 High/Critical (8 high → 1 high: `sharp 0.34.5` deferred to 2.9; 1 low +2 moderate → 0), landing `npm audit fix` cleared 12 high → 1 high: `vite/esbuild` deferred to 2.8 + `react-router` v7 deferred to 2.11, plus manual bump `react-router-dom 6.28.0 → 6.30.6`, `yet-another-react-lightbox 3.21.6 → 3.32.2`; added `w1-regression.test.js` (quota/lastError, legacy limits, parseUrl boundaries); now **8 suites, 136 tests, 0 failures** — new floor ≥126, no `.skip`/`.only`. Both `npm run lint`/`format:check` clean; landing `npm run lint -- --max-warnings 0` + `format:check` + `build` green. M1 achieved modulo deferred majors (sharp, vite).
 
 ---
 
@@ -49,9 +53,10 @@ All tasks `P0–P4` verify against these five commands. Prefer them over ad-hoc 
 
 ```bash
 npm run build
-# Internally: npm run version:update && node scripts/build.js
-# Expected: "Building FocusBear extension..." → "Build complete! Output in dist/"
-# Output tree: dist/manifest.json, dist/src/, dist/assets/
+# Internally: node scripts/build.js (stamps version_name into dist/manifest.json via git hash)
+# Legacy: npm run version:update && node scripts/build.js (pre-0.3) — now deterministic, tracked manifest.json untouched
+# Expected: "Building FocusBear extension..." → "Stamped dist/manifest.json version_name: 0.2.0-<hash>" → "Build complete! Output in dist/"
+# Output tree: dist/manifest.json (with version_name), dist/src/, dist/assets/
 # After Task 0.3 the build no longer mutates tracked manifest.json;
 # git status --porcelain must be clean after build (verify: `npm run build && git status --porcelain`).
 ```
