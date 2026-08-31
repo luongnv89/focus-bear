@@ -139,48 +139,53 @@ Block Page
 - **Performance:** Chrome DevTools profiling for popup/graph responsiveness
 - **Accessibility:** Lighthouse audit, manual WCAG 2.1 AA checks, keyboard navigation testing
 
-## Common Development Commands
+## Common Development Commands — Recorded Commands (test command of record: `npm test -- --ci`)
 
-### Build & Development
+> **Source of truth:** `docs/dev-setup.md` — toolchain (`npm ci` clean checkout), Node ≥20 (final policy ≥22 via Task 2.1), Chrome 100+, plus the five recorded commands every P0–P4 task verifies against. Until Task 0.1 restores the suite, the RED baseline means `npm test -- --ci` may report `jest: command not found`; see that file for expected outputs and the smoke-test additions (popup DOM load + SW `onInstalled`/`onActivated` wiring).
 
 ```bash
-# Install dependencies
-npm install
-
-# Update version with git commit hash
-# Updates manifest.json version_name to include current commit hash (e.g., "0.1.0-7205313")
-npm run version:update
-
-# Build/bundle extension (minify JS/CSS)
-# Automatically runs version:update before building
+# 1. Build the extension (deterministic after 0.3 — git status clean after build)
 npm run build
+# = npm run version:update && node scripts/build.js  → dist/manifest.json + dist/src + dist/assets
 
-# Development mode (watch for changes)
-npm run dev
+# 2. Test — command of record (≥ pass rate recorded in 0.1 is the floor for all later tasks)
+npm test -- --ci
+# Coverage: npm run test:coverage -- --ci  → coverage/lcov.info for codecov
 
-# Lint code with ESLint
+# 3. Lint (format check + ESLint)
 npm run lint
+# = npm run format:check && eslint "src/**/*.js"
 
-# Fix linting issues automatically
-npm run lint:fix
-
-# Format code with Prettier
-npm run format
-
-# Check code formatting
+# 4. Format check only
 npm run format:check
+# Fix locally: npm run format  or  npm run lint:fix
 
-# Run tests
-npm run test
+# 5. Landing-page second package (own lockfile, own CI job after 0.4)
+cd landing-page && npm ci && npm run build
+# Also in CI: npm run lint -- --max-warnings 0  &&  npm run format:check  &&  npm run build
 
-# Run single test file
-npm run test -- tests/background/limits.test.js
+# Legacy helpers (still valid, but not part of the five recorded)
+npm ci                          # deterministic install from lockfile — use over npm install for verification
+npm run version:update          # updates manifest version_name with git hash (auto via build)
+npm run dev                     # watch mode via scripts/watch.js
+npm run lint:fix                # prettier --write + eslint --fix
+npm run test -- tests/background/limits.test.js  # single-file run
+npm run icons:generate          # sharp-based icon generation (Task 2.9)
+```
 
-# Load extension in Chrome
-# 1. Open chrome://extensions/
-# 2. Enable "Developer mode"
-# 3. Click "Load unpacked"
-# 4. Select project root directory
+### Architecture Constraints — Storage / Limits (local-only, MV3)
+
+- **Storage is local-only:** all state in `chrome.storage.local` via helpers in `src/background/storage.js`. No external APIs, no telemetry, no cloud sync. Never add a remote write path without explicit instruction.
+- **Atomic visit mutation:** after Task 3.1, `incrementVisit` is a serialized, bounded writer (check `chrome.runtime.lastError`, cap timestamp retention, no read-modify-write races). Before 3.1, direct `storage.get`+`set` races lose counts.
+- **Limit enforcement:** `src/background/limits.js` + `src/background/notifications.js` + `src/background/focus-score.js` share a single normalization boundary for legacy numeric limits (`{ "example.com": 10 }` → `{ daily: 10, fiveHours: … }`) — fixed in 0.2. The shared date-key utility (Task 3.3) is the only correct `YYYY-MM-DD` source (local-tz aware); inline `toISOString().split('T')[0]` is legacy.
+- **MV3 service worker:** `src/background/index.js` registers `tabs.onActivated`/`onUpdated`/`onInstalled`/`storage.onChanged` listeners **top-level only** — never inside `onInstalled` (double-registration bug fixed in 0.2). Requires `tabs`, `storage`, `notifications`, `declarativeNetRequest*`, `<all_urls>`.
+- **Module layout:** `background/` (tracking/storage/limits/focus-score/achievements/badge) · `popup/` + `popup/graph.js` (D3 radial graph) · `dashboard/` (full-page dashboard, blocking, domain) · `blocked/` · `help/` · `content/countdown-toast.js` · `common/visualization-page.js` (shared helpers) · `landing-page/` (Vite/React second package) — see `docs/dev-setup.md` for the full tree.
+
+Load unpacked for manual testing:
+```bash
+# 1. Open chrome://extensions/ → Developer mode ON
+# 2. Load unpacked → select dist/ (after npm run build)
+# 3. Inspect: service_worker / popup / dashboard; check storage: chrome.storage.local.get(null, d => console.log(d))
 ```
 
 ### Version Management

@@ -7,7 +7,8 @@ build/
 *.zip
 
 # Documentation (auto-generated)
-docs/
+docs/*
+!docs/dev-setup.md
 
 # Test coverage
 coverage/

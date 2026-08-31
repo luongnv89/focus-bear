@@ -1,0 +1,156 @@
+# Development Setup — FocusBear
+
+This document describes how to set up a runnable development environment for FocusBear from a clean checkout. It is the single source for toolchain, required environment, and the five recorded commands that CI and local verification use.
+
+> **Baseline status: RED at audit (2026-08-30, commit `7d5299f`).**
+> A clean `npm ci` checkout builds in an isolated probe, but the local test suite could not start (`jest: command not found`) and lint/format tooling was not installed locally; the last CI run (2025-12-01, run 19828167779) was green. Until **Task 0.1 — Restore a runnable, recorded baseline** lands and records the new pass rate, the commands below may still fail locally. Follow the steps exactly, then run `0.1` fixes to reach green. See `MODERNIZATION_PLAN.md` Task 0.1, `MODERNIZATION_REPORT.md` (Baseline: RED), and `docs/tasks.md`.
+
+---
+
+## Required Environment
+
+- **Node.js** — `>=20` required now; final policy will be `>=22` (see `MODERNIZATION_PLAN.md` Task 2.1 → `engines.node`, `.nvmrc`, CI matrix `[22.x, 24.x]`). Use `nvm`/`fnm` with `.nvmrc` once 2.1 lands. Current CI matrix is `[18.x, 20.x]` (EOL — to be replaced in 2.1).
+- **npm** — ships with Node. Use `npm ci` in a clean checkout (never `npm install` for CI/verification) to get deterministic installs from `package-lock.json`.
+- **Chrome** — version `100+` required for MV3 service-worker, `tabs`, `storage`, `webRequest`/`declarativeNetRequest`, `notifications` APIs. Load the built `dist/` folder via `chrome://extensions → Load unpacked`.
+- **OS** — macOS/Linux/WSL supported. `scripts/update-version.sh` handles both `darwin` and `linux` `sed` variants.
+- **Tools assumed on PATH** — `git`, `bash`, `node`, `npm`, `chrome` (or Chromium).
+
+---
+
+## Toolchain Install (clean checkout)
+
+```bash
+# 1. Clone and enter
+git clone https://github.com/luongnv89/focus-bear.git
+cd focus-bear
+
+# 2. Install root package deterministically (requires package-lock.json)
+npm ci
+
+# 3. Install landing-page package (second lockfile)
+cd landing-page && npm ci && cd ..
+
+# Expected output (abbrev.):
+# added 300+ packages, and audited ... packages
+# found 0 vulnerabilities (after W1/W2 patches; may show High/Critical before 1.1–1.4)
+```
+
+Re-run `npm ci` after switching branches or pulling lockfile changes. Do not commit `node_modules/`, `dist/`, or `coverage/` — they are gitignored.
+
+---
+
+## Recorded Commands (test command of record)
+
+All tasks `P0–P4` verify against these five commands. Prefer them over ad-hoc variants.
+
+### 1. Build the extension
+
+```bash
+npm run build
+# Internally: npm run version:update && node scripts/build.js
+# Expected: "Building FocusBear extension..." → "Build complete! Output in dist/"
+# Output tree: dist/manifest.json, dist/src/, dist/assets/
+# After Task 0.3 the build no longer mutates tracked manifest.json;
+# git status --porcelain must be clean after build (verify: `npm run build && git status --porcelain`).
+```
+
+### 2. Run the test suite (command of record)
+
+```bash
+npm test -- --ci
+# Expected before 0.1: sh: jest: command not found (RED baseline — Jest not installed locally, CI green)
+# Expected after 0.1: Jest summary + pass rate, smoke tests for popup DOM load and SW onInstalled/onActivated wiring
+# Coverage variant: npm run test:coverage -- --ci  (produces coverage/lcov.info, consumed by codecov in CI)
+```
+
+The pass rate recorded in `0.1` becomes the floor for every later task (`≥ recorded rate`). CI runs the same command in both `lint-and-test` and `coverage` jobs.
+
+### 3. Lint
+
+```bash
+npm run lint
+# = npm run format:check && eslint "src/**/*.js"
+# Expected after 0.1: 0 errors, 0 warnings (after Task 2.6/2.7 ESLint 9 migration, flat config)
+# Before that, a written list of pre-existing violations is acceptable per 0.1 AC.
+```
+
+### 4. Format check
+
+```bash
+npm run format:check
+# = prettier --check "src/**/*.{js,html,css}"
+# Expected: "All matched files use Prettier code style!" or exit 0
+# Fix: npm run format  (or npm run lint:fix)
+```
+
+### 5. Build the landing page (second package)
+
+```bash
+cd landing-page && npm ci && npm run build
+# Internally: vite build (manual chunk splitting per research.md)
+# Expected: "vite v5.x building for production..." → "✓ built in ...s"
+# Additional checks (landed in CI by Task 0.4):
+#   npm run lint -- --max-warnings 0
+#   npm run format:check
+# Verify build: npm run preview (then open localhost:4173, smoke-check Landing + /privacy)
+```
+
+---
+
+## Pre-commit & CI Parity
+
+- **Husky + lint-staged**: `npm install` installs `.husky/pre-commit` which runs `eslint --fix`, `prettier --write`, and `jest --bail --findRelatedTests --passWithNoTests` on staged `src/**/*.js` plus `prettier` on `html/css`. To bypass (not recommended): `git commit --no-verify`.
+- **CI** (`.github/workflows/ci.yml`): on every `push`/`pull_request`
+  - `lint-and-test` matrix `[18.x, 20.x]` → `npm ci → npm run lint → npm run format:check → npm test → npm run build` + artifact `dist/`
+  - `coverage` → `npm test -- --coverage` → `codecov/codecov-action@v4`
+  - After 0.4: additional `landing` job → `cd landing-page && npm ci && npm run lint && npm run format:check && npm run build`
+  - After 2.1: matrix becomes `[22.x, 24.x]` with `engines.node >=22` and `.nvmrc` alignment
+
+CI must be green before any `P1+` task is considered done.
+
+---
+
+## Module Layout Note (for agents)
+
+```
+src/
+  background/          # Service worker (MV3, type: module)
+    index.js           # entry — registers top-level listeners (tabs, storage, notifications)
+    tracking.js        # tab focus tracking, domain extraction, visit counting
+    storage.js         # chrome.storage.local helpers, atomic visit mutation (Task 3.1)
+    limits.js          # limit checking/enforcement, legacy-limit normalization (Task 0.2)
+    notifications.js   # countdown/bubble logic, limit warnings
+    focus-score.js     # 0–100 score, compliance & streak helpers
+    achievements.js    # streak/badge logic (survives dead-code removal 3.4)
+    badge.js           # toolbar badge text
+  dashboard/           # full-page dashboard (index.html + dashboard.js/css, blocking, domain)
+  popup/               # popup + graph.js (D3 radial graph)
+  blocked/             # block page
+  help/                # help/FAQ
+  content/             # countdown-toast content script
+  common/              # shared utils (visualization-page.js, feature-flags.js, categories.js)
+landing-page/          # Vite + React 18 landing site (second lockfile, own CI job)
+scripts/               # build.js, update-version.sh (0.3 makes version stamping deterministic), generate-icons.js
+tests/                 # Jest tests (smoke + unit after 0.1)
+```
+
+Storage is **local-only** (`chrome.storage.local`), never remote; MV3 `manifest.json` permissions are least-privilege (`tabs`, `storage`, `notifications`, `declarativeNetRequest*`, `<all_urls>` host — justified in PRIVACY.md after 4.5).
+
+---
+
+## Quick Smoke After Setup
+
+```bash
+npm ci && npm run build && npm test -- --ci   # M0 gate (after 0.1)
+npm run lint && npm run format:check           # must pass
+cd landing-page && npm ci && npm run build     # second package green
+git status --porcelain                         # must be empty after build (0.3)
+```
+
+If any step fails with `command not found`, re-run `npm ci` in that package and verify Node ≥20 via `node -v`. For `jest: command not found` before 0.1, that is the expected RED baseline — no action beyond running 0.1.
+
+---
+
+## How to Point Future Agents Here
+
+`CLAUDE.md` and `AGENTS.md` both reference this file as the authoritative install/run notes and list the same five recorded commands plus the module layout and storage/limits constraints. Keep them in sync when this file changes (see `MODERNIZATION_PLAN.md` Pre.2/Pre.3).

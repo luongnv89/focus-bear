@@ -17,12 +17,25 @@
     - Before running any Python script, **activate the appropriate virtual environment** and document its usage.
   - Prefer readability over cleverness; optimize for maintainability for a solo/early-stage team.
 
+- **Recorded Commands — Single Source of Truth: `docs/dev-setup.md` (also summarized in `CLAUDE.md`)**
+  - Toolchain: `npm ci` in a clean checkout (never `npm install` for verification), Node ≥20 (final policy ≥22 via Task 2.1 → `engines.node` + `.nvmrc` + CI matrix `[22.x, 24.x]`), Chrome 100+, `git`/`bash` on PATH.
+  - **Test command of record:** `npm test -- --ci` — its pass rate recorded in Task 0.1 is the floor (≥) for every later P0–P4 task. Coverage variant: `npm run test:coverage -- --ci`. Until 0.1, the RED baseline (`jest: command not found`, CI green at 2025-12-01) is expected — docs/dev-setup.md states this and points to 0.1.
+  - **Five recorded commands (run as written):** `npm run build` · `npm test -- --ci` · `npm run lint` (`format:check && eslint "src/**/*.js"`) · `npm run format:check` · `cd landing-page && npm ci && npm run build` (plus `npm run lint`/`format:check`/`build` in `landing-page/` after Task 0.4; after 2.6/2.7 they run on ESLint 9 flat config). Every change must keep `npm run lint` and `npm run format:check` green.
+  - **Build determinism:** after Task 0.3, `npm run build` must not mutate tracked `manifest.json`; `git status --porcelain` stays clean and `dist/manifest.json` carries `version_name` `base-version-commit-sha`.
+  - **CI parity:** `.github/workflows/ci.yml` runs exactly these five on every push/PR (lint-and-test + coverage, plus landing job after 0.4; matrix migrates to 22/24 in 2.1). Keep CI in sync with this doc.
+
+- **Storage-Writer Contract (Tasks 0.2 / 3.1–3.3 — obey even before those tasks land)**
+  - Single atomic per-domain mutation path: all visit increments go through `src/background/storage.js` `incrementVisit` (or its predecessor helpers) — never inline `storage.get` + `set` read-modify-write. After 3.1 it is a serialized queue/lock with `chrome.runtime.lastError` checking and bounded timestamp retention (old timestamps compacted, storage write volume no longer scales with history).
+  - Single date-key utility: use the canonical `YYYY-MM-DD` helper introduced in 3.3 (local-tz aware) — never inline `toISOString().split('T')[0]` (grep-clean requirement after 3.3). Until 3.3, note UTC vs local-midnight mismatch as known debt (F-BUG-004).
+  - Single limit-form controller: after 3.3, all three limit forms share one validated controller (positive integer, same rejection of 0/negatives, same max). Legacy numeric limits normalized at the storage getter boundary (fixed in 0.2).
+  - Never register SW listeners inside `onInstalled` (double-count bug F-BUG-002, fixed in 0.2); keep only first-run seeding there.
+
 - **Best Practices (Testing, Documentation, CI/CD)**
   - Implement tests for core logic:
-    - Data aggregation (time ranges, per-domain counts).
-    - Limit enforcement and block-page triggering.
-    - Streak and average computations.
-  - Add at least a smoke test/integration check for popup load and background event handling.
+    - Data aggregation (time ranges, per-domain counts) — use the shared time-range aggregator from 3.3, not ad-hoc filters.
+    - Limit enforcement and block-page triggering — cover legacy-limit normalization and `chrome.runtime.lastError` quota path.
+    - Streak and average computations — single-pass focus-score after 3.2 (one storage read per dashboard load, zero unnecessary `overallStreak` writes).
+  - Add at least a smoke test/integration check for popup load and background event handling (required by Task 0.1 to void F-TEST-003; keep them green).
   - Always create and maintain **GitHub Actions** CI workflows:
     - At minimum: install dependencies, run linting, run tests, and build the extension.
     - Ensure CI fails on lint/test/build errors.
@@ -33,6 +46,7 @@
   - Keep internal documentation up to date:
     - Briefly document any new module, major function, or architectural decision in code comments or a short markdown note.
     - When adding/removing features, update `tasks.md` status and ensure behavior stays aligned with `prd.md`.
+    - Keep `docs/dev-setup.md`, `CLAUDE.md`, and `AGENTS.md` in sync on the recorded commands, storage-writer contract, and module layout (`background/popup/dashboard/shared`).
 
 - **Security Considerations**
   - Respect FocusBear’s **local-only, privacy-first** design:
