@@ -48,6 +48,35 @@ jobs:
           path: dist/
           retention-days: 7
 
+  landing:
+    name: Landing — Lint, Format & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing-page
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: landing-page/package-lock.json
+
+      - name: Install landing dependencies
+        run: npm ci
+
+      - name: Run ESLint (landing)
+        run: npm run lint -- --max-warnings 0
+
+      - name: Check formatting (landing)
+        run: npm run format:check
+
+      - name: Build landing page
+        run: npm run build
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest

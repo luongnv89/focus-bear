@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,26 @@ function copyDir(src, dest) {
       fs.copyFileSync(srcPath, destPath);
     }
   }
+}
+
+// Stamp version_name in dist/manifest.json without mutating tracked file (deterministic build)
+try {
+  const distManifestPath = path.join(distDir, 'manifest.json');
+  if (fs.existsSync(distManifestPath)) {
+    const manifest = JSON.parse(fs.readFileSync(distManifestPath, 'utf8'));
+    const baseVersion = manifest.version;
+    let gitHash = 'dev';
+    try {
+      gitHash = execSync('git rev-parse --short HEAD', { cwd: rootDir, encoding: 'utf8' }).trim();
+    } catch {
+      // No git repo or command failed — keep dev
+    }
+    manifest.version_name = `${baseVersion}-${gitHash}`;
+    fs.writeFileSync(distManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`Stamped dist/manifest.json version_name: ${manifest.version_name}`);
+  }
+} catch (error) {
+  console.warn('Warning: could not stamp dist manifest version_name', error.message);
 }
 
 console.log('Build complete! Output in dist/');
