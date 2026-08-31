@@ -15,7 +15,7 @@ This document describes how to set up a runnable development environment for Foc
 
 ## Required Environment
 
-- **Node.js** — `>=20` required now; final policy will be `>=22` (see `MODERNIZATION_PLAN.md` Task 2.1 → `engines.node`, `.nvmrc`, CI matrix `[22.x, 24.x]`). Use `nvm`/`fnm` with `.nvmrc` once 2.1 lands. Current CI matrix is `[18.x, 20.x]` (EOL — to be replaced in 2.1).
+- **Node.js** — `>=22` required (see `MODERNIZATION_PLAN.md` Task 2.1 → `engines.node >=22`, `.nvmrc` `22`, CI matrix `[22.x, 24.x]`). Previous policy `>=20` (with CI `[18.x, 20.x]` EOL 2025-04-30 / 2026-04-30) replaced in 2.1 per Node release schedule https://nodejs.org/en/about/previous-releases. Use `nvm`/`fnm` with `.nvmrc` (currently `22`).
 - **npm** — ships with Node. Use `npm ci` in a clean checkout (never `npm install` for CI/verification) to get deterministic installs from `package-lock.json`.
 - **Chrome** — version `100+` required for MV3 service-worker, `tabs`, `storage`, `webRequest`/`declarativeNetRequest`, `notifications` APIs. Load the built `dist/` folder via `chrome://extensions → Load unpacked`.
 - **OS** — macOS/Linux/WSL supported. `scripts/update-version.sh` handles both `darwin` and `linux` `sed` variants.
@@ -108,10 +108,10 @@ cd landing-page && npm ci && npm run build
 
 - **Husky + lint-staged**: `npm install` installs `.husky/pre-commit` which runs `eslint --fix`, `prettier --write`, and `jest --bail --findRelatedTests --passWithNoTests` on staged `src/**/*.js` plus `prettier` on `html/css`. To bypass (not recommended): `git commit --no-verify`.
 - **CI** (`.github/workflows/ci.yml`): on every `push`/`pull_request`
-  - `lint-and-test` matrix `[18.x, 20.x]` → `npm ci → npm run lint → npm run format:check → npm test → npm run build` + artifact `dist/`
-  - `coverage` → `npm test -- --coverage` → `codecov/codecov-action@v4`
-  - After 0.4: additional `landing` job → `cd landing-page && npm ci && npm run lint && npm run format:check && npm run build`
-  - After 2.1: matrix becomes `[22.x, 24.x]` with `engines.node >=22` and `.nvmrc` alignment
+  - `lint-and-test` matrix `[22.x, 24.x]` (was `[18.x, 20.x]` pre-2.1) → `npm ci → npm run lint → npm run format:check → npm test → npm run build` + artifact `dist/` (on `24.x`)
+  - `coverage` (Node `22.x`) → `npm test -- --coverage` → `codecov/codecov-action@v4`
+  - `landing` job (Node `22.x`) → `cd landing-page && npm ci && npm run lint -- --max-warnings 0 && npm run format:check && npm run build` (landed in 0.4)
+  - Engines: both `package.json` declare `engines.node >=22`, `.nvmrc` `22` (Task 2.1)
 
 CI must be green before any `P1+` task is considered done.
 
