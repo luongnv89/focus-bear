@@ -93,7 +93,16 @@ describe('Legacy numeric limit normalization', () => {
   });
 
   test('getLimits normalizes legacy numeric limits at getter boundary', async () => {
-    mockStorage({ limits: { 'example.com': 10, 'other.com': { enabled: true, daily: { enabled: true, limit: 5 }, fiveHour: { enabled: false, limit: 10 } } } });
+    mockStorage({
+      limits: {
+        'example.com': 10,
+        'other.com': {
+          enabled: true,
+          daily: { enabled: true, limit: 5 },
+          fiveHour: { enabled: false, limit: 10 },
+        },
+      },
+    });
     const limits = await getLimits();
     expect(limits['example.com'].daily.limit).toBe(10);
     expect(limits['example.com'].enabled).toBe(true);
@@ -104,7 +113,12 @@ describe('Legacy numeric limit normalization', () => {
     mockStorage({
       limits: { 'example.com': 10 },
       visits: {},
-      notificationPreferences: { enabled: false, types: {}, quietHours: { enabled: false }, maxPerDay: 5 },
+      notificationPreferences: {
+        enabled: false,
+        types: {},
+        quietHours: { enabled: false },
+        maxPerDay: 5,
+      },
     });
     await expect(checkLimitWarnings('example.com', 8)).resolves.not.toThrow();
     await expect(checkLimitWarnings('example.com', 10)).resolves.not.toThrow();
@@ -113,7 +127,11 @@ describe('Legacy numeric limit normalization', () => {
   test('calculateDailyFocusScore does not throw for legacy numeric limit', async () => {
     const today = new Date().toISOString().split('T')[0];
     mockStorage({
-      visits: { [today]: { 'example.com': { count: 5, lastVisit: Date.now(), timestamps: [], subpaths: {} } } },
+      visits: {
+        [today]: {
+          'example.com': { count: 5, lastVisit: Date.now(), timestamps: [], subpaths: {} },
+        },
+      },
       limits: { 'example.com': 10 },
       overallStreak: { current: 1, best: 1 },
     });
@@ -127,7 +145,11 @@ describe('Legacy numeric limit normalization', () => {
   test('getFocusScoreBreakdown does not throw for legacy numeric limit', async () => {
     const today = new Date().toISOString().split('T')[0];
     mockStorage({
-      visits: { [today]: { 'example.com': { count: 12, lastVisit: Date.now(), timestamps: [], subpaths: {} } } },
+      visits: {
+        [today]: {
+          'example.com': { count: 12, lastVisit: Date.now(), timestamps: [], subpaths: {} },
+        },
+      },
       limits: { 'example.com': 10 },
       overallStreak: { current: 0, best: 0 },
     });
@@ -135,10 +157,16 @@ describe('Legacy numeric limit normalization', () => {
   });
 
   test('storage streak helpers handle legacy numeric limit without throw', async () => {
-    const { calculateLimitStreak, calculateOverallStreak } = await import('../src/background/storage.js');
+    const { calculateLimitStreak, calculateOverallStreak } = await import(
+      '../src/background/storage.js'
+    );
     const today = new Date().toISOString().split('T')[0];
     mockStorage({
-      visits: { [today]: { 'example.com': { count: 5, lastVisit: Date.now(), timestamps: [], subpaths: {} } } },
+      visits: {
+        [today]: {
+          'example.com': { count: 5, lastVisit: Date.now(), timestamps: [], subpaths: {} },
+        },
+      },
       limits: { 'example.com': 10 },
       streaks: {},
       overallStreak: { current: 0, best: 0 },
@@ -157,7 +185,8 @@ describe('Service worker listener single registration (Task 0.2)', () => {
     // Should be exactly one top-level call (not inside onInstalled)
     expect(matches.length).toBe(1);
     // Ensure not inside onInstalled handler
-    const onInstalledSection = content.split('chrome.runtime.onInstalled.addListener')[1]?.split('});')[0] || '';
+    const onInstalledSection =
+      content.split('chrome.runtime.onInstalled.addListener')[1]?.split('});')[0] || '';
     expect(onInstalledSection).not.toMatch(/initializeTracking/);
   });
 });

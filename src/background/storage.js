@@ -152,8 +152,12 @@ export async function incrementVisit(domain, subpath = null) {
   const dateKey = getTodayKey();
   const timestamp = Date.now();
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     chrome.storage.local.get(['visits'], (data) => {
+      if (chrome.runtime?.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
       const visits = data.visits || {};
 
       // Initialize date if not exists
@@ -193,8 +197,12 @@ export async function incrementVisit(domain, subpath = null) {
         visits[dateKey][domain].subpaths[subpath].lastVisit = timestamp;
       }
 
-      // Save to storage
+      // Save to storage — surface quota/lastError instead of silently resolving
       chrome.storage.local.set({ visits }, () => {
+        if (chrome.runtime?.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
         resolve(visits[dateKey][domain].count);
       });
     });
