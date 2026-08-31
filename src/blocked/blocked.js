@@ -54,7 +54,7 @@ async function loadBlockedPageData() {
         try {
           const referrerUrl = new URL(document.referrer);
           domain = referrerUrl.hostname.replace(/^www\./, '');
-        } catch (e) {
+        } catch {
           domain = 'this site';
         }
       } else {
