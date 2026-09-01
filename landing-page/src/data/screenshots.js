@@ -1,24 +1,24 @@
 export const screenshotGalleryContent = {
-  sectionTitle: 'See FocusBear in Action',
+  sectionTitle: 'See FocusPaw in Action',
   sectionDescription:
     'Explore the intuitive interface designed to help you stay focused.',
   screenshots: [
     {
       id: 'dashboard',
       src: '/screenshots/dashboard.png',
-      alt: 'FocusBear dashboard showing focus tracking visualization with interactive graph',
+      alt: 'FocusPaw dashboard showing focus tracking visualization with interactive graph',
       caption: 'Dashboard with interactive focus graph',
     },
     {
       id: 'dashboard-reddit',
       src: '/screenshots/dashboard-reddit.png',
-      alt: 'FocusBear dashboard showing Reddit usage tracking and time spent',
+      alt: 'FocusPaw dashboard showing Reddit usage tracking and time spent',
       caption: 'Track time spent on specific sites',
     },
     {
       id: 'settings',
       src: '/screenshots/settings.png',
-      alt: 'Settings page for configuring FocusBear preferences and options',
+      alt: 'Settings page for configuring FocusPaw preferences and options',
       caption: 'Customize your focus tracking preferences',
     },
     {
@@ -36,7 +36,7 @@ export const screenshotGalleryContent = {
     {
       id: 'help-faq',
       src: '/screenshots/Help-FAQ.png',
-      alt: 'Help and FAQ page explaining FocusBear features and usage',
+      alt: 'Help and FAQ page explaining FocusPaw features and usage',
       caption: 'Comprehensive help documentation',
     },
   ],

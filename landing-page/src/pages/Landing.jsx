@@ -19,7 +19,7 @@ function Landing() {
           </h2>
           <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
             Join thousands of users who have improved their productivity with
-            FocusBear. It&apos;s free, private, and takes seconds to install.
+            FocusPaw. It&apos;s free, private, and takes seconds to install.
           </p>
           <a
             href={heroContent.ctaButton.url}
@@ -29,7 +29,7 @@ function Landing() {
             aria-label={heroContent.ctaButton.ariaLabel}
           >
             <Globe className="w-6 h-6" aria-hidden="true" />
-            Get FocusBear Now
+            Get FocusPaw Now
           </a>
         </div>
       </section>

@@ -5,14 +5,14 @@ export const privacyPolicyContent = {
     {
       id: 'overview',
       title: 'Overview',
-      content: `FocusBear is a privacy-first Chrome extension designed to help you track and improve your browsing focus habits. We are committed to protecting your privacy and being transparent about our data practices.
+      content: `FocusPaw is a privacy-first Chrome extension designed to help you track and improve your browsing focus habits. We are committed to protecting your privacy and being transparent about our data practices.
 
 **The short version: All your data stays on your device. We don't collect, transmit, or store any of your personal information.**`,
     },
     {
       id: 'what-we-collect',
       title: 'What We Collect',
-      content: `FocusBear collects the following data **locally on your device only**:
+      content: `FocusPaw collects the following data **locally on your device only**:
 
 - **Domain visit counts:** The number of times you switch to each website domain (e.g., "twitter.com: 5 visits")
 - **Visit timestamps:** When you visited each domain (used for time-based filtering)
@@ -67,7 +67,7 @@ export const privacyPolicyContent = {
     {
       id: 'permissions',
       title: 'Permissions Explained',
-      content: `FocusBear requests the following Chrome permissions:
+      content: `FocusPaw requests the following Chrome permissions:
 
 | Permission | Why We Need It |
 |------------|----------------|
@@ -81,17 +81,17 @@ export const privacyPolicyContent = {
     {
       id: 'third-party',
       title: 'Third-Party Services',
-      content: `FocusBear does not use any third-party services, analytics, or tracking. The extension operates entirely offline once installed.`,
+      content: `FocusPaw does not use any third-party services, analytics, or tracking. The extension operates entirely offline once installed.`,
     },
     {
       id: 'children',
       title: "Children's Privacy",
-      content: `FocusBear does not knowingly collect information from children under 13. The extension is intended for general audiences who want to improve their browsing habits.`,
+      content: `FocusPaw does not knowingly collect information from children under 13. The extension is intended for general audiences who want to improve their browsing habits.`,
     },
     {
       id: 'open-source',
       title: 'Open Source',
-      content: `FocusBear is open source. You can review our code at any time:
+      content: `FocusPaw is open source. You can review our code at any time:
 
 **Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)`,
     },
@@ -103,7 +103,7 @@ export const privacyPolicyContent = {
     {
       id: 'contact',
       title: 'Contact',
-      content: `If you have questions about this privacy policy or FocusBear's data practices:
+      content: `If you have questions about this privacy policy or FocusPaw's data practices:
 
 - **GitHub Issues:** [https://github.com/luongnv89/focus-bear/issues](https://github.com/luongnv89/focus-bear/issues)
 - **Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)`,

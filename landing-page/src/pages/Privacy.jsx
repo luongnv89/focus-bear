@@ -235,7 +235,7 @@ function Privacy() {
           {/* Footer message */}
           <div className="text-center pt-8 border-t border-dark-border">
             <p className="text-gray-400">
-              <strong className="text-white">FocusBear</strong> — Track your
+              <strong className="text-white">FocusPaw</strong> — Track your
               focus, privacy-first.
             </p>
           </div>

@@ -3,15 +3,15 @@ export const heroContent = {
   tagline:
     'Privacy-first Chrome extension that helps you understand your browsing habits through beautiful visualizations. All data stays on your device. Now with React 19, Manifest V3, and enhanced privacy.',
   ctaButton: {
-    text: "Get FocusBear 1.0.0 — It's Free",
+    text: "Get FocusPaw 1.0.0 — It's Free",
     url:
       import.meta.env.VITE_CHROME_STORE_URL ||
       'https://chrome.google.com/webstore',
-    ariaLabel: 'Install FocusBear extension from Chrome Web Store',
+    ariaLabel: 'Install FocusPaw extension from Chrome Web Store',
   },
   heroImage: {
     src: '/screenshots/dashboard.png',
-    alt: 'FocusBear dashboard showing focus tracking graph with interactive visualization',
+    alt: 'FocusPaw dashboard showing focus tracking graph with interactive visualization',
     width: 1920,
     height: 1080,
   },

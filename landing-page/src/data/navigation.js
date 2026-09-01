@@ -1,6 +1,6 @@
 export const navigationContent = {
   logo: {
-    text: 'FocusBear',
+    text: 'FocusPaw',
     href: '/',
   },
   links: [
@@ -18,6 +18,6 @@ export const navigationContent = {
     url:
       import.meta.env.VITE_CHROME_STORE_URL ||
       'https://chrome.google.com/webstore',
-    ariaLabel: 'Install FocusBear extension from Chrome Web Store',
+    ariaLabel: 'Install FocusPaw extension from Chrome Web Store',
   },
 };

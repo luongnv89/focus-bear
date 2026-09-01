@@ -7,7 +7,7 @@ export const footerContent = {
         import.meta.env.VITE_GITHUB_URL ||
         'https://github.com/luongnv89/focus-bear',
       external: true,
-      ariaLabel: 'View FocusBear source code on GitHub',
+      ariaLabel: 'View FocusPaw source code on GitHub',
     },
     {
       id: 'privacy',
@@ -16,6 +16,6 @@ export const footerContent = {
       external: false,
     },
   ],
-  copyright: `© ${new Date().getFullYear()} FocusBear. All rights reserved.`,
+  copyright: `© ${new Date().getFullYear()} FocusPaw. All rights reserved.`,
   tagline: 'Track your focus, privacy-first.',
 };

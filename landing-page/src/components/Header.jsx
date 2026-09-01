@@ -66,7 +66,7 @@ function Header() {
           <Link
             to="/"
             className="flex items-center gap-2 text-xl font-bold text-white hover:text-accent transition-colors"
-            aria-label="FocusBear home"
+            aria-label="FocusPaw home"
           >
             <Zap className="w-6 h-6 text-accent" aria-hidden="true" />
             <span>{navigationContent.logo.text}</span>

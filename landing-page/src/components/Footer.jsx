@@ -14,7 +14,7 @@ function Footer() {
               className="flex items-center gap-2 text-xl font-bold text-white hover:text-accent transition-colors"
             >
               <Zap className="w-6 h-6 text-accent" aria-hidden="true" />
-              <span>FocusBear</span>
+              <span>FocusPaw</span>
             </Link>
             <p className="text-gray-400 text-sm">{footerContent.tagline}</p>
           </div>
