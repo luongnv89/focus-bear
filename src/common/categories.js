@@ -82,8 +82,6 @@ export const CATEGORY_CONFIG = {
       'codepen',
       'codesandbox',
       'repl.it',
-      'localhost',
-      '127.0.0.1',
       'w3schools',
       'mdn',
       'mozilla',
