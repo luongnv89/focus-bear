@@ -2,6 +2,24 @@ import { getLimits, setLimitForDomain, normalizeLimitConfig } from '../backgroun
 import { updateBlockingRules } from '../background/limits.js';
 import { validateDomain, validateLimitConfig } from '../common/limit-validation.js';
 
+/**
+ * Ask the user for the optional <all_urls> host permission required for
+ * declarativeNetRequest redirect-blocking. Tracking and toasts work without it.
+ * Silent no-op if already granted, denied, or if the API is unavailable.
+ * @returns {Promise<boolean>} whether the permission is now granted
+ */
+async function ensureBlockingHostPermission() {
+  try {
+    if (!chrome.permissions || !chrome.permissions.contains) return true;
+    const already = await chrome.permissions.contains({ origins: ['<all_urls>'] });
+    if (already) return true;
+    return await chrome.permissions.request({ origins: ['<all_urls>'] });
+  } catch (error) {
+    console.debug('[Blocking] host permission request failed', error);
+    return false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await renderRulesList();
   setupForm();
@@ -150,6 +168,10 @@ function setupForm() {
       };
 
       await setLimitForDomain(domain, config);
+      // First time a user adds a limit, prompt for the optional <all_urls> host
+      // permission so redirect-blocking actually works. Decline = tracking/toasts
+      // still work; only redirect blocking is disabled.
+      await ensureBlockingHostPermission();
       await updateBlockingRules();
 
       form.reset();
