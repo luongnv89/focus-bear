@@ -70,6 +70,9 @@ export function createDefaultLimitConfig(overrides = {}) {
   };
 }
 
+export const RETENTION_DAYS = 30;
+export const MAX_TIMESTAMPS_PER_DOMAIN = 1000;
+
 /**
  * Get today's date in YYYY-MM-DD format
  * @returns {string} Date string
@@ -78,6 +81,51 @@ export function getTodayKey() {
   const now = new Date();
   return now.toISOString().split('T')[0];
 }
+
+/**
+ * Get retention cutoff date key (YYYY-MM-DD) — entries older than this are compacted
+ * @returns {string} Cutoff date key
+ */
+export function getRetentionCutoffKey() {
+  const d = new Date();
+  d.setDate(d.getDate() - RETENTION_DAYS);
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Compact visits history: remove date buckets older than retention window and trim per-domain timestamp arrays.
+ * Mutates the visits object in place.
+ * @param {Object} visits - Visits object keyed by date
+ */
+export function compactVisits(visits) {
+  const cutoff = getRetentionCutoffKey();
+  Object.keys(visits).forEach((dateKey) => {
+    if (dateKey < cutoff) {
+      delete visits[dateKey];
+    } else {
+      const dayVisits = visits[dateKey];
+      Object.values(dayVisits).forEach((domainData) => {
+        if (domainData.timestamps && domainData.timestamps.length > MAX_TIMESTAMPS_PER_DOMAIN) {
+          domainData.timestamps = domainData.timestamps.slice(-MAX_TIMESTAMPS_PER_DOMAIN);
+        }
+      });
+    }
+  });
+}
+
+// Serialized write queue — ensures per-domain mutations are not lost under concurrent calls
+let writeQueue = Promise.resolve();
+
+/**
+ * Reset internal write queue (test-only)
+ */
+export function resetWriteQueueForTests() {
+  writeQueue = Promise.resolve();
+}
+
+// Back-compat alias for earlier underscore name (kept for any external import)
+// eslint-disable-next-line no-underscore-dangle
+export const _resetWriteQueueForTests = resetWriteQueueForTests;
 
 /**
  * Get all stored data
@@ -142,13 +190,7 @@ export async function getTodayVisitCount() {
   );
 }
 
-/**
- * Increment visit count for a domain
- * @param {string} domain - Domain name (e.g., "example.com")
- * @param {string} [subpath] - Optional subpath (e.g., "/page1")
- * @returns {Promise<number>} New count for domain
- */
-export async function incrementVisit(domain, subpath = null) {
+async function incrementVisitInternal(domain, subpath = null) {
   const dateKey = getTodayKey();
   const timestamp = Date.now();
 
@@ -184,6 +226,10 @@ export async function incrementVisit(domain, subpath = null) {
         visits[dateKey][domain].timestamps = [];
       }
       visits[dateKey][domain].timestamps.push(timestamp);
+      if (visits[dateKey][domain].timestamps.length > MAX_TIMESTAMPS_PER_DOMAIN) {
+        const trimmed = visits[dateKey][domain].timestamps.slice(-MAX_TIMESTAMPS_PER_DOMAIN);
+        visits[dateKey][domain].timestamps = trimmed;
+      }
 
       // Handle subpath if provided
       if (subpath) {
@@ -197,6 +243,9 @@ export async function incrementVisit(domain, subpath = null) {
         visits[dateKey][domain].subpaths[subpath].lastVisit = timestamp;
       }
 
+      // Compact history before write so write volume does not scale with unbounded history
+      compactVisits(visits);
+
       // Save to storage — surface quota/lastError instead of silently resolving
       chrome.storage.local.set({ visits }, () => {
         if (chrome.runtime?.lastError) {
@@ -207,6 +256,20 @@ export async function incrementVisit(domain, subpath = null) {
       });
     });
   });
+}
+
+/**
+ * Increment visit count for a domain — serialized via internal queue to prevent lost updates
+ * @param {string} domain - Domain name (e.g., "example.com")
+ * @param {string} [subpath] - Optional subpath (e.g., "/page1")
+ * @returns {Promise<number>} New count for domain
+ */
+export function incrementVisit(domain, subpath = null) {
+  const task = () => incrementVisitInternal(domain, subpath);
+  const result = writeQueue.then(task, task);
+  // Keep queue flowing even if task rejects — swallow for queue continuity, caller still sees rejection via `result`
+  writeQueue = result.catch(() => {});
+  return result;
 }
 
 /**
