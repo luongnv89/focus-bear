@@ -97,15 +97,19 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --coverage
 
-      # Fail loudly if the coverage report is missing or malformed, or if
-      # coverage drops below the M3 target (60% lines). The threshold is
-      # intentionally set below the #48 recorded rate (~64.5%) so the gate
-      # catches silent regressions without immediately failing.
+      # Upload coverage reports to Codecov. The 60% line-coverage threshold
+      # is enforced by the next step (the authoritative gate), so this
+      # upload step is non-fatal: a missing CODECOV_TOKEN or a transient
+      # upload failure must not break CI. The Codecov dashboard is a
+      # secondary signal; the local 60% gate below is the contract.
       - name: Upload coverage reports
+        if: always()
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN || '' }}
 
       - name: Enforce line coverage threshold (>=60%)
         if: always()
