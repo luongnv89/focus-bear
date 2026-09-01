@@ -7,6 +7,7 @@ import {
   getTodayKey,
   deleteDomainData,
 } from '../background/storage.js';
+import { validateLimitConfig } from '../common/limit-validation.js';
 
 let currentDomain = '';
 let currentLimitConfig = null;
@@ -121,17 +122,18 @@ function setupLimitFormListeners() {
 
     const enabled = form.elements.enabled.checked;
     const fiveHourEnabled = form.elements.fiveHourEnabled.checked;
-    const fiveHourLimit = Number(form.elements.fiveHourLimit.value);
+    const fiveHourLimit = form.elements.fiveHourLimit.value;
     const dailyEnabled = form.elements.dailyEnabled.checked;
-    const dailyLimit = Number(form.elements.dailyLimit.value);
+    const dailyLimit = form.elements.dailyLimit.value;
 
-    if (fiveHourEnabled && (!Number.isInteger(fiveHourLimit) || fiveHourLimit <= 0)) {
-      if (errorEl) errorEl.textContent = 'Enter a positive 5-hour limit.';
-      return;
-    }
-
-    if (dailyEnabled && (!Number.isInteger(dailyLimit) || dailyLimit <= 0)) {
-      if (errorEl) errorEl.textContent = 'Enter a positive daily limit.';
+    const limitRes = validateLimitConfig({
+      fiveHourEnabled,
+      fiveHourLimit,
+      dailyEnabled,
+      dailyLimit,
+    });
+    if (!limitRes.valid) {
+      if (errorEl) errorEl.textContent = limitRes.error;
       return;
     }
 
@@ -142,11 +144,11 @@ function setupLimitFormListeners() {
         enabled,
         fiveHour: {
           enabled: fiveHourEnabled,
-          limit: fiveHourLimit,
+          limit: fiveHourEnabled ? Number(fiveHourLimit) : 10,
         },
         daily: {
           enabled: dailyEnabled,
-          limit: dailyLimit,
+          limit: dailyEnabled ? Number(dailyLimit) : 20,
         },
       };
 

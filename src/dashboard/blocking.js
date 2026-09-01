@@ -1,5 +1,6 @@
 import { getLimits, setLimitForDomain, normalizeLimitConfig } from '../background/storage.js';
 import { updateBlockingRules } from '../background/limits.js';
+import { validateDomain, validateLimitConfig } from '../common/limit-validation.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await renderRulesList();
@@ -93,29 +94,41 @@ function setupForm() {
     errorEl.textContent = '';
 
     const formData = new FormData(form);
-    const domain = formData.get('domain').trim().toLowerCase();
+    const rawDomain = formData.get('domain') || '';
 
-    if (!domain) {
-      errorEl.textContent = 'Please enter a valid domain';
+    const domainRes = validateDomain(rawDomain);
+    if (!domainRes.valid) {
+      errorEl.textContent = domainRes.error;
       return;
     }
+    const domain = domainRes.normalized;
 
     try {
-      // Validate domain format (simple check)
-      if (!domain.includes('.') || domain.includes(' ')) {
-        errorEl.textContent = 'Please enter a valid domain (e.g., example.com)';
+      const fiveHourEnabled = formData.get('fiveHourEnabled') === 'on';
+      const dailyEnabled = formData.get('dailyEnabled') === 'on';
+      const fiveHourLimit = formData.get('fiveHourLimit');
+      const dailyLimit = formData.get('dailyLimit');
+
+      const limitRes = validateLimitConfig({
+        fiveHourEnabled,
+        fiveHourLimit,
+        dailyEnabled,
+        dailyLimit,
+      });
+      if (!limitRes.valid) {
+        errorEl.textContent = limitRes.error;
         return;
       }
 
       const config = {
         enabled: formData.get('enabled') === 'on',
         fiveHour: {
-          enabled: formData.get('fiveHourEnabled') === 'on',
-          limit: parseInt(formData.get('fiveHourLimit'), 10) || 10,
+          enabled: fiveHourEnabled,
+          limit: fiveHourEnabled ? Number(fiveHourLimit) : 10,
         },
         daily: {
-          enabled: formData.get('dailyEnabled') === 'on',
-          limit: parseInt(formData.get('dailyLimit'), 10) || 20,
+          enabled: dailyEnabled,
+          limit: dailyEnabled ? Number(dailyLimit) : 20,
         },
       };
 

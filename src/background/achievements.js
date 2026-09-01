@@ -4,6 +4,7 @@
  */
 
 import { calculateOverallStreak } from './storage.js';
+import { getTodayKey } from '../common/date-utils.js';
 
 function getTotalVisitCount(visits) {
   return Object.values(visits).reduce((total, dayData) => {
@@ -122,7 +123,7 @@ export const ACHIEVEMENTS = {
     category: 'challenge',
     check: async () => {
       const { visits = {}, limits = {} } = await chrome.storage.local.get(['visits', 'limits']);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayKey();
       const todayVisits = visits[today] || {};
 
       const enabledLimits = Object.entries(limits).filter(
@@ -146,7 +147,7 @@ export const ACHIEVEMENTS = {
     category: 'challenge',
     check: async () => {
       const { visits = {} } = await chrome.storage.local.get('visits');
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayKey();
       const todayVisits = visits[today] || {};
       const domainCount = Object.keys(todayVisits).length;
       return domainCount > 0 && domainCount <= 5;

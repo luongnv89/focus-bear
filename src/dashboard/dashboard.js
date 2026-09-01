@@ -11,6 +11,7 @@ import {
 } from '../background/storage.js';
 import { getTodayFocusScore } from '../background/focus-score.js';
 import { categorizeDomain } from '../common/categories.js';
+import { getTodayKey, FIVE_HOUR_MS } from '../common/date-utils.js';
 
 let currentTableData = [];
 let currentLimits = {};
@@ -31,7 +32,6 @@ function getStatusColor(percent) {
   if (percent > 80) return 'var(--color-warning)';
   return 'var(--color-success)';
 }
-const FIVE_HOUR_MS = 5 * 60 * 60 * 1000;
 const tableFilters = {
   query: '',
   sortField: 'count',
@@ -85,7 +85,7 @@ async function showInsightsPopup() {
   if (!popup || !overlay || !closeBtn) return;
 
   // Check if insights were dismissed today
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayKey();
   const { insightsDismissedDate } = await chrome.storage.local.get('insightsDismissedDate');
 
   if (insightsDismissedDate === today) {
@@ -710,8 +710,10 @@ function sortTableData(data, field, order = 'desc') {
       }
     }
 
-    let aVal = a[field];
-    let bVal = b[field];
+    // Map displayed column to its source field: visits column displays todayCount
+    const displayField = field === 'count' ? 'todayCount' : field;
+    let aVal = a[displayField];
+    let bVal = b[displayField];
 
     // Handle string comparisons
     if (field === 'domain') {

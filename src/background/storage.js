@@ -41,6 +41,13 @@
  * }
  */
 
+import {
+  getTodayKey,
+  getDateKey,
+  parseDateKey,
+  aggregateVisitsInRange,
+} from '../common/date-utils.js';
+
 const defaultSettings = {
   onboardingComplete: false,
 };
@@ -50,6 +57,9 @@ const limitDefaults = {
   fiveHour: { enabled: true, limit: 10 },
   daily: { enabled: true, limit: 20 },
 };
+
+// eslint-disable-next-line object-curly-newline
+export { getTodayKey, getDateKey, parseDateKey, aggregateVisitsInRange };
 
 /**
  * Create a normalized limit config merged with defaults
@@ -74,22 +84,13 @@ export const RETENTION_DAYS = 30;
 export const MAX_TIMESTAMPS_PER_DOMAIN = 1000;
 
 /**
- * Get today's date in YYYY-MM-DD format
- * @returns {string} Date string
- */
-export function getTodayKey() {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
-}
-
-/**
  * Get retention cutoff date key (YYYY-MM-DD) — entries older than this are compacted
  * @returns {string} Cutoff date key
  */
 export function getRetentionCutoffKey() {
   const d = new Date();
   d.setDate(d.getDate() - RETENTION_DAYS);
-  return d.toISOString().split('T')[0];
+  return getDateKey(d);
 }
 
 /**
@@ -428,10 +429,13 @@ export async function getVisitsInRange(startDate, endDate) {
   const visits = await getVisits();
   const result = {};
 
-  // Generate all date keys in range
+  // Generate all date keys in range (local)
   const currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    const dateKey = currentDate.toISOString().split('T')[0];
+  const end = new Date(endDate);
+  currentDate.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  while (currentDate <= end) {
+    const dateKey = getDateKey(currentDate);
     if (visits[dateKey]) {
       result[dateKey] = visits[dateKey];
     }
@@ -456,7 +460,7 @@ export async function calculateFocusHeroBadges() {
   const dateKeys = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today);
     date.setDate(date.getDate() - index);
-    return date.toISOString().split('T')[0];
+    return getDateKey(date);
   });
 
   Object.keys(limits).forEach((domain) => {
@@ -509,8 +513,8 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 60 * 60 * 1000);
       break;
     case 'today': {
-      const todayKey = getTodayKey();
-      startDate = new Date(`${todayKey}T00:00:00.000Z`);
+      startDate = new Date(now);
+      startDate.setHours(0, 0, 0, 0);
       break;
     }
     case 'week':
@@ -520,48 +524,14 @@ export async function getAggregatedStats(range = 'today') {
       startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       break;
     default: {
-      const todayKey = getTodayKey();
-      startDate = new Date(`${todayKey}T00:00:00.000Z`);
+      startDate = new Date(now);
+      startDate.setHours(0, 0, 0, 0);
       break;
     }
   }
 
   const visits = await getVisits();
-  const aggregated = {};
-
-  // Aggregate visits across all dates in range
-  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
-    const visitDate = new Date(dateKey);
-    if (visitDate >= startDate && visitDate <= now) {
-      Object.entries(dateVisits).forEach(([domain, domainData]) => {
-        if (!aggregated[domain]) {
-          aggregated[domain] = {
-            count: 0,
-            lastVisit: domainData.lastVisit,
-            subpaths: {},
-          };
-        }
-        aggregated[domain].count += domainData.count;
-        if (domainData.lastVisit > aggregated[domain].lastVisit) {
-          aggregated[domain].lastVisit = domainData.lastVisit;
-        }
-
-        // Aggregate subpaths
-        Object.entries(domainData.subpaths || {}).forEach(([subpath, subpathData]) => {
-          if (!aggregated[domain].subpaths[subpath]) {
-            aggregated[domain].subpaths[subpath] = {
-              count: 0,
-              lastVisit: subpathData.lastVisit,
-            };
-          }
-          aggregated[domain].subpaths[subpath].count += subpathData.count;
-          if (subpathData.lastVisit > aggregated[domain].subpaths[subpath].lastVisit) {
-            aggregated[domain].subpaths[subpath].lastVisit = subpathData.lastVisit;
-          }
-        });
-      });
-    }
-  });
+  const aggregated = aggregateVisitsInRange(visits, startDate, now);
 
   return aggregated;
 }
@@ -597,7 +567,7 @@ export async function calculateLimitStreak(domain) {
   const checkDate = new Date(today);
 
   for (let i = 0; i < 365; i += 1) {
-    const dateKey = checkDate.toISOString().split('T')[0];
+    const dateKey = getDateKey(checkDate);
     const dayVisits = visits[dateKey]?.[domain]?.count || 0;
 
     if (dayVisits <= dailyLimit) {
@@ -614,7 +584,7 @@ export async function calculateLimitStreak(domain) {
   streaks[domain] = {
     current: currentStreak,
     best: bestStreak,
-    lastCheckDate: today.toISOString().split('T')[0],
+    lastCheckDate: getDateKey(today),
   };
 
   await chrome.storage.local.set({ streaks });
@@ -656,7 +626,7 @@ export function computeOverallStreakFromData(visits = {}, rawLimits = {}, existi
   );
 
   for (let i = 0; i < 365; i += 1) {
-    const dateKey = checkDate.toISOString().split('T')[0];
+    const dateKey = getDateKey(checkDate);
     const dayVisits = visits[dateKey] || {};
 
     const allLimitsRespected = limitEntries.every(([domain, limitConfig]) => {
@@ -677,7 +647,7 @@ export function computeOverallStreakFromData(visits = {}, rawLimits = {}, existi
   return {
     current: currentStreak,
     best: bestStreak,
-    lastCheckDate: today.toISOString().split('T')[0],
+    lastCheckDate: getDateKey(today),
   };
 }
 
