@@ -97,8 +97,41 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --coverage
 
+      # Fail loudly if the coverage report is missing or malformed, or if
+      # coverage drops below the M3 target (60% lines). The threshold is
+      # intentionally set below the #48 recorded rate (~64.5%) so the gate
+      # catches silent regressions without immediately failing.
       - name: Upload coverage reports
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info
-          fail_ci_if_error: false
+          fail_ci_if_error: true
+
+      - name: Enforce line coverage threshold (>=60%)
+        if: always()
+        run: |
+          set -euo pipefail
+          THRESHOLD=60
+          LCOV=./coverage/lcov.info
+          if [ ! -f "$LCOV" ]; then
+            echo "::error::Coverage report $LCOV not found — failing the build."
+            exit 1
+          fi
+          # Aggregate lcov LF (lines found) and LH (lines hit) across all records.
+          read -r LH LF < <(awk -F: '
+            /^LF:/ { lf += $2 }
+            /^LH:/ { lh += $2 }
+            END { printf "%d %d\n", (lh ? lh : 0), (lf ? lf : 0) }
+          ' "$LCOV")
+          if [ "${LF}" -le 0 ]; then
+            echo "::error::No executable lines found in $LCOV — failing the build."
+            exit 1
+          fi
+          PCT=$(awk -v h="$LH" -v f="$LF" 'BEGIN { printf "%.4f", (h * 100.0) / f }')
+          echo "::notice::Line coverage: ${PCT}% (${LH}/${LF}, threshold ${THRESHOLD}%)"
+          if awk -v p="$PCT" -v t="$THRESHOLD" 'BEGIN { exit !(p + 0 >= t + 0) }'; then
+            echo "::notice::Coverage gate passed."
+          else
+            echo "::error::Line coverage ${PCT}% is below the ${THRESHOLD}% threshold."
+            exit 1
+          fi

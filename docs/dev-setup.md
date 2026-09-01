@@ -109,7 +109,7 @@ cd landing-page && npm ci && npm run build
 - **Husky + lint-staged**: `npm install` installs `.husky/pre-commit` which runs `eslint --fix`, `prettier --write`, and `jest --bail --findRelatedTests --passWithNoTests` on staged `src/**/*.js` plus `prettier` on `html/css`. To bypass (not recommended): `git commit --no-verify`.
 - **CI** (`.github/workflows/ci.yml`): on every `push`/`pull_request`
   - `lint-and-test` matrix `[22.x, 24.x]` (was `[18.x, 20.x]` pre-2.1) → `npm ci → npm run lint → npm run format:check → npm test → npm run build` + artifact `dist/` (on `24.x`)
-  - `coverage` (Node `22.x`) → `npm test -- --coverage` → `codecov/codecov-action@v4`
+  - `coverage` (Node `22.x`) → `npm test -- --coverage` → `codecov/codecov-action@v7` with `fail_ci_if_error: true` (Task 4.7) and a 60% line-coverage threshold gate that fails the build if the aggregate lcov drops below the M3 target (Task 4.7)
   - `landing` job (Node `22.x`) → `cd landing-page && npm ci && npm run lint -- --max-warnings 0 && npm run format:check && npm run build` (landed in 0.4)
   - Engines: both `package.json` declare `engines.node >=22`, `.nvmrc` `22` (Task 2.1)
 
