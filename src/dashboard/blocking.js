@@ -149,16 +149,7 @@ async function toggleRule(domain, currentConfig) {
 async function deleteRule(domain) {
   // eslint-disable-next-line no-restricted-globals, no-alert
   if (confirm(`Are you sure you want to remove the limits for ${domain}?`)) {
-    // To delete, we effectively set it to null or remove it from storage
-    // The storage.js doesn't have a removeLimit function exposed directly,
-    // but setLimitForDomain(domain, null) might work if implemented,
-    // or we get all limits, delete the key, and save back.
-    // Let's check storage.js implementation.
-
-    // Re-implementing delete logic here as it's safer
-    const limits = await getLimits();
-    delete limits[domain];
-    await chrome.storage.local.set({ limits });
+    await setLimitForDomain(domain, null);
     await updateBlockingRules();
     await renderRulesList();
   }

@@ -5,13 +5,10 @@ import {
 } from '../common/visualization-page.js';
 import {
   getLimits,
-  setLimitForDomain,
   calculateFocusHeroBadges,
   normalizeLimitConfig,
-  createDefaultLimitConfig,
   calculateOverallStreak,
 } from '../background/storage.js';
-import { updateBlockingRules } from '../background/limits.js';
 import { getTodayFocusScore } from '../background/focus-score.js';
 import { categorizeDomain } from '../common/categories.js';
 
@@ -55,9 +52,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup footer
   setupFooter();
   setupBrandReset();
-
-  // Handle window resize
-  window.addEventListener('resize', handleResize);
 
   // Listen for domain drilldown events from graph
   window.addEventListener('domainDrilldown', handleDomainDrilldown);
@@ -192,16 +186,6 @@ function getGraphDimensions() {
   }
 
   return { width, height };
-}
-
-function handleResize() {
-  // Debounce resize handler
-  clearTimeout(window.resizeTimeout);
-  window.resizeTimeout = setTimeout(() => {
-    const newDimensions = getGraphDimensions();
-    // Graph will auto-resize via D3, but we can trigger a refresh if needed
-    console.log('[Dashboard] Resize:', newDimensions);
-  }, 250);
 }
 
 function setupBrandReset() {
@@ -810,40 +794,6 @@ function updatePaginationInfo(start, end, total) {
   // Update button states
   if (prevBtn) prevBtn.disabled = currentPage === 1 || total === 0;
   if (nextBtn) nextBtn.disabled = currentPage >= totalPages || total === 0;
-}
-
-// eslint-disable-next-line no-unused-vars
-async function handleInlineLimitToggle(domain, enabled) {
-  try {
-    const limits = await getLimits();
-    const existing = limits[domain] ? normalizeLimitConfig(limits[domain]) : null;
-    if (!existing && !enabled) {
-      return true;
-    }
-
-    let updatedConfig = existing;
-    if (!existing && enabled) {
-      updatedConfig = createDefaultLimitConfig();
-    }
-
-    if (!updatedConfig) {
-      return false;
-    }
-
-    updatedConfig.enabled = enabled;
-    await setLimitForDomain(domain, updatedConfig);
-
-    // Update blocking rules to reflect the limit change
-    await updateBlockingRules();
-
-    currentLimits = await getLimits();
-    currentTableData = prepareTableData(currentAggregatedData);
-    renderTable();
-    return true;
-  } catch (error) {
-    console.error('Error toggling inline limit:', error);
-    return false;
-  }
 }
 
 function openDomainDetail(domain) {
