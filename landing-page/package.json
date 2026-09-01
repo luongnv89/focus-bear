@@ -13,10 +13,10 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css}\""
   },
   "dependencies": {
-    "lucide-react": "^0.460.0",
+    "lucide-react": "^1.38.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^6.30.6",
+    "react-router-dom": "^7.18.3",
     "yet-another-react-lightbox": "^3.32.2"
   },
   "devDependencies": {

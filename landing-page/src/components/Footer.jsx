@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Github, Zap, Heart } from 'lucide-react';
+import { Code, Zap, Heart } from 'lucide-react';
 import { footerContent } from '../data/footer';
 
 function Footer() {
@@ -32,7 +32,7 @@ function Footer() {
                   aria-label={link.ariaLabel}
                 >
                   {link.id === 'github' && (
-                    <Github className="w-4 h-4" aria-hidden="true" />
+                    <Code className="w-4 h-4" aria-hidden="true" />
                   )}
                   {link.label}
                 </a>

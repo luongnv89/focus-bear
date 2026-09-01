@@ -1,7 +1,7 @@
 import Hero from '../components/Hero';
 import Features from '../components/Features';
 import Screenshots from '../components/Screenshots';
-import { Chrome } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { heroContent } from '../data/hero';
 
 function Landing() {
@@ -28,7 +28,7 @@ function Landing() {
             className="btn-primary text-lg px-8 py-4 inline-flex items-center gap-3"
             aria-label={heroContent.ctaButton.ariaLabel}
           >
-            <Chrome className="w-6 h-6" aria-hidden="true" />
+            <Globe className="w-6 h-6" aria-hidden="true" />
             Get FocusBear Now
           </a>
         </div>
