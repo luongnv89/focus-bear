@@ -1,22 +1,31 @@
-# Brand Kit: FocusBear
+# Brand Kit: FocusPaw
 
 ## Brand Overview
+
+**Brand Name:**
+FocusPaw — a playful, privacy-first focus tracker. The name keeps the friendly "companion" energy of the original brand while centering the paw as the brand mark: every step of your browsing is a step you can take with intention, one paw at a time.
+
+**Tagline:**
+"Track your focus, one paw at a time."
 
 **Brand Mission:**
 Help people reclaim their focus from digital distractions with a playful, privacy-first companion that makes self-awareness fun instead of shameful.
 
+**Mascot Concept:**
+A friendly **paw print** mascot (replacing the panda/bear). The mark is a single rounded paw print — one main pad and four toe pads — drawn in the brand palette. It represents gentle, step-by-step progress: every "focus switch" you are aware of is one step toward better habits. The mascot appears as the extension icon, block-page companion, and a recurring motif (toast, streaks, empty states). Playful, soft, minimal — no angry claws, always supportive.
+
 **Brand Personality:**
 - Playful
-- Honest
 - Supportive
+- Privacy-first
 - Clever
 - Minimalist
 
 **Target Audience:**
-Knowledge workers, students, freelancers, and productivity enthusiasts who struggle with social media distractions, care about their privacy, and enjoy tools that feel light-hearted rather than clinical.
+Knowledge workers, students, freelancers, and productivity enthusiasts who struggle with social media distractions, care about their privacy, and enjoy tools that feel light-hearted rather than clinical. The paw-themed identity is deliberately warm and approachable to keep "productivity" from feeling like a punishment.
 
 **Brand Positioning:**
-FocusBear is the **fun, local-only focus tracker** that turns your tab-switching habits into a visual, humorous experience. Unlike heavy, cloud-based productivity tools, FocusBear requires no account, stores everything on-device, and uses humor (not guilt) to nudge you into better habits.
+FocusPaw is the **fun, local-only focus tracker** that turns your tab-switching habits into a visual, humorous experience. Unlike heavy, cloud-based productivity tools, FocusPaw requires no account, stores everything on-device, and uses humor (not guilt) to nudge you into better habits.
 
 ---
 
@@ -50,7 +59,7 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 - **Usage:** Secondary actions, highlights in graphs, badges (e.g., “Focus Hero”), accent elements on landing pages
 - **Rationale:**
   - Purple conveys creativity and “magic” – a good fit for an app that transforms messy habits into clear insights.
-  - Pairs well with Bear Blue for a memorable, modern palette.
+  - Pairs well with Paw Blue for a memorable, modern palette.
 
 **Secondary Variants**
 - **Secondary Light:** `#A29BFF` – Badges, subtle accents
@@ -174,20 +183,20 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 ### Logo Variations
 
 - **Primary Logo:**
-  - Wordmark "FocusBear" with a simple bear head icon to the left.
+  - Wordmark "FocusPaw" with a simple paw print icon to the left.
   - Colors: Sky Blue (`#87CEEB`) for icon, Gray 900 (`#111827`) for wordmark.
 
 - **Secondary Logo:**
-  - Horizontal lockup with bear icon + wordmark in single color (White or Gray 900) for small headers or narrow spaces.
+  - Horizontal lockup with paw icon + wordmark in single color (White or Gray 900) for small headers or narrow spaces.
 
 - **Icon / Symbol:**
-  - Simplified bear head in a circle using Sky Blue background and Gray 900 icon.
+  - Simplified paw print in a circle using Sky Blue background and Gray 900 icon.
   - Used for Chrome extension icon, favicon, avatars.
 
 ### Logo Usage
 
 - **Clear Space:**
-  - Minimum clear space = height of the bear icon on all sides.
+  - Minimum clear space = height of the paw icon on all sides.
 - **Minimum Size:**
   - Digital: 24px height for icon-only, 32px height for logo + wordmark.
 
@@ -214,13 +223,13 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 
 **Icon Set:**
 - Base: Lucide, Heroicons, or similar open-source outline icon set.
-- Customized bear-related icons can be drawn in the same style.
+- Customized paw-related icons (paw print, paw steps, paw badges) can be drawn in the same style.
 
 **Icon Sizes:**
 - **Small (16px):** Inline with text (labels, tags)
 - **Medium (20–24px):** Buttons, navigation, settings icon
 - **Large (32px):** Empty states, feature highlights
-- **XL (48px+):** Hero illustrations, block page bear icon
+- **XL (48px+):** Hero illustrations, block page paw icon
 
 **Icon Guidelines:**
 
@@ -245,10 +254,10 @@ FocusBear is the **fun, local-only focus tracker** that turns your tab-switching
 
 ### Illustration Style (for product & marketing)
 
-- Soft, round shapes mirroring the bear icon.
+- Soft, round shapes mirroring the paw mascot.
 - Minimalist, flat or semi-flat style with subtle shadows.
 - Use brand colors as primary fills; avoid introducing a large new palette.
-- Illustrations of bears doing human tasks: working at a desk, blocking distractions, celebrating streaks.
+- Illustrations of the paw mascot doing human tasks: working at a desk, blocking distractions, celebrating streaks.
 
 ### Image Guidelines
 
@@ -384,7 +393,7 @@ Cards are used for:
   - “You’re close to today’s limit. Future you will be proud if you stop now.”
 
 - **Error Message:**
-  - “Hmm, something broke. Try again—FocusBear is still on your side.”
+  - "Hmm, something broke. Try again—FocusPaw is still on your side."
 
 - **Empty State:**
   - “No distractions tracked… yet. Either you’re a focus ninja or it’s early in the day.”
@@ -399,11 +408,11 @@ Cards are used for:
 ### Example 1: Landing Page Hero Section
 
 - **Background:** White or Sky Blue (`#E0F4FF`) solid color (no gradients).
-- **Heading (H1):** "Tame your tabs with a friendly bear." in Gray 900.
-- **Subheading (Body Large):** "FocusBear tracks your tab hopping—locally—and nudges you back to deep work."
+- **Heading (H1):** "Keep your focus, one paw at a time." in Gray 900.
+- **Subheading (Body Large):** "FocusPaw tracks your tab hopping—locally—and nudges you back to deep work."
 - **Primary CTA:** "Add to Chrome" (primary button, Sky Blue).
 - **Secondary CTA:** "View the graph demo" (secondary text button).
-- **Illustration:** Bear sitting at a desk, radial graph behind them.
+- **Illustration:** Paw mascot at a desk, radial graph behind them.
 
 ---
 
@@ -411,7 +420,7 @@ Cards are used for:
 
 - **Background:** White.
 - **Header:**
-  - Left: Bear icon + “FocusBear” in H4.
+  - Left: Paw icon + "FocusPaw" in H4.
   - Right: gear icon (Settings).
 
 - **Search Bar:** Standard input with placeholder “Search sites…”.
@@ -430,9 +439,9 @@ Cards are used for:
 ### Example 3: Block Page
 
 - **Background:** Light Primary (`#E0F2FF`).
-- **Center Card:** White card with bear illustration.
-- **Title (H2):** “You’ve hit your [Site] limit.”
-- **Body:** “Let’s give your brain a break. Try again tomorrow or change your limit in FocusBear settings.”
+- **Center Card:** White card with paw illustration.
+- **Title (H2):** "You've hit your [Site] limit."
+- **Body:** "Let's give your brain a break. Try again tomorrow or change your limit in FocusPaw settings."
 - **Primary Button:** "Back to work" (Sky Blue).
 - **Secondary Text:** Soft, playful line such as “We’ll be here if you need another nudge.”
 
@@ -444,7 +453,7 @@ Cards are used for:
 
 **Research Round 1 – Color Psychology & Industry Trends**
 - Blues and purples dominate productivity and SaaS tools for trust + creativity.
-- Many competitors use very sterile, corporate blues; FocusBear differentiates with a light, airy sky blue that evokes openness and mental clarity, paired with warm supporting colors (orange and yellow).
+- Many competitors use very sterile, corporate blues; FocusPaw differentiates with a light, airy sky blue that evokes openness and mental clarity, paired with warm supporting colors (orange and yellow).
 
 **Research Round 2 – Typography**
 - Inter is widely used in modern web apps; proven readable at small sizes and optimized for screen.
@@ -452,7 +461,7 @@ Cards are used for:
 
 **Research Round 3 – Brand Kits from Similar Products**
 - Successful Chrome extensions use very compact type scales and strong contrast due to popup constraints.
-- Playful mascots (e.g., owls, robots, bears) help make “productivity” feel less intimidating and more approachable.
+- Playful mascots (e.g., paw prints, owls, robots) help make "productivity" feel less intimidating and more approachable.
 
 **Research Round 4 – Accessibility Validation**
 - Bright blues and purples need careful selection to pass AA contrast; Sky Blue uses dark text (Gray 900) for sufficient contrast, and Focus Purple variants were chosen with adequate contrast in mind.
@@ -467,7 +476,7 @@ Cards are used for:
 
 ### Design System Resources (Suggested)
 
-- **Design Tool:** Figma file: `/FocusBear/BrandSystem` (structure suggestion)
+- **Design Tool:** Figma file: `/FocusPaw/BrandSystem` (structure suggestion)
 - **CSS / Tailwind Tokens:**
   - `--color-primary: #87CEEB;`
   - `--color-primary-light: #B3E0F7;`
@@ -482,7 +491,7 @@ Cards are used for:
 
 ### Glossary
 
-- **Brand Identity:** Visual and verbal system that makes FocusBear recognizable and memorable.
+- **Brand Identity:** Visual and verbal system that makes FocusPaw recognizable and memorable.
 - **Semantic Colors:** Colors that communicate meaning (success, error, warning, info).
 - **WCAG:** Web Content Accessibility Guidelines – standards to ensure web content is accessible.
-- **Mascot:** Character (the bear) representing the brand personality across UI and marketing.
+- **Mascot:** Character (the paw print) representing the brand personality across UI and marketing.
