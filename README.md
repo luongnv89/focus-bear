@@ -196,3 +196,20 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
   <a href="PRIVACY.md">Privacy Policy</a> •
   <a href="LICENSE">License</a>
 </div>
+
+---
+
+## Landing Page
+
+The FocusPaw landing page is hosted on GitHub Pages at:
+
+**https://focus-paw.luongnv.com**
+
+To rebuild and deploy:
+
+```bash
+cd landing-page
+npm run build
+# Deploy to gh-pages branch
+npx gh-pages -d dist
+```
