@@ -38,7 +38,7 @@ Edit `.env.local` with your values:
 ```env
 VITE_CHROME_STORE_URL=https://chrome.google.com/webstore/detail/focusbear/your-extension-id
 VITE_APP_VERSION=1.0.0
-VITE_GITHUB_URL=https://github.com/luongnv89/focus-bear
+VITE_GITHUB_URL=https://github.com/luongnv89/focus-paw
 ```
 
 ### Development

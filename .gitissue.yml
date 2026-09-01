@@ -1,0 +1,16 @@
+autopilot:
+  mode: balanced
+  merge_partial: false
+  max_iterations: 11
+  max_parallel: 1
+  review_cycles: 3
+  auto_merge: true
+  pause_on_failure: false
+  skip_labels: ["wontfix", "blocked", "do-not-merge"]
+  critical_labels: ["critical", "priority:critical"]
+  respect_dependencies: true
+  quarantine_after: 3
+  quarantine_label: "auto-pilot-quarantined"
+  max_runtime_minutes: 0
+  triage_cache_max_age_minutes: 60
+  retriage_every: 0

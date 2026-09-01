@@ -27,8 +27,8 @@ This document describes how to set up a runnable development environment for Foc
 
 ```bash
 # 1. Clone and enter
-git clone https://github.com/luongnv89/focus-bear.git
-cd focus-bear
+git clone https://github.com/luongnv89/focus-paw.git
+cd focus-paw
 
 # 2. Install root package deterministically (requires package-lock.json)
 npm ci

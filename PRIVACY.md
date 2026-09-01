@@ -102,7 +102,7 @@ FocusPaw does not knowingly collect information from children under 13. The exte
 ## Open Source
 
 FocusPaw is open source. You can review our code at any time:
-- **Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)
+- **Repository:** [https://github.com/luongnv89/focus-paw](https://github.com/luongnv89/focus-paw)
 
 ## Changes to This Policy
 
@@ -112,8 +112,8 @@ If we make changes to this privacy policy, we will update the "Last Updated" dat
 
 If you have questions about this privacy policy or FocusPaw's data practices:
 
-- **GitHub Issues:** [https://github.com/luongnv89/focus-bear/issues](https://github.com/luongnv89/focus-bear/issues)
-- **Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)
+- **GitHub Issues:** [https://github.com/luongnv89/focus-paw/issues](https://github.com/luongnv89/focus-paw/issues)
+- **Repository:** [https://github.com/luongnv89/focus-paw](https://github.com/luongnv89/focus-paw)
 
 ## Summary
 

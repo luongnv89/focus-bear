@@ -5,7 +5,7 @@
   "version_name": "1.0.0-<git-sha>",
   "description": "FocusPaw tracks focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity. All data stays on your device.",
   "author": "FocusPaw Team",
-  "homepage_url": "https://github.com/luongnv89/focus-bear",
+  "homepage_url": "https://github.com/luongnv89/focus-paw",
   "permissions": [
     "tabs",
     "storage",

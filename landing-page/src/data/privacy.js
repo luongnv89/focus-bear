@@ -93,7 +93,7 @@ export const privacyPolicyContent = {
       title: 'Open Source',
       content: `FocusPaw is open source. You can review our code at any time:
 
-**Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)`,
+**Repository:** [https://github.com/luongnv89/focus-paw](https://github.com/luongnv89/focus-paw)`,
     },
     {
       id: 'changes',
@@ -105,8 +105,8 @@ export const privacyPolicyContent = {
       title: 'Contact',
       content: `If you have questions about this privacy policy or FocusPaw's data practices:
 
-- **GitHub Issues:** [https://github.com/luongnv89/focus-bear/issues](https://github.com/luongnv89/focus-bear/issues)
-- **Repository:** [https://github.com/luongnv89/focus-bear](https://github.com/luongnv89/focus-bear)`,
+- **GitHub Issues:** [https://github.com/luongnv89/focus-paw/issues](https://github.com/luongnv89/focus-paw/issues)
+- **Repository:** [https://github.com/luongnv89/focus-paw](https://github.com/luongnv89/focus-paw)`,
     },
   ],
   summary: {

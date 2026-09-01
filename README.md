@@ -42,8 +42,8 @@ FocusPaw helps you understand and improve your browsing habits by tracking how o
 
 1. Download or clone this repository
    ```bash
-   git clone https://github.com/luongnv89/focus-bear.git
-   cd focus-bear
+   git clone https://github.com/luongnv89/focus-paw.git
+   cd focus-paw
    npm install
    npm run build
    ```
@@ -130,7 +130,7 @@ npm run format
 ### Project Structure
 
 ```
-focus-bear/
+focus-paw/
 ├── src/
 │   ├── background/     # Service worker (tracking, limits)
 │   ├── popup/          # Popup styles
@@ -173,8 +173,8 @@ Contributions are welcome! Please:
 
 ## Support
 
-- **Bug Reports:** [GitHub Issues](https://github.com/luongnv89/focus-bear/issues)
-- **Feature Requests:** [GitHub Issues](https://github.com/luongnv89/focus-bear/issues)
+- **Bug Reports:** [GitHub Issues](https://github.com/luongnv89/focus-paw/issues)
+- **Feature Requests:** [GitHub Issues](https://github.com/luongnv89/focus-paw/issues)
 - **Help & FAQ:** Available in the extension's Help page
 
 ## License
@@ -192,7 +192,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 <div align="center">
   <strong>FocusPaw</strong> — Track your focus, privacy-first 🐻
   <br><br>
-  <a href="https://github.com/luongnv89/focus-bear">GitHub</a> •
+  <a href="https://github.com/luongnv89/focus-paw">GitHub</a> •
   <a href="PRIVACY.md">Privacy Policy</a> •
   <a href="LICENSE">License</a>
 </div>

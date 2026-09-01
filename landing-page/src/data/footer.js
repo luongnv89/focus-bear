@@ -5,7 +5,7 @@ export const footerContent = {
       label: 'GitHub',
       href:
         import.meta.env.VITE_GITHUB_URL ||
-        'https://github.com/luongnv89/focus-bear',
+        'https://github.com/luongnv89/focus-paw',
       external: true,
       ariaLabel: 'View FocusPaw source code on GitHub',
     },

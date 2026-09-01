@@ -1,0 +1,11 @@
+{"ts":"2026-09-01T07:59:00Z","issue":48,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":0,"outcome":"merged","pr":77,"duration_s":136}
+{"ts":"2026-09-01T08:01:30Z","issue":51,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"full","qa_cycles":0,"outcome":"merged","pr":78,"duration_s":65}
+{"ts":"2026-09-01T08:10:00Z","issue":49,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"full","qa_cycles":1,"outcome":"merged","pr":79,"duration_s":320}
+{"ts":"2026-09-01T08:20:30Z","issue":50,"mode":"balanced","skill":"auto-pilot","complexity":"medium","profile":"light","qa_cycles":1,"outcome":"merged","pr":80,"duration_s":180}
+{"ts":"2026-09-01T08:24:30Z","issue":52,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":0,"outcome":"merged","pr":81,"duration_s":81}
+{"ts":"2026-09-01T08:28:00Z","issue":53,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"outcome":"merged","pr":82,"duration_s":120}
+{"ts":"2026-09-01T08:32:00Z","issue":54,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"outcome":"merged","pr":83,"duration_s":115}
+{"ts":"2026-09-01T08:38:00Z","issue":55,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"outcome":"merged","pr":84,"duration_s":41}
+{"ts":"2026-09-01T08:42:00Z","issue":56,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":1,"outcome":"merged","pr":85,"duration_s":45}
+{"ts":"2026-09-01T08:48:00Z","issue":57,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":2,"ceiling":3,"breach_reason":"two fix cycles: 1) review found codecov token regression; 2) rerun review after fix","outcome":"merged","pr":86,"duration_s":260}
+{"ts":"2026-09-01T08:55:00Z","issue":58,"mode":"balanced","skill":"auto-pilot","complexity":"low","profile":"light","qa_cycles":0,"outcome":"merged","pr":87,"duration_s":142}

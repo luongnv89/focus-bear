@@ -76,4 +76,4 @@
 ### New Contributors
 - None — all contributions by [@luongnv89](https://github.com/luongnv89).
 
-**Full Changelog**: https://github.com/luongnv89/focus-bear/compare/v1.0.0...HEAD
+**Full Changelog**: https://github.com/luongnv89/focus-paw/compare/v1.0.0...HEAD

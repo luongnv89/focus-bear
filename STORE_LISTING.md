@@ -94,7 +94,7 @@ Q: Can I delete my data?
 A: Yes! Export your data first if you want, then use "Reset All Data" in Settings.
 
 Q: Is it open source?
-A: Yes! View the code at github.com/luongnv89/focus-bear
+A: Yes! View the code at github.com/luongnv89/focus-paw
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -167,7 +167,7 @@ English
 
 ### Privacy Policy URL
 ```
-https://github.com/luongnv89/focus-bear/blob/main/PRIVACY.md
+https://github.com/luongnv89/focus-paw/blob/main/PRIVACY.md
 ```
 
 ### Permission Justifications
@@ -249,7 +249,7 @@ FocusPaw Team
 
 ### Website
 ```
-https://github.com/luongnv89/focus-bear
+https://github.com/luongnv89/focus-paw
 ```
 
 ---
