@@ -14,6 +14,8 @@ import {
   createDefaultLimitConfig,
 } from '../background/storage.js';
 import { updateBlockingRules } from '../background/limits.js';
+import { getTodayKey, aggregateVisitsInRange } from './date-utils.js';
+import { validateLimitConfig, validateDomain } from './limit-validation.js';
 
 /**
  * Load aggregated stats for a given time range
@@ -51,45 +53,7 @@ export async function loadAggregatedStats(range = 'today') {
 
   const data = await chrome.storage.local.get(['visits']);
   const visits = data.visits || {};
-  const aggregated = {};
-
-  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
-    // Parse date string as local date to avoid timezone issues
-    // dateKey format: "YYYY-MM-DD"
-    const [year, month, day] = dateKey.split('-').map(Number);
-    const visitDate = new Date(year, month - 1, day); // month is 0-indexed
-
-    if (visitDate >= startDate && visitDate <= now) {
-      Object.entries(dateVisits).forEach(([domain, domainData]) => {
-        if (!aggregated[domain]) {
-          aggregated[domain] = {
-            count: 0,
-            lastVisit: domainData.lastVisit,
-            subpaths: {},
-          };
-        }
-        aggregated[domain].count += domainData.count;
-        if (domainData.lastVisit > aggregated[domain].lastVisit) {
-          aggregated[domain].lastVisit = domainData.lastVisit;
-        }
-
-        Object.entries(domainData.subpaths || {}).forEach(([subpath, subpathData]) => {
-          if (!aggregated[domain].subpaths[subpath]) {
-            aggregated[domain].subpaths[subpath] = {
-              count: 0,
-              lastVisit: subpathData.lastVisit,
-            };
-          }
-          aggregated[domain].subpaths[subpath].count += subpathData.count;
-          if (subpathData.lastVisit > aggregated[domain].subpaths[subpath].lastVisit) {
-            aggregated[domain].subpaths[subpath].lastVisit = subpathData.lastVisit;
-          }
-        });
-      });
-    }
-  });
-
-  return aggregated;
+  return aggregateVisitsInRange(visits, startDate, now);
 }
 
 function getTitleForRange(range) {
@@ -150,26 +114,7 @@ async function loadPreviousPeriodData(range) {
 
   const data = await chrome.storage.local.get(['visits']);
   const visits = data.visits || {};
-  const aggregated = {};
-
-  Object.entries(visits).forEach(([dateKey, dateVisits]) => {
-    const [year, month, day] = dateKey.split('-').map(Number);
-    const visitDate = new Date(year, month - 1, day);
-
-    if (visitDate >= startDate && visitDate <= endDate) {
-      Object.entries(dateVisits).forEach(([domain, domainData]) => {
-        if (!aggregated[domain]) {
-          aggregated[domain] = { count: 0, lastVisit: domainData.lastVisit, subpaths: {} };
-        }
-        aggregated[domain].count += domainData.count;
-        if (domainData.lastVisit > aggregated[domain].lastVisit) {
-          aggregated[domain].lastVisit = domainData.lastVisit;
-        }
-      });
-    }
-  });
-
-  return aggregated;
+  return aggregateVisitsInRange(visits, startDate, endDate);
 }
 
 /**
@@ -998,37 +943,28 @@ export async function setupVisualizationPage(options = {}) {
 
     limitForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      const domainInput = limitForm.elements.domain;
-      const rawDomain = domainInput.value.trim();
-      const normalizedDomain = rawDomain
-        .replace(/^https?:\/\//i, '')
-        .split('/')[0]
-        .toLowerCase();
-
-      if (!normalizedDomain || !/^[a-z0-9.-]+$/.test(normalizedDomain)) {
-        if (limitErrorEl) {
-          limitErrorEl.textContent = 'Enter a valid domain like example.com';
-        }
-        return;
-      }
-
+      const rawDomain = limitForm.elements.domain.value;
       const enabled = limitForm.elements.enabled.checked;
       const fiveHourEnabled = limitForm.elements.fiveHourEnabled.checked;
-      const fiveHourLimit = Number(limitForm.elements.fiveHourLimit.value);
+      const fiveHourLimit = limitForm.elements.fiveHourLimit.value;
       const dailyEnabled = limitForm.elements.dailyEnabled.checked;
-      const dailyLimit = Number(limitForm.elements.dailyLimit.value);
+      const dailyLimit = limitForm.elements.dailyLimit.value;
 
-      if (fiveHourEnabled && (!Number.isInteger(fiveHourLimit) || fiveHourLimit <= 0)) {
-        if (limitErrorEl) {
-          limitErrorEl.textContent = 'Enter a positive 5-hour limit.';
-        }
+      const domainRes = validateDomain(rawDomain);
+      if (!domainRes.valid) {
+        if (limitErrorEl) limitErrorEl.textContent = domainRes.error;
         return;
       }
+      const normalizedDomain = domainRes.normalized;
 
-      if (dailyEnabled && (!Number.isInteger(dailyLimit) || dailyLimit <= 0)) {
-        if (limitErrorEl) {
-          limitErrorEl.textContent = 'Enter a positive daily limit.';
-        }
+      const limitRes = validateLimitConfig({
+        fiveHourEnabled,
+        fiveHourLimit,
+        dailyEnabled,
+        dailyLimit,
+      });
+      if (!limitRes.valid) {
+        if (limitErrorEl) limitErrorEl.textContent = limitRes.error;
         return;
       }
 
@@ -1041,11 +977,11 @@ export async function setupVisualizationPage(options = {}) {
           enabled,
           fiveHour: {
             enabled: fiveHourEnabled,
-            limit: fiveHourLimit,
+            limit: fiveHourEnabled ? Number(fiveHourLimit) : 10,
           },
           daily: {
             enabled: dailyEnabled,
-            limit: dailyLimit,
+            limit: dailyEnabled ? Number(dailyLimit) : 20,
           },
         };
 
@@ -1118,7 +1054,7 @@ export async function setupVisualizationPage(options = {}) {
         const jsonString = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const timestamp = new Date().toISOString().split('T')[0];
+        const timestamp = getTodayKey();
         const filename = `focusbear-data-${timestamp}.json`;
 
         const a = document.createElement('a');
@@ -1164,7 +1100,7 @@ export async function setupVisualizationPage(options = {}) {
 
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        const timestamp = new Date().toISOString().split('T')[0];
+        const timestamp = getTodayKey();
         const filename = `focusbear-data-${timestamp}.csv`;
 
         const a = document.createElement('a');

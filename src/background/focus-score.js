@@ -5,6 +5,8 @@
  */
 
 import { computeOverallStreakFromData, normalizeLimitConfig } from './storage.js';
+// eslint-disable-next-line object-curly-newline
+import { getDateKey, getTodayKey, getDateRange, getPreviousDates } from '../common/date-utils.js';
 
 function getDayTotalVisits(dayData = {}) {
   return Object.values(dayData).reduce((sum, visitData) => sum + (visitData.count || 0), 0);
@@ -164,7 +166,7 @@ export async function calculateAverageFocusScore(startDate, endDate) {
  * @returns {Promise<number>}
  */
 export async function getTodayFocusScore() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayKey();
   const { visits, limits, streakDays } = await getStorageSnapshot();
   return calculateDailyFocusScoreWithData(today, visits, limits, streakDays);
 }
@@ -174,8 +176,10 @@ export async function getTodayFocusScore() {
  * @returns {Promise<number>}
  */
 export async function getWeeklyFocusScore() {
-  const today = new Date().toISOString().split('T')[0];
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const today = getTodayKey();
+  const weekAgoDate = new Date();
+  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+  const weekAgo = getDateKey(weekAgoDate);
   return calculateAverageFocusScore(weekAgo, today);
 }
 
@@ -190,7 +194,7 @@ export async function getFocusScoreHistory(days = 30) {
     const daysAgo = days - 1 - index;
     const date = new Date(today);
     date.setDate(date.getDate() - daysAgo);
-    return date.toISOString().split('T')[0];
+    return getDateKey(date);
   });
 
   const { visits, limits, streakDays } = await getStorageSnapshot();
@@ -266,38 +270,8 @@ export async function getFocusScoreBreakdown(date) {
   };
 }
 
-/**
- * Helper: Get previous N dates before a given date
- */
-function getPreviousDates(dateStr, count) {
-  const dates = [];
-  const date = new Date(dateStr);
-
-  for (let i = 1; i <= count; i += 1) {
-    const prevDate = new Date(date);
-    prevDate.setDate(prevDate.getDate() - i);
-    dates.push(prevDate.toISOString().split('T')[0]);
-  }
-
-  return dates;
-}
-
-/**
- * Helper: Get all dates in a range (inclusive)
- */
-function getDateRange(startDateStr, endDateStr) {
-  const dates = [];
-  const startDate = new Date(startDateStr);
-  const endDate = new Date(endDateStr);
-
-  const currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    dates.push(currentDate.toISOString().split('T')[0]);
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return dates;
-}
+// Re-export helpers for external use (keep import compatibility)
+export { getPreviousDates, getDateRange };
 
 /**
  * Get focus score trend (improving/declining/stable)

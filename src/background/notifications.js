@@ -5,6 +5,7 @@
 
 import { getLimits, normalizeLimitConfig } from './storage.js';
 import { ACHIEVEMENTS } from './achievements.js';
+import { getTodayKey } from '../common/date-utils.js';
 
 // Notification types
 export const NOTIFICATION_TYPES = {
@@ -81,7 +82,7 @@ async function canSendNotification(type) {
 
   // Check daily limit
   const { notificationHistory = [] } = await chrome.storage.local.get('notificationHistory');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayKey();
   const todayNotifications = notificationHistory.filter((n) => n.date === today);
 
   if (todayNotifications.length >= preferences.maxPerDay) {
@@ -100,7 +101,7 @@ async function recordNotification(type, message) {
   const notification = {
     type,
     message,
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayKey(),
     timestamp: new Date().toISOString(),
   };
 
@@ -264,7 +265,7 @@ export async function checkLimitWarnings(domain, currentCount) {
  */
 export async function showDailyEncouragement() {
   const { lastEncouragementDate } = await chrome.storage.local.get('lastEncouragementDate');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayKey();
 
   // Only show once per day
   if (lastEncouragementDate === today) return;

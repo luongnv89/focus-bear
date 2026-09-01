@@ -1,4 +1,5 @@
 import { getTodayKey, normalizeLimitConfig } from '../background/storage.js';
+import { getNextMidnight } from '../common/date-utils.js';
 
 /**
  * FocusBear Blocked Page Script
@@ -151,11 +152,8 @@ function calculateTimeUntilReset() {
     const resetTime = new Date(now.getTime() + 5 * 60 * 60 * 1000);
     return resetTime.getTime();
   }
-  // For daily limit, reset is at midnight
-  const tomorrow = new Date(new Date());
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow.getTime();
+  // For daily limit, reset is at local midnight (same as storage)
+  return getNextMidnight().getTime();
 }
 
 /**
