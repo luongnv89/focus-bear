@@ -1,39 +1,13 @@
 /**
  * Feature Flags for FocusBear
  * Controls which features are enabled/disabled
+ * Only flags actually consulted by source are listed here.
+ * Consumer map:
+ * - RADIAL_GRAPH: src/common/visualization-page.js (isFeatureEnabled('RADIAL_GRAPH'))
  */
 
 export const FEATURES = {
-  // Phase 0 - POC (Completed)
-  BASIC_TRACKING: true,
-  BASIC_POPUP: true,
-
-  // Phase 1 - MVP Core (In Progress)
   RADIAL_GRAPH: true,
-  TIME_FILTERS: true,
-  SEARCH: true,
-  LIMITS: true,
-  BLOCK_PAGE: true,
-  COUNTDOWN_BUBBLE: true,
-  SETTINGS_PANEL: true,
-  HIGH_CONTRAST: true,
-
-  // Phase 2 - Polish & UX (Future)
-  ONBOARDING: false,
-  STREAKS: false,
-  AVERAGES: false,
-
-  // Phase 3 - Advanced Features (Future)
-  SUBPATH_DRILLDOWN: false,
-  EXPORT_PNG: false,
-  EXPORT_DATA: false,
-  BADGES: false,
-
-  // Phase 4+ - Future Enhancements
-  FOCUS_MODE: false,
-  DARK_MODE: false,
-  EVOLVING_BEAR: false,
-  BLOCK_PAGE_GAMES: false,
 };
 
 /**
