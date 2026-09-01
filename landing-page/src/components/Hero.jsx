@@ -1,4 +1,4 @@
-import { Chrome } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { heroContent } from '../data/hero';
 
 function Hero() {
@@ -37,7 +37,7 @@ function Hero() {
               className="btn-primary text-lg px-8 py-4 flex items-center gap-3"
               aria-label={heroContent.ctaButton.ariaLabel}
             >
-              <Chrome className="w-6 h-6" aria-hidden="true" />
+              <Globe className="w-6 h-6" aria-hidden="true" />
               {heroContent.ctaButton.text}
             </a>
           </div>
