@@ -4,7 +4,7 @@
  */
 
 import { incrementVisit } from './storage.js';
-import { updateBlockingRules } from './limits.js';
+import { checkLimit } from './limits.js';
 import { updateVisitBadge } from './badge.js';
 import { checkLimitWarnings, showAchievementUnlocked } from './notifications.js';
 import { checkAchievements } from './achievements.js';
@@ -83,8 +83,9 @@ async function trackTabFocus(tabId) {
       await showAchievementUnlocked(newlyUnlocked[0]);
     }
 
-    // Update blocking rules in case a limit was just exceeded
-    await updateBlockingRules();
+    // Blocking rules are refreshed by the chrome.storage.onChanged listener in
+    // limits.js, which fires whenever visits/limits are written. No need for an
+    // explicit per-visit call here.
   } catch (error) {
     // Tab might have been closed or URL inaccessible
     console.debug('Could not track tab:', error.message);
@@ -99,7 +100,6 @@ async function trackTabFocus(tabId) {
  */
 async function showCountdownToastIfNeeded(tabId, domain) {
   try {
-    const { checkLimit } = await import('./limits.js');
     const limitStatus = await checkLimit(domain);
 
     // Only show toast if domain has a limit
