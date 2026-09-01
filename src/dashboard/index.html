@@ -108,7 +108,7 @@
               title="Manage blocking rules and limits"
               style="text-decoration: none"
             >
-              🛡️
+              <span aria-hidden="true">🛡️</span> <span class="icon-label">Blocks</span>
             </a>
             <a
               href="../help/help.html"
@@ -118,7 +118,7 @@
               title="Help and frequently asked questions"
               style="text-decoration: none"
             >
-              ❓
+              <span aria-hidden="true">❓</span> <span class="icon-label">Help</span>
             </a>
             <button
               id="settings-btn"
@@ -126,7 +126,7 @@
               aria-label="Settings"
               title="Configure extension settings"
             >
-              ⚙️
+              <span aria-hidden="true">⚙️</span> <span class="icon-label">Settings</span>
             </button>
           </div>
         </div>
@@ -282,19 +282,22 @@
                 </div>
               </div>
 
-              <!-- Weekly Insights Popup (shown on dashboard open) -->
+              <!-- Weekly Insights Banner (dismissible, non-modal) -->
               <div
-                class="insights-popup"
+                class="insights-banner"
                 id="insights-popup"
                 style="display: none"
-                role="dialog"
+                role="region"
                 aria-label="Weekly insights"
               >
-                <div class="insights-popup-overlay" id="insights-popup-overlay"></div>
-                <div class="insights-popup-content">
+                <div class="insights-banner-content">
                   <div class="insights-header">
                     <h4 class="insights-title">📊 Weekly Insights</h4>
-                    <button class="insights-close" id="insights-close" aria-label="Close insights">
+                    <button
+                      class="insights-close"
+                      id="insights-close"
+                      aria-label="Dismiss insights"
+                    >
                       ✕
                     </button>
                   </div>

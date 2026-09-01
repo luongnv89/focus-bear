@@ -27,14 +27,18 @@
             title="Blocking Rules"
             style="
               text-decoration: none;
-              font-size: 20px;
+              font-size: 14px;
               padding: 6px 10px;
               border-radius: 8px;
               border: 1px solid var(--color-border);
               background: var(--color-card);
               color: var(--color-text-dark);
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
             "
-            >🛡️</a
+            ><span aria-hidden="true" style="font-size: 16px">🛡️</span>
+            <span class="icon-label">Blocks</span></a
           >
           <a
             href="../help/help.html"
@@ -44,16 +48,27 @@
             title="Help & FAQ"
             style="
               text-decoration: none;
-              font-size: 20px;
+              font-size: 14px;
               padding: 6px 10px;
               border-radius: 8px;
               border: 1px solid var(--color-border);
               background: var(--color-card);
               color: var(--color-text-dark);
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
             "
-            >❓</a
+            ><span aria-hidden="true" style="font-size: 16px">❓</span>
+            <span class="icon-label">Help</span></a
           >
-          <button id="settings-btn" aria-label="Settings">⚙️</button>
+          <button
+            id="settings-btn"
+            aria-label="Settings"
+            title="Settings"
+            style="display: inline-flex; align-items: center; gap: 6px"
+          >
+            <span aria-hidden="true">⚙️</span> <span class="icon-label">Settings</span>
+          </button>
         </div>
       </header>
 
@@ -69,7 +84,14 @@
         <div id="content" style="display: none">
           <div class="stats-header">
             <h2 id="stats-title">Today's Focus Switches</h2>
-            <button id="refresh-btn" aria-label="Refresh data" title="Refresh">🔄</button>
+            <button
+              id="refresh-btn"
+              aria-label="Refresh data"
+              title="Refresh data"
+              style="display: inline-flex; align-items: center; gap: 6px"
+            >
+              <span aria-hidden="true">🔄</span> <span class="icon-label">Refresh</span>
+            </button>
           </div>
 
           <div class="time-filter" role="tablist" aria-label="Time range filter">

@@ -79,22 +79,29 @@
 /* View Mode Toggle removed - always use split view */
 
 .icon-button {
-  width: 36px;
-  /* Increased to accommodate 20px icons */
+  min-width: 36px;
   height: 36px;
-  /* Increased to accommodate 20px icons */
   border: none;
   background: var(--color-surface);
   border-radius: 5px;
-  font-size: 20px;
-  /* Standardized icon size */
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  padding: 0;
-  display: flex;
+  padding: 0 10px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   flex-shrink: 0;
+  text-decoration: none;
+  color: var(--color-text-dark);
+  border: 1px solid var(--color-border);
+}
+
+.icon-button .icon-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .icon-button:hover {
@@ -1211,43 +1218,20 @@
    Weekly Insights Report
    ======================================== */
 
-/* Insights Popup (modal overlay) */
-.insights-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* Insights Banner (dismissible, non-modal) */
+.insights-banner {
   display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease;
-}
-
-.insights-popup-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-}
-
-.insights-popup-content {
-  position: relative;
-  z-index: 1001;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
+  margin: 16px;
   background: linear-gradient(135deg, #141414, #0a0a0a);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: fadeIn 0.3s ease;
+}
+
+.insights-banner-content {
+  width: 100%;
 }
 
 @media (min-width: 768px) {

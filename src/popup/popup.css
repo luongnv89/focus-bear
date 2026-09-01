@@ -1378,6 +1378,44 @@ main {
   transform: translateY(-1px);
 }
 
+.icon-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.2px;
+}
+
+/* High-contrast mode */
+body.high-contrast {
+  --color-surface: #000000;
+  --color-card: #000000;
+  --color-border: #ffffff;
+  --color-border-light: #ffffff;
+  --color-text-dark: #ffffff;
+  --color-text-muted: #ffff00;
+  --color-primary: #ffff00;
+  --color-success: #00ff00;
+  --color-warning: #ffff00;
+}
+
+body.high-contrast .settings-card,
+body.high-contrast .graph-container,
+body.high-contrast header,
+body.high-contrast .container,
+body.high-contrast .domain-item,
+body.high-contrast .pill-button,
+body.high-contrast .settings-panel {
+  border-width: 2px;
+  border-color: #ffffff;
+}
+
+body.high-contrast .time-filter-btn.active,
+body.high-contrast .pill-button,
+body.high-contrast #settings-btn,
+body.high-contrast #refresh-btn {
+  border: 2px solid #ffffff;
+}
+
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   .drilldown-edit-btn:hover {

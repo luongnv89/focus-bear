@@ -157,6 +157,15 @@ function calculateTimeUntilReset() {
 }
 
 /**
+ * Format a reset timestamp as a local time string (e.g. 12:00 AM)
+ * @param {number} ts - milliseconds
+ * @returns {string}
+ */
+function formatResetTime(ts) {
+  return new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+/**
  * Update countdown timer showing time until limit resets
  * Supports both 5-hour window and daily limits
  */
@@ -184,9 +193,22 @@ function updateCountdownTimer() {
   document.getElementById('countdown-minutes').textContent = formatTime(minutes);
   document.getElementById('countdown-seconds').textContent = formatTime(seconds);
 
-  // Update sublabel based on limit type
-  const sublabel = limitType === 'fiveHour' ? 'in your 5-hour window' : 'until midnight';
-  document.getElementById('countdown-sublabel').textContent = sublabel;
+  // Show actual reset time alongside countdown (F-UX-003)
+  const resetTimeStr = formatResetTime(resetTime);
+  const sublabelEl = document.getElementById('countdown-sublabel');
+  if (limitType === 'fiveHour') {
+    sublabelEl.textContent = `resets at ${resetTimeStr} (5-hour window)`;
+  } else {
+    sublabelEl.textContent = `until midnight (${resetTimeStr})`;
+  }
+  const footerEl = document.getElementById('reset-footer');
+  if (footerEl) {
+    if (limitType === 'fiveHour') {
+      footerEl.textContent = `Resets at ${resetTimeStr} — 5 hours after your oldest visit. You got this! 💪`;
+    } else {
+      footerEl.textContent = `Resets at midnight (${resetTimeStr}). You got this! 💪`;
+    }
+  }
 }
 
 // Load data when page loads

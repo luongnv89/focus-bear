@@ -8,6 +8,7 @@ import {
   calculateFocusHeroBadges,
   normalizeLimitConfig,
   calculateOverallStreak,
+  getSettings,
 } from '../background/storage.js';
 import { getTodayFocusScore } from '../background/focus-score.js';
 import { categorizeDomain } from '../common/categories.js';
@@ -40,7 +41,14 @@ const tableFilters = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Show insights popup on dashboard open (if not dismissed today)
+  // Apply high-contrast mode if enabled
+  try {
+    const s = await getSettings();
+    if (s.highContrastMode) document.body.classList.add('high-contrast');
+  } catch (err) {
+    console.warn('High-contrast init failed', err);
+  }
+  // Show insights banner on dashboard open (if not dismissed today)
   await showInsightsPopup();
 
   // Setup table controls early
@@ -52,6 +60,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup footer
   setupFooter();
   setupBrandReset();
+  // Keep Visits header label in sync with selected range
+  document.querySelectorAll('.time-filter-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      // label updates after visualization reloads; also update promptly
+      setTimeout(updateVisitsHeaderLabel, 50);
+    });
+  });
 
   // Listen for domain drilldown events from graph
   window.addEventListener('domainDrilldown', handleDomainDrilldown);
@@ -74,15 +89,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Show insights popup on dashboard open
- * Checks if insights have been dismissed today and shows popup if not
+ * Show insights as a dismissible banner (non-modal) on dashboard open
+ * Checks if insights have been dismissed today and shows banner if not
  */
 async function showInsightsPopup() {
-  const popup = document.getElementById('insights-popup');
-  const overlay = document.getElementById('insights-popup-overlay');
+  const banner = document.getElementById('insights-popup');
   const closeBtn = document.getElementById('insights-close');
 
-  if (!popup || !overlay || !closeBtn) return;
+  if (!banner || !closeBtn) return;
 
   // Check if insights were dismissed today
   const today = getTodayKey();
@@ -131,25 +145,22 @@ async function showInsightsPopup() {
     }
   }
 
-  // Show popup after a short delay to let the page load
-  setTimeout(() => {
-    popup.style.display = 'flex';
-  }, 1000);
+  // Show banner immediately as non-modal inline element (no overlay, no auto-delay)
+  banner.style.display = 'block';
 
-  // Close handlers
-  const closePopup = async () => {
-    popup.style.display = 'none';
+  // Close handlers - dismissible banner
+  const closeBanner = async () => {
+    banner.style.display = 'none';
     // Save dismissal date
     await chrome.storage.local.set({ insightsDismissedDate: today });
   };
 
-  closeBtn.addEventListener('click', closePopup);
-  overlay.addEventListener('click', closePopup);
+  closeBtn.addEventListener('click', closeBanner);
 
-  // Also close on Escape key
+  // Also close on Escape key while banner is visible
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && popup.style.display === 'flex') {
-      closePopup();
+    if (e.key === 'Escape' && banner.style.display !== 'none') {
+      closeBanner();
     }
   });
 }
@@ -291,8 +302,9 @@ async function handleDataLoaded(aggregatedData) {
   // Prepare table data
   currentTableData = prepareTableData(aggregatedData);
 
-  // Render table
+  // Render table and sync header label to active range
   renderTable();
+  updateVisitsHeaderLabel();
 }
 
 function updateStatsSummary(data) {
@@ -484,10 +496,11 @@ function renderTable() {
     domainTd.appendChild(domainContent);
     tr.appendChild(domainTd);
 
-    // Visits cell
+    // Visits cell — show same period as header totals (F-UX-002)
     const visitsTd = document.createElement('td');
     visitsTd.className = 'visits-cell';
-    visitsTd.textContent = row.todayCount;
+    visitsTd.textContent = row.count;
+    visitsTd.title = `Visits in selected period: ${row.count} (today: ${row.todayCount})`;
     tr.appendChild(visitsTd);
 
     // Subpaths cell removed as per feedback
@@ -717,10 +730,8 @@ function sortTableData(data, field, order = 'desc') {
       }
     }
 
-    // Map displayed column to its source field: visits column displays todayCount
-    const displayField = field === 'count' ? 'todayCount' : field;
-    let aVal = a[displayField];
-    let bVal = b[displayField];
+    let aVal = a[field];
+    let bVal = b[field];
 
     // Handle string comparisons
     if (field === 'domain') {
@@ -750,6 +761,30 @@ function updateSortHeaderState(field, order) {
       header.classList.add(order === 'asc' ? 'sorted-asc' : 'sorted-desc');
     }
   });
+}
+
+function updateVisitsHeaderLabel() {
+  const active = document.querySelector('.time-filter-btn.active');
+  const range = active ? active.dataset.range : 'today';
+  const labels = {
+    today: 'Times Opened (Today)',
+    week: 'Times Opened (Week)',
+    month: 'Times Opened (Month)',
+  };
+  const th = document.querySelector('.data-table th[data-sort="count"]');
+  if (!th) return;
+  const indicator = th.querySelector('.sort-indicator');
+  const label = labels[range] || 'Times Opened';
+  // Preserve sort indicator
+  th.textContent = `${label} `;
+  if (indicator) {
+    th.appendChild(indicator);
+  } else {
+    const span = document.createElement('span');
+    span.className = 'sort-indicator';
+    th.appendChild(span);
+  }
+  th.title = label;
 }
 
 function setupPagination() {
