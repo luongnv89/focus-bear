@@ -265,7 +265,11 @@ function updateStatsUI(stats) {
         month: 'short',
         day: 'numeric',
       });
-      item.innerHTML = `<strong>${dayLabel}</strong><span>${entry.count} visits</span>`;
+      const strong = document.createElement('strong');
+      strong.textContent = dayLabel;
+      const span = document.createElement('span');
+      span.textContent = `${entry.count} visits`;
+      item.append(strong, span);
       historyList.appendChild(item);
     });
   }

@@ -27,59 +27,83 @@ async function renderRulesList() {
     const item = document.createElement('div');
     item.className = 'rule-item';
 
-    // Determine status text
-    const badges = [];
+    const ruleInfo = document.createElement('div');
+    ruleInfo.className = 'rule-info';
+
+    const ruleIcon = document.createElement('div');
+    ruleIcon.className = 'rule-icon';
+    const favicon = document.createElement('img');
+    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+    favicon.alt = '';
+    favicon.style.width = '20px';
+    favicon.style.height = '20px';
+    favicon.style.opacity = '0.8';
+    favicon.onerror = function () {
+      this.style.display = 'none';
+    };
+    ruleIcon.appendChild(favicon);
+
+    const ruleDetails = document.createElement('div');
+    ruleDetails.className = 'rule-details';
+    const domainHeading = document.createElement('h3');
+    domainHeading.textContent = domain;
+    const badgesContainer = document.createElement('div');
+    badgesContainer.className = 'rule-badges';
+
+    const createBadge = (label, cssText) => {
+      const badge = document.createElement('span');
+      badge.className = 'rule-badge';
+      badge.textContent = label;
+      if (cssText) badge.style.cssText = cssText;
+      return badge;
+    };
+
     const mutedStyle = 'border-color: var(--color-text-muted); color: var(--color-text-muted);';
     const successStyle = 'border-color: var(--color-success); color: var(--color-success);';
     if (!normalized.enabled) {
-      badges.push(`<span class="rule-badge" style="${mutedStyle}">Disabled</span>`);
+      badgesContainer.appendChild(createBadge('Disabled', mutedStyle));
     } else {
-      badges.push(`<span class="rule-badge" style="${successStyle}">Active</span>`);
+      badgesContainer.appendChild(createBadge('Active', successStyle));
       if (normalized.fiveHour.enabled) {
-        badges.push(`<span class="rule-badge">${normalized.fiveHour.limit} / 5h</span>`);
+        badgesContainer.appendChild(createBadge(`${normalized.fiveHour.limit} / 5h`, ''));
       }
       if (normalized.daily.enabled) {
-        badges.push(`<span class="rule-badge">${normalized.daily.limit} / day</span>`);
+        badgesContainer.appendChild(createBadge(`${normalized.daily.limit} / day`, ''));
       }
     }
 
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    ruleDetails.append(domainHeading, badgesContainer);
+    ruleInfo.append(ruleIcon, ruleDetails);
+
+    const ruleActions = document.createElement('div');
+    ruleActions.className = 'rule-actions';
+
     const toggleTitle = normalized.enabled ? 'Disable' : 'Enable';
     const toggleIcon = normalized.enabled ? '⏸️' : '▶️';
 
-    item.innerHTML = `
-      <div class="rule-info">
-        <div class="rule-icon">
-          <img src="${faviconUrl}" alt=""
-            style="width: 20px; height: 20px; opacity: 0.8;"
-            onerror="this.style.display='none'">
-        </div>
-        <div class="rule-details">
-          <h3>${domain}</h3>
-          <div class="rule-badges">
-            ${badges.join('')}
-          </div>
-        </div>
-      </div>
-      <div class="rule-actions">
-        <button class="btn-icon toggle-btn" title="${toggleTitle}"
-          data-domain="${domain}">${toggleIcon}</button>
-        <button class="btn-icon edit-btn" title="Edit"
-          data-domain="${domain}">✏️</button>
-        <button class="btn-icon delete-btn" title="Delete"
-          data-domain="${domain}">🗑️</button>
-      </div>
-    `;
-
-    // Add event listeners
-    const toggleBtn = item.querySelector('.toggle-btn');
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'btn-icon toggle-btn';
+    toggleBtn.title = toggleTitle;
+    toggleBtn.dataset.domain = domain;
+    toggleBtn.textContent = toggleIcon;
     toggleBtn.addEventListener('click', () => toggleRule(domain, normalized));
 
-    const editBtn = item.querySelector('.edit-btn');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-icon edit-btn';
+    editBtn.title = 'Edit';
+    editBtn.dataset.domain = domain;
+    editBtn.textContent = '✏️';
     editBtn.addEventListener('click', () => editRule(domain, normalized));
 
-    const deleteBtn = item.querySelector('.delete-btn');
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-icon delete-btn';
+    deleteBtn.title = 'Delete';
+    deleteBtn.dataset.domain = domain;
+    deleteBtn.textContent = '🗑️';
     deleteBtn.addEventListener('click', () => deleteRule(domain));
+
+    ruleActions.append(toggleBtn, editBtn, deleteBtn);
+    item.append(ruleInfo, ruleActions);
 
     rulesList.appendChild(item);
   });
