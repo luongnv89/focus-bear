@@ -1,0 +1,122 @@
+{
+  "version": "1.0.0",
+  "previousVersion": "0.2.0",
+  "releaseDate": "2026-09-01",
+  "isFirstRelease": true,
+  "hasBreakingChanges": true,
+  "totalCommits": 50,
+  "totalPRs": 40,
+  "newContributors": [],
+  "categories": {
+    "breakingChanges": {
+      "label": "Breaking Changes",
+      "count": 6,
+      "commits": [
+        { "hash": "49178cb", "message": "feat: react-router 6→7 and lucide 0.x→1.x (P2 Wave 13)", "pr": 67 },
+        { "hash": "334f307", "message": "feat: React 18→19 (react + react-dom, peer pair)", "pr": 66 },
+        { "hash": "e398a92", "message": "feat: sharp 0.35.4 and remove focus-trap, defer vite major (P2)", "pr": 65 },
+        { "hash": "a43eefb", "message": "P2 Wave 9: Actions v7, runner pin, ESLint 9 flat config", "pr": 64 },
+        { "hash": "b01d92a", "message": "feat: Node policy + CI lanes (2.1, W3)", "pr": 63 },
+        { "hash": "f809998", "message": "fix(sec): move <all_urls> to optional_host_permissions (4.5)", "pr": 84 }
+      ]
+    },
+    "features": {
+      "label": "Features",
+      "count": 11,
+      "commits": [
+        { "hash": "7b44ad4", "message": "feat(focus-score): single-pass history and memoized streak (3.2)", "pr": 69 },
+        { "hash": "1a38853", "message": "feat: add landing page for FocusBear Chrome extension", "pr": 13 },
+        { "hash": "e25d8dc", "message": "feat: add Help & FAQ page with privacy info and concept explanations", "pr": 82 },
+        { "hash": "27a98ca", "message": "feat: add blocking rules page and improve dashboard", "pr": 78 },
+        { "hash": "f8ab9da", "message": "feat: add zoom in/out controls to topology graph", "pr": 67 },
+        { "hash": "9449a91", "message": "feat: secure & patch P1 — root + landing W1/W2 + regression tests", "pr": 62 },
+        { "hash": "af4c226", "message": "feat: stabilize P0 — fix SW duplicate listeners, deterministic build, landing CI", "pr": 61 },
+        { "hash": "fa68c73", "message": "feat: restore runnable baseline with smoke tests (0.1)", "pr": 60 },
+        { "hash": "e4d7b14", "message": "feat: add agent-runnable dev setup and improve CLAUDE/AGENTS", "pr": 59 },
+        { "hash": "49178cb", "message": "feat: react-router 6→7 and lucide 0.x→1.x (P2 Wave 13)", "pr": 67 },
+        { "hash": "334f307", "message": "feat: React 18→19 (react + react-dom, peer pair)", "pr": 66 }
+      ]
+    },
+    "bugFixes": {
+      "label": "Bug Fixes",
+      "count": 9,
+      "commits": [
+        { "hash": "fb9ea29", "message": "fix(categories): label-aligned matcher to drop substring false positives (4.8)", "pr": 87 },
+        { "hash": "dfed6ff", "message": "fix(sec): harden CSV export against formula-injection (4.4)", "pr": 83 },
+        { "hash": "8f3acf7", "message": "fix(xss): replace HTML-string templating with safe DOM APIs (3.6)", "pr": 76 },
+        { "hash": "a1acb3f", "message": "fix(privacy): drop Google S2 favicon fetches and sync docs", "pr": 82 },
+        { "hash": "2467150", "message": "fix(ux): wire/remove high-contrast, label counts, countdown, toolbar, insights (4.1)", "pr": 78 },
+        { "hash": "262d84e", "message": "fix(storage): serialized, bounded writer (3.1)", "pr": 68 },
+        { "hash": "eb08a49", "message": "fix: add base directory to Netlify config for correct package installation", "pr": null },
+        { "hash": "7dc67cd", "message": "fix: use npm ci to install devDependencies for Netlify build", "pr": null },
+        { "hash": "529cd2a", "message": "fix: add npm install to Netlify build command", "pr": null }
+      ]
+    },
+    "performance": {
+      "label": "Performance",
+      "count": 2,
+      "commits": [
+        { "hash": "0b4b6ae", "message": "refactor(perf): drop redundant updateBlockingRules + dynamic limits import (4.2)", "pr": 81 },
+        { "hash": "7b44ad4", "message": "feat(focus-score): single-pass history and memoized streak (3.2)", "pr": 69 }
+      ]
+    },
+    "documentation": {
+      "label": "Documentation",
+      "count": 3,
+      "commits": [
+        { "hash": "99435e2", "message": "docs: sync Node runtime policy to engines >=22 in READMEs (4.6)", "pr": 85 },
+        { "hash": "4c38173", "message": "docs: add declarativeNetRequestWithHostAccess permission justification", "pr": null },
+        { "hash": "c5da50f", "message": "docs: prepare for Chrome Web Store submission", "pr": null }
+      ]
+    },
+    "dependencies": {
+      "label": "Dependencies",
+      "count": 1,
+      "commits": [
+        { "hash": "8b0fa58", "message": "chore(deps): dedupe transitive resolutions via nearest-parent upgrades (3.8)", "pr": 79 }
+      ]
+    },
+    "other": {
+      "label": "Other Changes",
+      "count": 19,
+      "commits": [
+        { "hash": "29efec1", "message": "ci(coverage): fail_ci_if_error + 60% line threshold gate (4.7)", "pr": 86 },
+        { "hash": "32e5074", "message": "refactor(clean): split visualization god fn, named constants, fix comments (3.9)", "pr": 80 },
+        { "hash": "8431e6e", "message": "test(coverage): coverage program to target (3.7)", "pr": 77 },
+        { "hash": "eed54cf", "message": "refactor(utils): unify date/time-range and limit-form controller (3.3)", "pr": 75 },
+        { "hash": "0e36a31", "message": "chore(dead): remove remaining dead code (3.5)", "pr": 74 },
+        { "hash": "56fd612", "message": "chore(dead): remove goals/achievements/insights/export-PNG subsystem (3.4)", "pr": 70 },
+        { "hash": "7d5299f", "message": "build: add pre-built landing page dist for Netlify static hosting", "pr": null },
+        { "hash": "e24e54e", "message": "chore: update .gitignore with best practices and ignore docs/", "pr": null },
+        { "hash": "fc872d3", "message": "chore: remove obsolete documentation files and update version", "pr": null },
+        { "hash": "86c648a", "message": "chore: update manifest version name", "pr": null },
+        { "hash": "ce2c17b", "message": "chore: Bump manifest version_name.", "pr": null },
+        { "hash": "a0a9636", "message": "refactor: make dashboard content use full available height", "pr": null },
+        { "hash": "4bc6d7c", "message": "refactor: enhance dashboard UI/UX with improved typography, colors, and visual hierarchy", "pr": null },
+        { "hash": "539c6a1", "message": "refactor: make topology graph responsive to container size", "pr": null },
+        { "hash": "ff634be", "message": "refactor: rebrand to dark-only mode with dark blue theme", "pr": null },
+        { "hash": "08ff3bf", "message": "refactor: remove accessibility component from settings panel", "pr": null },
+        { "hash": "c8a1a51", "message": "refactor: simplify dashboard UI and fix dark theme issues", "pr": null },
+        { "hash": "19ad014", "message": "style: apply prettier formatting to simplified dashboard files", "pr": null },
+        { "hash": "565cee4", "message": "update before changing the theme color", "pr": null }
+      ]
+    }
+  },
+  "prSummary": {
+    "totalMergedPRs": 40,
+    "prsByCategory": {
+      "breakingChanges": [67, 66, 65, 64, 63, 84],
+      "features": [69, 13, 82, 78, 67, 62, 61, 60, 59],
+      "bugFixes": [87, 83, 76, 82, 78, 68],
+      "performance": [81],
+      "documentation": [85],
+      "dependencies": [79],
+      "other": [86, 80, 77, 75, 74, 70]
+    }
+  },
+  "author": {
+    "login": "luongnv89",
+    "name": "Luong NGUYEN",
+    "isBot": false
+  }
+}

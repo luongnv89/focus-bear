@@ -100,7 +100,7 @@ dist/
 **Environment Variables** (configured in Netlify dashboard):
 ```bash
 VITE_CHROME_STORE_URL=https://chrome.google.com/webstore/detail/...
-VITE_APP_VERSION=0.2.0
+VITE_APP_VERSION=1.0.0
 VITE_GITHUB_URL=https://github.com/yourusername/focus-bear
 ```
 

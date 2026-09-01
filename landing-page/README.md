@@ -4,7 +4,7 @@ Marketing landing page for the FocusBear Chrome extension.
 
 ## Tech Stack
 
-- **React 18** - UI framework
+- **React 19** - UI framework
 - **Vite 5** - Build tool and dev server
 - **TailwindCSS 3** - Utility-first CSS framework
 - **React Router 6** - Client-side routing
@@ -37,7 +37,7 @@ Edit `.env.local` with your values:
 
 ```env
 VITE_CHROME_STORE_URL=https://chrome.google.com/webstore/detail/focusbear/your-extension-id
-VITE_APP_VERSION=0.2.0
+VITE_APP_VERSION=1.0.0
 VITE_GITHUB_URL=https://github.com/luongnv89/focus-bear
 ```
 

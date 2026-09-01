@@ -55,7 +55,7 @@ All tasks `P0–P4` verify against these five commands. Prefer them over ad-hoc 
 npm run build
 # Internally: node scripts/build.js (stamps version_name into dist/manifest.json via git hash)
 # Legacy: npm run version:update && node scripts/build.js (pre-0.3) — now deterministic, tracked manifest.json untouched
-# Expected: "Building FocusBear extension..." → "Stamped dist/manifest.json version_name: 0.2.0-<hash>" → "Build complete! Output in dist/"
+# Expected: "Building FocusBear extension..." → "Stamped dist/manifest.json version_name: 1.0.0-<hash>" → "Build complete! Output in dist/"
 # Output tree: dist/manifest.json (with version_name), dist/src/, dist/assets/
 # After Task 0.3 the build no longer mutates tracked manifest.json;
 # git status --porcelain must be clean after build (verify: `npm run build && git status --porcelain`).

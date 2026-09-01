@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "FocusBear - Focus Tracker",
-  "version": "0.2.0",
-  "version_name": "0.2.0-c5da50f",
+  "version": "1.0.0",
+  "version_name": "1.0.0-<git-sha>",
   "description": "Track focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity.",
   "author": "FocusBear Team",
   "homepage_url": "https://github.com/luongnv89/focus-bear",

@@ -31,5 +31,12 @@ export const featuresContent = {
       description:
         'Track your productivity with daily focus scores and build streaks to stay motivated. Watch your focus improve over time.',
     },
+    {
+      id: 'security-hardened',
+      icon: 'Lock',
+      title: 'Security & Privacy Hardened',
+      description:
+        'Manifest V3 migration, XSS protection, CSV formula injection fixes, and zero external tracking. Your data never leaves your device — guaranteed.',
+    },
   ],
 };

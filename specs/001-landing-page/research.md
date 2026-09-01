@@ -333,7 +333,7 @@ Use comprehensive **`netlify.toml`** with SPA redirects, custom headers, and env
 
 ```bash
 VITE_CHROME_STORE_URL=https://chrome.google.com/webstore/detail/focusbear/...
-VITE_APP_VERSION=0.2.0
+VITE_APP_VERSION=1.0.0
 ```
 
 **Access in Code**:

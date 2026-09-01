@@ -10,7 +10,7 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-yellow.svg)](https://www.google.com/chrome/)
   [![Privacy First](https://img.shields.io/badge/Privacy-100%25%20Local-green.svg)](#privacy)
-  [![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](manifest.json)
+  [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](manifest.json)
 </div>
 
 ---

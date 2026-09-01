@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **FocusBear** is a Chrome extension (Manifest V3) that helps users track focus-switching habits through an interactive D3.js visualization. The extension is privacy-first and local-only with no external API calls or cloud synchronization.
 
-**Current Status:** v0.2.0 - Ready for Chrome Web Store submission. Core features implemented.
+**Current Status:** v1.0.0 - First official release. Core features complete, Chrome Web Store live.
 
 **Tech Stack:** Vanilla JavaScript (ES modules), D3.js v7, Chrome APIs (tabs, storage, webRequest, notifications), HTML5/CSS3
 
@@ -192,8 +192,8 @@ Load unpacked for manual testing:
 
 The extension uses **semantic versioning** with git commit hash tracking:
 
-- **`version`** in `manifest.json`: Numeric version required by Chrome (e.g., "0.1.0")
-- **`version_name`** in `manifest.json`: Display version with git hash (e.g., "0.1.0-7205313")
+- **`version`** in `manifest.json`: Numeric version required by Chrome (e.g., "1.0.0")
+- **`version_name`** in `manifest.json`: Display version with git hash (e.g., "1.0.0-7205313")
 
 The `version_name` is automatically updated before each build via `scripts/update-version.sh`:
 

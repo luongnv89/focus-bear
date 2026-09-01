@@ -332,7 +332,7 @@ const twitterMetadata: TwitterCardMetadata = {
 ```typescript
 interface EnvironmentVariables {
   VITE_CHROME_STORE_URL: string;  // Chrome Web Store listing URL
-  VITE_APP_VERSION: string;       // Current version (e.g., "0.2.0")
+  VITE_APP_VERSION: string;       // Current version (e.g., "1.0.0")
   VITE_GITHUB_URL: string;        // GitHub repository URL
   VITE_HELP_URL: string;          // Help/FAQ page URL
 }
