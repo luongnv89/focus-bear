@@ -1,8 +1,18 @@
 # Changelog
 
+## Unreleased — FocusPaw Rebrand
+
+> FocusBear has been rebranded to **FocusPaw** with a new paw-themed mascot and brand identity.
+
+### Rebrand
+- **New brand identity** — FocusPaw name, tagline ("Track your focus, one paw at a time"), paw-themed mascot, updated brand kit (`phase-1-requirements/brand_kit.md`).
+- **New icons** — Paw-print icon (light + dark) with green focus-highlight accent; PNG variants regenerated at 16/32/48/128.
+- **All product surface updated** — manifest (name/description/author/default_title), extension pages (popup, dashboard, blocking, domain, blocked, help), source JS/CSS, scripts, landing page, README, docs, AGENTS.md, CLAUDE.md.
+- **Compatibility** — No storage-key or permission changes; existing installs upgrade in place. GitHub links still point to `luongnv89/focus-bear` (repo unchanged). Archived planning/spec docs (`phase-1-requirements/`, `specs/`) retain the legacy name for historical accuracy.
+
 ## v1.0.0 — 2026-09-01
 
-> First official release of FocusBear. This version marks the completion of all P0–P4 development phases, including the core extension, landing page, and comprehensive security hardening.
+> First official release of the extension (pre-rebrand). This version marks the completion of all P0–P4 development phases, including the core extension, landing page, and comprehensive security hardening.
 
 ### Breaking Changes
 - **React Router 6 → 7** — API surface changed; upgrade guide in PR #67.
@@ -14,7 +24,7 @@
 
 ### Features
 - **Focus Score** — Single-pass history computation with memoized streak tracking (PR #69).
-- **Landing Page** — Dedicated marketing page for FocusBear Chrome extension (PR #13).
+- **Landing Page** — Dedicated marketing page for the Chrome extension (PR #13).
 - **Help & FAQ Page** — Privacy information and feature explanations (PR #82).
 - **Blocking Rules Page** — User-configurable domain blocking rules (PR #78).
 - **Topography Graph Zoom** — Zoom in/out controls for the topology visualization (PR #67).

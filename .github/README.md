@@ -1,6 +1,6 @@
 # CI/CD Configuration
 
-This directory contains GitHub Actions workflows and CI/CD configuration for the FocusBear Chrome extension.
+This directory contains GitHub Actions workflows and CI/CD configuration for the FocusPaw Chrome extension.
 
 ## GitHub Actions Workflows
 

@@ -1,6 +1,6 @@
 # Chrome Web Store Listing
 
-This document contains all the information needed to submit FocusBear to the Chrome Web Store.
+This document contains all the information needed to submit FocusPaw to the Chrome Web Store.
 
 ---
 
@@ -8,7 +8,7 @@ This document contains all the information needed to submit FocusBear to the Chr
 
 ### Extension Name
 ```
-FocusBear - Focus Tracker
+FocusPaw - Focus Tracker
 ```
 
 ### Short Description (132 characters max)
@@ -19,11 +19,11 @@ Track focus-switching habits with privacy-first visualizations. Set limits, buil
 ### Detailed Description (16,000 characters max)
 
 ```
-🐻 FocusBear - Your Attention, Mapped with Empathy
+🐻 FocusPaw - Your Attention, Mapped with Empathy
 
-FocusBear is a privacy-first Chrome extension that helps you understand and improve your browsing habits by tracking how often you switch between websites.
+FocusPaw is a privacy-first Chrome extension that helps you understand and improve your browsing habits by tracking how often you switch between websites.
 
-Unlike time trackers that measure hours spent, FocusBear focuses on ATTENTION SWITCHES — each time you navigate to a different domain counts as a "focus switch." Research shows frequent context-switching is one of the biggest productivity killers.
+Unlike time trackers that measure hours spent, FocusPaw focuses on ATTENTION SWITCHES — each time you navigate to a different domain counts as a "focus switch." Research shows frequent context-switching is one of the biggest productivity killers.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ KEY FEATURES
@@ -58,7 +58,7 @@ Download all your data as JSON or CSV anytime. Your data, your control.
 🔒 100% PRIVACY-FIRST
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-FocusBear is completely local-only:
+FocusPaw is completely local-only:
 
 ✅ ALL data stored locally on your device
 ✅ NO external servers or cloud sync
@@ -73,7 +73,7 @@ We don't collect, transmit, or store any of your personal information. Period.
 📖 HOW IT WORKS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Install FocusBear and browse normally
+1. Install FocusPaw and browse normally
 2. Click the toolbar icon to open your dashboard
 3. See your attention patterns visualized
 4. Set limits for distracting sites
@@ -84,11 +84,11 @@ We don't collect, transmit, or store any of your personal information. Period.
 ❓ FAQ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Q: What does FocusBear track?
+Q: What does FocusPaw track?
 A: Only domain visit counts (e.g., "twitter.com: 5 visits"). We don't track page content, time spent, or anything you type.
 
 Q: Does it work in Incognito?
-A: No, FocusBear respects your privacy and doesn't track Incognito browsing.
+A: No, FocusPaw respects your privacy and doesn't track Incognito browsing.
 
 Q: Can I delete my data?
 A: Yes! Export your data first if you want, then use "Reset All Data" in Settings.
@@ -98,7 +98,7 @@ A: Yes! View the code at github.com/luongnv89/focus-bear
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Take control of your attention. Install FocusBear today!
+Take control of your attention. Install FocusPaw today!
 
 🐻 Track your focus, privacy-first.
 ```
@@ -183,7 +183,7 @@ https://github.com/luongnv89/focus-bear/blob/main/PRIVACY.md
 
 ### Single Purpose Description
 ```
-FocusBear helps users track and limit their focus-switching habits by counting domain visits and enforcing user-configured daily limits.
+FocusPaw helps users track and limit their focus-switching habits by counting domain visits and enforcing user-configured daily limits.
 ```
 
 ---
@@ -239,7 +239,7 @@ zip -r ../focusbear-v1.0.0.zip .
 
 ### Publisher Name
 ```
-FocusBear Team
+FocusPaw Team
 ```
 
 ### Support Email

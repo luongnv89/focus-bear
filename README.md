@@ -1,9 +1,9 @@
 <div align="center">
-  <img src="assets/icon.svg" alt="FocusBear Logo" width="128" height="128">
+  <img src="assets/icon.svg" alt="FocusPaw Logo" width="128" height="128">
 
-  # FocusBear
+  # FocusPaw
 
-  ### Your attention, mapped with empathy
+  ### Track your focus, one paw at a time
 
   A playful, privacy-first Chrome extension that helps you track focus-switching habits through beautiful D3.js visualizations.
 
@@ -15,11 +15,11 @@
 
 ---
 
-## What is FocusBear?
+## What is FocusPaw?
 
-FocusBear helps you understand and improve your browsing habits by tracking how often you switch between websites. Unlike time trackers, FocusBear focuses on **attention switches** — each time you navigate to a different domain counts as a "focus switch."
+FocusPaw helps you understand and improve your browsing habits by tracking how often you switch between websites. Unlike time trackers, FocusPaw focuses on **attention switches** — each time you navigate to a different domain counts as a "focus switch."
 
-**Key insight:** Frequent context-switching is one of the biggest productivity killers. FocusBear helps you see the pattern and build better habits.
+**Key insight:** Frequent context-switching is one of the biggest productivity killers. FocusPaw helps you see the pattern and build better habits.
 
 ## Features
 
@@ -36,7 +36,7 @@ FocusBear helps you understand and improve your browsing habits by tracking how 
 ## Installation
 
 ### From Chrome Web Store (Coming Soon)
-<!-- [Install FocusBear](https://chrome.google.com/webstore/detail/focusbear/YOUR_EXTENSION_ID) -->
+<!-- [Install FocusPaw](https://chrome.google.com/webstore/detail/focusbear/YOUR_EXTENSION_ID) -->
 
 ### Manual Installation (Developer Mode)
 
@@ -56,11 +56,11 @@ FocusBear helps you understand and improve your browsing habits by tracking how 
 
 5. Select the `dist/` folder (or project root)
 
-6. Click the FocusBear icon in your toolbar to start!
+6. Click the FocusPaw icon in your toolbar to start!
 
 ## How It Works
 
-1. **Browse normally** — FocusBear quietly tracks domain switches in the background
+1. **Browse normally** — FocusPaw quietly tracks domain switches in the background
 2. **Open the dashboard** — Click the toolbar icon to see your attention map
 3. **Set limits** — Configure daily limits for distracting sites
 4. **Build streaks** — Stay under limits to build consecutive day streaks
@@ -76,7 +76,7 @@ FocusBear helps you understand and improve your browsing habits by tracking how 
 
 ## Privacy
 
-**FocusBear is 100% local-only.** Your data never leaves your device.
+**FocusPaw is 100% local-only.** Your data never leaves your device.
 
 - ✅ All data stored locally in Chrome's storage
 - ✅ No external servers or API calls
@@ -185,12 +185,12 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 - D3.js for beautiful data visualizations
 - The Chrome Extensions team for Manifest V3
-- All contributors and users who help improve FocusBear
+- All contributors and users who help improve FocusPaw
 
 ---
 
 <div align="center">
-  <strong>FocusBear</strong> — Track your focus, privacy-first 🐻
+  <strong>FocusPaw</strong> — Track your focus, privacy-first 🐻
   <br><br>
   <a href="https://github.com/luongnv89/focus-bear">GitHub</a> •
   <a href="PRIVACY.md">Privacy Policy</a> •

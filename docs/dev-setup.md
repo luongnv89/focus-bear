@@ -1,6 +1,6 @@
-# Development Setup — FocusBear
+# Development Setup — FocusPaw
 
-This document describes how to set up a runnable development environment for FocusBear from a clean checkout. It is the single source for toolchain, required environment, and the five recorded commands that CI and local verification use.
+This document describes how to set up a runnable development environment for FocusPaw from a clean checkout. It is the single source for toolchain, required environment, and the five recorded commands that CI and local verification use.
 
 > **Baseline status: RED at audit (2026-08-30, commit `7d5299f`).**
 > A clean `npm ci` checkout builds in an isolated probe, but the local test suite could not start (`jest: command not found`) and lint/format tooling was not installed locally; the last CI run (2025-12-01, run 19828167779) was green. Until **Task 0.1 — Restore a runnable, recorded baseline** lands and records the new pass rate, the commands below may still fail locally. Follow the steps exactly, then run `0.1` fixes to reach green. See `MODERNIZATION_PLAN.md` Task 0.1, `MODERNIZATION_REPORT.md` (Baseline: RED), and `docs/tasks.md`.
@@ -55,7 +55,7 @@ All tasks `P0–P4` verify against these five commands. Prefer them over ad-hoc 
 npm run build
 # Internally: node scripts/build.js (stamps version_name into dist/manifest.json via git hash)
 # Legacy: npm run version:update && node scripts/build.js (pre-0.3) — now deterministic, tracked manifest.json untouched
-# Expected: "Building FocusBear extension..." → "Stamped dist/manifest.json version_name: 1.0.0-<hash>" → "Build complete! Output in dist/"
+# Expected: "Building FocusPaw extension..." → "Stamped dist/manifest.json version_name: 1.0.0-<hash>" → "Build complete! Output in dist/"
 # Output tree: dist/manifest.json (with version_name), dist/src/, dist/assets/
 # After Task 0.3 the build no longer mutates tracked manifest.json;
 # git status --porcelain must be clean after build (verify: `npm run build && git status --porcelain`).
