@@ -5,6 +5,9 @@
 
 import { getTodayKey, normalizeLimitConfig } from './storage.js';
 
+// One rolling 5-hour window used for the per-window visit counter.
+const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
+
 function getNextActiveLimit(normalizedConfig, fiveHourCount, dailyCount) {
   const candidates = [];
   if (normalizedConfig.fiveHour.enabled) {
@@ -127,8 +130,7 @@ export async function checkLimit(domain) {
       }
 
       // Check 5-hour window limit
-      const fiveHourMs = 5 * 60 * 60 * 1000;
-      const fiveHourCount = countVisitsInWindow(timestamps, fiveHourMs);
+      const fiveHourCount = countVisitsInWindow(timestamps, FIVE_HOURS_MS);
 
       if (limitConfig.fiveHour.enabled && fiveHourCount >= limitConfig.fiveHour.limit) {
         resolve({
@@ -234,11 +236,10 @@ export async function updateBlockingRules() {
       }
 
       // Check 5-hour window
-      const fiveHourMs = 5 * 60 * 60 * 1000;
-      const fiveHourCount = countVisitsInWindow(timestamps, fiveHourMs);
+      const fiveHourCount = countVisitsInWindow(timestamps, FIVE_HOURS_MS);
 
       if (normalizedConfig.fiveHour.enabled && fiveHourCount >= normalizedConfig.fiveHour.limit) {
-        const oldestTimestamp = getOldestTimestampInWindow(timestamps, fiveHourMs);
+        const oldestTimestamp = getOldestTimestampInWindow(timestamps, FIVE_HOURS_MS);
         console.info('[Limits] Blocking domain due to 5h limit', {
           domain,
           fiveHourCount,

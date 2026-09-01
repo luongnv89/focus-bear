@@ -5,6 +5,9 @@
 
 import { getTodayVisitCount } from './storage.js';
 
+// Bright green accent used as the badge background.
+const FOCUS_BEAR_BADGE_COLOR = '#1BFF6E';
+
 /**
  * Update extension badge with current visit count
  */
@@ -17,7 +20,7 @@ export async function updateVisitBadge() {
     await chrome.action.setBadgeText({ text: badgeText });
 
     // Set badge background color using bright green accent
-    await chrome.action.setBadgeBackgroundColor({ color: '#1BFF6E' });
+    await chrome.action.setBadgeBackgroundColor({ color: FOCUS_BEAR_BADGE_COLOR });
 
     console.log(`Badge updated: ${count} visits tracked today`);
   } catch (error) {
