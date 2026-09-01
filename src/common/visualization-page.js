@@ -180,6 +180,7 @@ async function loadPreviousPeriodData(range) {
  * @param {Object} previousData - Previous period data for comparison
  * @returns {string} - Natural language summary
  */
+// eslint-disable-next-line no-unused-vars
 function generateInsightsSummary(aggregatedData, limits, range, previousData = null) {
   const domains = Object.entries(aggregatedData);
 
@@ -312,6 +313,143 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
   return `${parts.join('. ')}.`;
 }
 
+function buildSummaryFragment(aggregatedData, limits, range, previousData = null) {
+  const frag = document.createDocumentFragment();
+  const domains = Object.entries(aggregatedData);
+
+  if (domains.length === 0) {
+    frag.appendChild(
+      document.createTextNode('No data to analyze yet. Start browsing to see insights!'),
+    );
+    return frag;
+  }
+
+  const sorted = domains
+    .map(([domain, data]) => ({ domain, count: data.count }))
+    .sort((a, b) => b.count - a.count);
+  const top3 = sorted.slice(0, 3);
+
+  let overLimitCount = 0;
+  let nearLimitCount = 0;
+  const FIVE_HOUR_MS = 5 * 60 * 60 * 1000;
+  const fiveHoursAgo = Date.now() - FIVE_HOUR_MS;
+  Object.entries(limits).forEach(([domain, limitConfig]) => {
+    if (!limitConfig || !limitConfig.enabled) return;
+    const domainData = aggregatedData[domain];
+    if (!domainData) return;
+    const todayCount = domainData.count || 0;
+    const fiveHourLimit = limitConfig.fiveHour?.enabled ? limitConfig.fiveHour.limit : null;
+    let fiveHourCount = 0;
+    if (fiveHourLimit && domainData.timestamps) {
+      fiveHourCount = domainData.timestamps.filter((t) => t >= fiveHoursAgo).length;
+    }
+    const dailyLimit = limitConfig.daily?.enabled ? limitConfig.daily?.limit : null;
+    const overFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit;
+    const overDaily = dailyLimit && todayCount >= dailyLimit;
+    const nearFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit * 0.8;
+    const nearDaily = dailyLimit && todayCount >= dailyLimit * 0.8;
+    if (overFiveHour || overDaily) {
+      overLimitCount += 1;
+    } else if (nearFiveHour || nearDaily) {
+      nearLimitCount += 1;
+    }
+  });
+
+  const rangeLabels = {
+    hour: 'in the last hour',
+    today: 'today',
+    week: 'this week',
+    month: 'this month',
+  };
+  const rangeText = rangeLabels[range] || 'today';
+
+  const parts = [];
+
+  if (top3.length > 0) {
+    const span = document.createElement('span');
+    const distractionsLabel = top3.length === 1 ? 'distraction' : 'distractions';
+    span.appendChild(document.createTextNode(`Your top ${distractionsLabel} ${rangeText}: `));
+    top3.forEach((d, idx) => {
+      const strong = document.createElement('strong');
+      strong.className = 'summary-highlight';
+      strong.textContent = d.domain;
+      span.appendChild(strong);
+      span.appendChild(document.createTextNode(` (${d.count} visits)`));
+      if (idx < top3.length - 1) span.appendChild(document.createTextNode(', '));
+    });
+    parts.push(span);
+  }
+
+  if (overLimitCount > 0) {
+    const span = document.createElement('span');
+    span.className = 'summary-warning';
+    const domainLabel = overLimitCount === 1 ? 'domain' : 'domains';
+    span.textContent = `⚠️ You exceeded limits on ${overLimitCount} ${domainLabel}`;
+    parts.push(span);
+  } else if (nearLimitCount > 0) {
+    const span = document.createElement('span');
+    span.className = 'summary-warning';
+    const domainLabel = nearLimitCount === 1 ? 'domain' : 'domains';
+    span.textContent = `You're approaching limits on ${nearLimitCount} ${domainLabel}`;
+    parts.push(span);
+  } else if (Object.keys(limits).length > 0) {
+    const span = document.createElement('span');
+    span.className = 'summary-success';
+    span.textContent = '✓ All limits under control';
+    parts.push(span);
+  }
+
+  const totalDomains = domains.length;
+  const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
+
+  if (previousData) {
+    const previousTotalVisits = Object.values(previousData).reduce(
+      (sum, d) => sum + (d.count || 0),
+      0,
+    );
+    const visitChange = totalVisits - previousTotalVisits;
+    const hasPreviousVisits = previousTotalVisits > 0;
+    const changePercent = hasPreviousVisits
+      ? Math.round((visitChange / previousTotalVisits) * 100)
+      : 0;
+    const span = document.createElement('span');
+    if (visitChange > 0) {
+      span.className = 'summary-warning';
+      const prefix = changePercent > 0 ? '+' : '';
+      span.textContent = `📈 ${visitChange} more visits (${prefix}${changePercent}%) than previous period`;
+    } else if (visitChange < 0) {
+      span.className = 'summary-success';
+      span.textContent = `📉 ${Math.abs(visitChange)} fewer visits (${changePercent}%) than previous period`;
+    } else {
+      span.textContent = 'No change from previous period';
+    }
+    parts.push(span);
+  }
+
+  {
+    const span = document.createElement('span');
+    const totalDomainLabel = totalDomains === 1 ? 'domain' : 'domains';
+    span.appendChild(document.createTextNode('Tracked '));
+    const strongDomains = document.createElement('strong');
+    strongDomains.textContent = String(totalDomains);
+    span.appendChild(strongDomains);
+    span.appendChild(document.createTextNode(` ${totalDomainLabel} with `));
+    const strongVisits = document.createElement('strong');
+    strongVisits.textContent = String(totalVisits);
+    span.appendChild(strongVisits);
+    span.appendChild(document.createTextNode(' total visits'));
+    parts.push(span);
+  }
+
+  parts.forEach((part, idx) => {
+    frag.appendChild(part);
+    if (idx < parts.length - 1) frag.appendChild(document.createTextNode('. '));
+    else frag.appendChild(document.createTextNode('.'));
+  });
+
+  return frag;
+}
+
 /**
  * Generate weekly insights from aggregated data
  * @param {Object} weekData - Week's visit data
@@ -331,14 +469,12 @@ export function generateWeeklyInsights(weekData, limits) {
 
   // Insight 1: Most visited domain
   const topDomain = sorted[0];
-  const mostVisitedText = [
-    `You visited <span class="insight-stat">${topDomain.domain}</span> the most this week`,
-    `with <span class="insight-stat">${topDomain.count} visits</span>.`,
-  ].join(' ');
   insights.push({
     type: 'info',
     title: '🎯 Most Visited',
-    text: mostVisitedText,
+    text: `You visited ${topDomain.domain} the most this week with ${topDomain.count} visits.`,
+    domain: topDomain.domain,
+    count: topDomain.count,
   });
 
   // Insight 2: Limit violations
@@ -350,16 +486,12 @@ export function generateWeeklyInsights(weekData, limits) {
   });
 
   if (overLimitDomains.length > 0) {
-    const limitTextParts = [
-      `You exceeded daily limits on <span class="insight-stat">${overLimitDomains.length} ${
-        overLimitDomains.length === 1 ? 'domain' : 'domains'
-      }</span> this week.`,
-      'Consider adjusting your limits or reducing usage.',
-    ];
     insights.push({
       type: 'warning',
       title: '⚠️ Limits Exceeded',
-      text: limitTextParts.join(' '),
+      text: `You exceeded daily limits on ${overLimitDomains.length} ${
+        overLimitDomains.length === 1 ? 'domain' : 'domains'
+      } this week. Consider adjusting your limits or reducing usage.`,
     });
   } else if (Object.keys(limits).length > 0) {
     insights.push({
@@ -372,14 +504,10 @@ export function generateWeeklyInsights(weekData, limits) {
   // Insight 3: Total focus switches
   const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
   const avgPerDay = Math.round(totalVisits / 7);
-  const activityText = [
-    `You switched focus <span class="insight-stat">${totalVisits} times</span> this week,`,
-    `averaging <span class="insight-stat">${avgPerDay} switches/day</span>.`,
-  ].join(' ');
   insights.push({
     type: 'info',
     title: '📊 Activity Summary',
-    text: activityText,
+    text: `You switched focus ${totalVisits} times this week, averaging ${avgPerDay} switches/day.`,
   });
 
   // Insight 4: Recommendations
@@ -388,14 +516,11 @@ export function generateWeeklyInsights(weekData, limits) {
     const percentageOfTotal = Math.round((top3Total / totalVisits) * 100);
 
     if (percentageOfTotal > 60) {
-      const recommendationText = [
-        `Your top 3 sites account for <span class="insight-stat">${percentageOfTotal}%</span>`,
-        'of your focus switches. Consider setting limits to improve focus distribution.',
-      ].join(' ');
       insights.push({
         type: 'warning',
         title: '💡 Recommendation',
-        text: recommendationText,
+        // eslint-disable-next-line max-len
+        text: `Your top 3 sites account for ${percentageOfTotal}% of your focus switches. Consider setting limits to improve focus distribution.`,
       });
     }
   }
@@ -484,9 +609,14 @@ export async function setupVisualizationPage(options = {}) {
       const info = document.createElement('div');
       info.className = 'limit-item-info';
 
-      let limitText = '';
+      const domainStrong = document.createElement('strong');
+      domainStrong.textContent = domain;
+      info.appendChild(domainStrong);
+      info.appendChild(document.createElement('br'));
+      const limitSpan = document.createElement('span');
       if (!normalized.enabled) {
-        limitText = '<span style="color: #999;">Disabled</span>';
+        limitSpan.style.color = '#999';
+        limitSpan.textContent = 'Disabled';
       } else {
         const parts = [];
         if (normalized.fiveHour.enabled) {
@@ -496,13 +626,13 @@ export async function setupVisualizationPage(options = {}) {
           parts.push(`${normalized.daily.limit} per day`);
         }
         if (parts.length === 0) {
-          limitText = '<span style="color: #999;">No limits active</span>';
+          limitSpan.style.color = '#999';
+          limitSpan.textContent = 'No limits active';
         } else {
-          limitText = parts.join(', ');
+          limitSpan.textContent = parts.join(', ');
         }
       }
-
-      info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
+      info.appendChild(limitSpan);
 
       // Quick toggle switch
       const toggleWrapper = document.createElement('label');
@@ -635,15 +765,24 @@ export async function setupVisualizationPage(options = {}) {
       const info = document.createElement('div');
       info.className = 'quick-limit-info';
 
-      let statusText = '';
+      const domainDiv = document.createElement('div');
+      domainDiv.className = 'quick-limit-domain';
+      domainDiv.textContent = domain;
+
+      const statsDiv = document.createElement('div');
+      statsDiv.className = 'quick-limit-stats';
+
+      const visitCountSpan = document.createElement('span');
+      visitCountSpan.className = 'visit-count';
+      visitCountSpan.textContent = `${visitCount} visits`;
+
+      const statusSpan = document.createElement('span');
       if (!hasLimit) {
-        statusText = `
-          <span class="limit-status no-limit">
-            Default ${defaultConfig.fiveHour.limit}/5h · ${defaultConfig.daily.limit}/day
-          </span>
-        `.trim();
+        statusSpan.className = 'limit-status no-limit';
+        statusSpan.textContent = `Default ${defaultConfig.fiveHour.limit}/5h · ${defaultConfig.daily.limit}/day`;
       } else if (!isEnabled) {
-        statusText = '<span class="limit-status disabled">Disabled</span>';
+        statusSpan.className = 'limit-status disabled';
+        statusSpan.textContent = 'Disabled';
       } else {
         const parts = [];
         if (limitConfig.fiveHour.enabled) {
@@ -652,16 +791,12 @@ export async function setupVisualizationPage(options = {}) {
         if (limitConfig.daily.enabled) {
           parts.push(`${limitConfig.daily.limit}/day`);
         }
-        statusText = `<span class="limit-status active">${parts.join(', ')}</span>`;
+        statusSpan.className = 'limit-status active';
+        statusSpan.textContent = parts.join(', ');
       }
 
-      info.innerHTML = `
-        <div class="quick-limit-domain">${domain}</div>
-        <div class="quick-limit-stats">
-          <span class="visit-count">${visitCount} visits</span>
-          ${statusText}
-        </div>
-      `;
+      statsDiv.append(visitCountSpan, document.createTextNode(' '), statusSpan);
+      info.append(domainDiv, statsDiv);
 
       const actions = document.createElement('div');
       actions.className = 'quick-limit-actions';
@@ -765,14 +900,10 @@ export async function setupVisualizationPage(options = {}) {
             ? await loadPreviousPeriodData(currentRange)
             : null;
 
-          const summaryText = generateInsightsSummary(
-            aggregatedVisits,
-            limits,
-            currentRange,
-            previousData,
-          );
+          summaryElement.textContent = '';
           summaryElement.classList.add('updating');
-          summaryElement.innerHTML = summaryText;
+          const frag = buildSummaryFragment(aggregatedVisits, limits, currentRange, previousData);
+          summaryElement.appendChild(frag);
           // Remove animation class after animation completes
           setTimeout(() => {
             summaryElement.classList.remove('updating');
@@ -791,13 +922,17 @@ export async function setupVisualizationPage(options = {}) {
       console.error('Error rendering visualization:', error);
       console.error('Error stack:', error.stack);
       if (graphContainer) {
-        const errorHtml = `
-          <div class="graph-error">
-            Error loading visualization<br/>
-            <small style="font-size: 11px; opacity: 0.7;">${error.message}</small>
-          </div>
-        `;
-        graphContainer.innerHTML = errorHtml;
+        graphContainer.textContent = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'graph-error';
+        errorDiv.appendChild(document.createTextNode('Error loading visualization'));
+        errorDiv.appendChild(document.createElement('br'));
+        const small = document.createElement('small');
+        small.style.fontSize = '11px';
+        small.style.opacity = '0.7';
+        small.textContent = error.message;
+        errorDiv.appendChild(small);
+        graphContainer.appendChild(errorDiv);
       }
     }
   };
@@ -854,17 +989,34 @@ export async function setupVisualizationPage(options = {}) {
       const limits = await getLimits();
       const insights = generateWeeklyInsights(weekData, limits);
 
-      // Render insights
-      insightsContent.innerHTML = insights
-        .map(
-          (insight) => `
-        <div class="insight-card ${insight.type}">
-          <div class="insight-card-title">${insight.title}</div>
-          <div class="insight-card-text">${insight.text}</div>
-        </div>
-      `,
-        )
-        .join('');
+      // Render insights safely
+      insightsContent.textContent = '';
+      insights.forEach((insight) => {
+        const card = document.createElement('div');
+        card.className = `insight-card ${insight.type}`;
+        const titleEl = document.createElement('div');
+        titleEl.className = 'insight-card-title';
+        titleEl.textContent = insight.title;
+        const textEl = document.createElement('div');
+        textEl.className = 'insight-card-text';
+        if (insight.domain) {
+          textEl.appendChild(document.createTextNode('You visited '));
+          const domainSpan = document.createElement('span');
+          domainSpan.className = 'insight-stat';
+          domainSpan.textContent = insight.domain;
+          textEl.appendChild(domainSpan);
+          textEl.appendChild(document.createTextNode(' the most this week with '));
+          const countSpan = document.createElement('span');
+          countSpan.className = 'insight-stat';
+          countSpan.textContent = `${insight.count} visits`;
+          textEl.appendChild(countSpan);
+          textEl.appendChild(document.createTextNode('.'));
+        } else {
+          textEl.textContent = insight.text;
+        }
+        card.append(titleEl, textEl);
+        insightsContent.appendChild(card);
+      });
 
       insightsReport.style.display = 'block';
     });

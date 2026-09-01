@@ -26,19 +26,19 @@ async function renderRulesList() {
     const item = document.createElement('div');
     item.className = 'rule-item';
 
-    // Determine status text
-    const badges = [];
+    // Build rule badges safely (numeric limits only, domain handled via textContent)
+    const badgeInfos = [];
     const mutedStyle = 'border-color: var(--color-text-muted); color: var(--color-text-muted);';
     const successStyle = 'border-color: var(--color-success); color: var(--color-success);';
     if (!normalized.enabled) {
-      badges.push(`<span class="rule-badge" style="${mutedStyle}">Disabled</span>`);
+      badgeInfos.push({ text: 'Disabled', style: mutedStyle });
     } else {
-      badges.push(`<span class="rule-badge" style="${successStyle}">Active</span>`);
+      badgeInfos.push({ text: 'Active', style: successStyle });
       if (normalized.fiveHour.enabled) {
-        badges.push(`<span class="rule-badge">${normalized.fiveHour.limit} / 5h</span>`);
+        badgeInfos.push({ text: `${normalized.fiveHour.limit} / 5h`, style: '' });
       }
       if (normalized.daily.enabled) {
-        badges.push(`<span class="rule-badge">${normalized.daily.limit} / day</span>`);
+        badgeInfos.push({ text: `${normalized.daily.limit} / day`, style: '' });
       }
     }
 
@@ -46,29 +46,63 @@ async function renderRulesList() {
     const toggleTitle = normalized.enabled ? 'Disable' : 'Enable';
     const toggleIcon = normalized.enabled ? '⏸️' : '▶️';
 
-    item.innerHTML = `
-      <div class="rule-info">
-        <div class="rule-icon">
-          <img src="${faviconUrl}" alt=""
-            style="width: 20px; height: 20px; opacity: 0.8;"
-            onerror="this.style.display='none'">
-        </div>
-        <div class="rule-details">
-          <h3>${domain}</h3>
-          <div class="rule-badges">
-            ${badges.join('')}
-          </div>
-        </div>
-      </div>
-      <div class="rule-actions">
-        <button class="btn-icon toggle-btn" title="${toggleTitle}"
-          data-domain="${domain}">${toggleIcon}</button>
-        <button class="btn-icon edit-btn" title="Edit"
-          data-domain="${domain}">✏️</button>
-        <button class="btn-icon delete-btn" title="Delete"
-          data-domain="${domain}">🗑️</button>
-      </div>
-    `;
+    const ruleInfo = document.createElement('div');
+    ruleInfo.className = 'rule-info';
+
+    const ruleIcon = document.createElement('div');
+    ruleIcon.className = 'rule-icon';
+    const iconImg = document.createElement('img');
+    iconImg.src = faviconUrl;
+    iconImg.alt = '';
+    iconImg.style.width = '20px';
+    iconImg.style.height = '20px';
+    iconImg.style.opacity = '0.8';
+    iconImg.onerror = function () {
+      this.style.display = 'none';
+    };
+    ruleIcon.appendChild(iconImg);
+
+    const ruleDetails = document.createElement('div');
+    ruleDetails.className = 'rule-details';
+    const domainHeading = document.createElement('h3');
+    domainHeading.textContent = domain;
+    const badgesContainer = document.createElement('div');
+    badgesContainer.className = 'rule-badges';
+    badgeInfos.forEach((b) => {
+      const badge = document.createElement('span');
+      badge.className = 'rule-badge';
+      if (b.style) badge.setAttribute('style', b.style);
+      badge.textContent = b.text;
+      badgesContainer.appendChild(badge);
+    });
+    ruleDetails.append(domainHeading, badgesContainer);
+
+    ruleInfo.append(ruleIcon, ruleDetails);
+
+    const ruleActions = document.createElement('div');
+    ruleActions.className = 'rule-actions';
+
+    const toggleBtnEl = document.createElement('button');
+    toggleBtnEl.className = 'btn-icon toggle-btn';
+    toggleBtnEl.title = toggleTitle;
+    toggleBtnEl.dataset.domain = domain;
+    toggleBtnEl.textContent = toggleIcon;
+
+    const editBtnEl = document.createElement('button');
+    editBtnEl.className = 'btn-icon edit-btn';
+    editBtnEl.title = 'Edit';
+    editBtnEl.dataset.domain = domain;
+    editBtnEl.textContent = '✏️';
+
+    const deleteBtnEl = document.createElement('button');
+    deleteBtnEl.className = 'btn-icon delete-btn';
+    deleteBtnEl.title = 'Delete';
+    deleteBtnEl.dataset.domain = domain;
+    deleteBtnEl.textContent = '🗑️';
+
+    ruleActions.append(toggleBtnEl, editBtnEl, deleteBtnEl);
+
+    item.append(ruleInfo, ruleActions);
 
     // Add event listeners
     const toggleBtn = item.querySelector('.toggle-btn');

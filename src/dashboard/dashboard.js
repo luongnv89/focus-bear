@@ -107,26 +107,55 @@ async function showInsightsPopup() {
       const limits = await getLimits();
       const insights = generateWeeklyInsights(weekData, limits);
 
+      insightsContent.textContent = '';
       if (insights.length === 0) {
         const msg = 'No insights available for this week yet. Start browsing to see your patterns!';
-        insightsContent.innerHTML = `<div class="insight-card"><div class="insight-card-text">${msg}</div></div>`;
+        const card = document.createElement('div');
+        card.className = 'insight-card';
+        const textDiv = document.createElement('div');
+        textDiv.className = 'insight-card-text';
+        textDiv.textContent = msg;
+        card.appendChild(textDiv);
+        insightsContent.appendChild(card);
       } else {
-        insightsContent.innerHTML = insights
-          .map(
-            (insight) => `
-            <div class="insight-card ${insight.type === 'info' ? '' : insight.type}">
-                <div class="insight-card-title">${insight.title}</div>
-                <div class="insight-card-text">${insight.text}</div>
-            </div>
-        `,
-          )
-          .join('');
+        insights.forEach((insight) => {
+          const card = document.createElement('div');
+          card.className = `insight-card ${insight.type === 'info' ? '' : insight.type}`;
+          const titleEl = document.createElement('div');
+          titleEl.className = 'insight-card-title';
+          titleEl.textContent = insight.title;
+          const textEl = document.createElement('div');
+          textEl.className = 'insight-card-text';
+          if (insight.domain) {
+            textEl.appendChild(document.createTextNode('You visited '));
+            const domainSpan = document.createElement('span');
+            domainSpan.className = 'insight-stat';
+            domainSpan.textContent = insight.domain;
+            textEl.appendChild(domainSpan);
+            textEl.appendChild(document.createTextNode(' the most this week with '));
+            const countSpan = document.createElement('span');
+            countSpan.className = 'insight-stat';
+            countSpan.textContent = `${insight.count} visits`;
+            textEl.appendChild(countSpan);
+            textEl.appendChild(document.createTextNode('.'));
+          } else {
+            textEl.textContent = insight.text;
+          }
+          card.append(titleEl, textEl);
+          insightsContent.appendChild(card);
+        });
       }
     } catch (error) {
       console.error('Error generating weekly insights:', error);
       const errorMsg = 'Unable to load insights at this time.';
-      const errorHtml = `<div class="insight-card warning"><div class="insight-card-text">${errorMsg}</div></div>`;
-      insightsContent.innerHTML = errorHtml;
+      insightsContent.textContent = '';
+      const card = document.createElement('div');
+      card.className = 'insight-card warning';
+      const textDiv = document.createElement('div');
+      textDiv.className = 'insight-card-text';
+      textDiv.textContent = errorMsg;
+      card.appendChild(textDiv);
+      insightsContent.appendChild(card);
     }
   }
 
@@ -868,31 +897,50 @@ async function handleDomainDrilldown(event) {
 
   const subpathCount = Object.keys(domainData.subpaths || {}).length;
 
-  let limitBadges = '<span class="limit-status-badge limit-disabled">No limits</span>';
+  panelHeader.textContent = '';
+  const drillHeader = document.createElement('div');
+  drillHeader.className = 'drilldown-table-header';
+
+  const drillInfo = document.createElement('div');
+  drillInfo.className = 'drilldown-info';
+  const h3 = document.createElement('h3');
+  h3.textContent = `Path Statistics for ${domain}`;
+  const p = document.createElement('p');
+  p.className = 'panel-subtitle';
+  p.textContent = `${domainData.count} total visits • ${subpathCount} subpaths`;
+  drillInfo.append(h3, p);
+
+  const drillStatus = document.createElement('div');
+  drillStatus.className = 'drilldown-status';
+
   if (limitConfig && limitConfig.enabled) {
-    limitBadges = `<span class="limit-status-badge limit-enabled">✓ Limits Active</span>
-      <span class="limit-details">
-        ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
-        ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
-        ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
-      </span>`;
+    const activeBadge = document.createElement('span');
+    activeBadge.className = 'limit-status-badge limit-enabled';
+    activeBadge.textContent = '✓ Limits Active';
+    drillStatus.appendChild(activeBadge);
+
+    const detailsSpan = document.createElement('span');
+    detailsSpan.className = 'limit-details';
+    const parts = [];
+    if (limitConfig.fiveHour?.enabled) parts.push(`${limitConfig.fiveHour.limit}/5hr`);
+    if (limitConfig.daily?.enabled) parts.push(`${limitConfig.daily.limit}/day`);
+    detailsSpan.textContent = parts.join(' • ');
+    if (parts.length > 0) drillStatus.appendChild(detailsSpan);
+  } else {
+    const noBadge = document.createElement('span');
+    noBadge.className = 'limit-status-badge limit-disabled';
+    noBadge.textContent = 'No limits';
+    drillStatus.appendChild(noBadge);
   }
 
-  // Create header with domain info and limitation status
-  panelHeader.innerHTML = `
-  <div class="drilldown-table-header">
-    <div class="drilldown-info">
-      <h3>Path Statistics for ${domain}</h3>
-      <p class="panel-subtitle">${domainData.count} total visits • ${subpathCount} subpaths</p>
-    </div>
-    <div class="drilldown-status">
-      ${limitBadges}
-      <button class="drilldown-edit-btn" data-domain="${domain}">
-        Edit Limitation Settings
-      </button>
-    </div>
-  </div>
-`;
+  const editBtnEl = document.createElement('button');
+  editBtnEl.className = 'drilldown-edit-btn';
+  editBtnEl.dataset.domain = domain;
+  editBtnEl.textContent = 'Edit Limitation Settings';
+  drillStatus.appendChild(editBtnEl);
+
+  drillHeader.append(drillInfo, drillStatus);
+  panelHeader.appendChild(drillHeader);
 
   // Add click handler for edit button
   const editBtn = panelHeader.querySelector('.drilldown-edit-btn');
@@ -993,20 +1041,39 @@ function renderSubpathTable(domain, domainData) {
     const lastVisitDate = new Date(subpath.lastVisit).toLocaleString();
 
     const row = document.createElement('tr');
-    row.innerHTML = `
-      <td class="subpath-cell">
-        <span class="subpath-domain">${domain}</span>
-        <span class="subpath-path">${subpath.subpath}</span>
-      </td>
-      <td class="visits-cell">${subpath.count}</td>
-      <td class="date-cell">${lastVisitDate}</td>
-      <td class="percentage-cell">
-        <div class="percentage-bar-container">
-          <div class="percentage-bar" style="width: ${percentage}%"></div>
-          <span class="percentage-text">${percentage}%</span>
-        </div>
-      </td>
-    `;
+
+    const subpathCell = document.createElement('td');
+    subpathCell.className = 'subpath-cell';
+    const domainSpan = document.createElement('span');
+    domainSpan.className = 'subpath-domain';
+    domainSpan.textContent = domain;
+    const pathSpan = document.createElement('span');
+    pathSpan.className = 'subpath-path';
+    pathSpan.textContent = subpath.subpath;
+    subpathCell.append(domainSpan, pathSpan);
+
+    const visitsCell = document.createElement('td');
+    visitsCell.className = 'visits-cell';
+    visitsCell.textContent = String(subpath.count);
+
+    const dateCell = document.createElement('td');
+    dateCell.className = 'date-cell';
+    dateCell.textContent = lastVisitDate;
+
+    const percCell = document.createElement('td');
+    percCell.className = 'percentage-cell';
+    const barContainer = document.createElement('div');
+    barContainer.className = 'percentage-bar-container';
+    const bar = document.createElement('div');
+    bar.className = 'percentage-bar';
+    bar.style.width = `${percentage}%`;
+    const percText = document.createElement('span');
+    percText.className = 'percentage-text';
+    percText.textContent = `${percentage}%`;
+    barContainer.append(bar, percText);
+    percCell.appendChild(barContainer);
+
+    row.append(subpathCell, visitsCell, dateCell, percCell);
 
     tbody.appendChild(row);
   });

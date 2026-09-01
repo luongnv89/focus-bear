@@ -54,16 +54,16 @@ if (!window.focusBearToastInjected) {
 
     toast.classList.add(`focusbear-toast-${severity}`);
 
-    // Build message
-    let message;
+    // Build message remainder text
     const limitLabel = limitType === 'fiveHour' ? '5-hour window' : 'day';
     const timeframeLabel = limitType === 'fiveHour' ? 'window' : 'day';
+    let remainderText;
     if (remaining === 0) {
-      message = `<strong>${domain}</strong><br/>Limit reached for this ${limitLabel}`;
+      remainderText = `Limit reached for this ${limitLabel}`;
     } else if (remaining === 1) {
-      message = `<strong>${domain}</strong><br/>1 visit left this ${timeframeLabel}`;
+      remainderText = `1 visit left this ${timeframeLabel}`;
     } else {
-      message = `<strong>${domain}</strong><br/>${remaining} visits left this ${limitLabel}`;
+      remainderText = `${remaining} visits left this ${limitLabel}`;
     }
 
     // Icon based on severity
@@ -74,10 +74,19 @@ if (!window.focusBearToastInjected) {
       icon = '⚠️';
     }
 
-    toast.innerHTML = `
-      <div class="focusbear-toast-icon">${icon}</div>
-      <div class="focusbear-toast-content">${message}</div>
-    `;
+    const iconEl = document.createElement('div');
+    iconEl.className = 'focusbear-toast-icon';
+    iconEl.textContent = icon;
+
+    const contentEl = document.createElement('div');
+    contentEl.className = 'focusbear-toast-content';
+    const domainStrong = document.createElement('strong');
+    domainStrong.textContent = domain;
+    contentEl.appendChild(domainStrong);
+    contentEl.appendChild(document.createElement('br'));
+    contentEl.appendChild(document.createTextNode(remainderText));
+
+    toast.append(iconEl, contentEl);
 
     // Add to container
     toastContainer.appendChild(toast);

@@ -308,25 +308,35 @@ export function renderRadialGraph(container, data, options = {}) {
         // eslint-disable-next-line newline-per-chained-call
         d3.select(this).select('circle').transition().duration(200).attr('transform', 'scale(1.1)');
 
-        let content = '';
+        tooltip.selectAll('*').remove();
         if (d.group === 'center') {
-          content = '<strong>You</strong><br/>Center of your digital universe';
+          tooltip.append('strong').text('You');
+          tooltip.append('br');
+          tooltip.append('span').text('Center of your digital universe');
         } else if (d.group === 'domain' || d.group === 'center-domain') {
-          const badgeInfo = badges[d.id] ? `<br/>🏆 Focus Hero (${badges[d.id].streak} days!)` : '';
-          content = `
-            <strong>${d.id}</strong><br/>
-            <span style="opacity:0.8">${d.categoryName || 'Website'}</span><br/>
-            <strong>${d.count}</strong> visits${badgeInfo}
-          `;
+          tooltip.append('strong').text(d.id);
+          tooltip.append('br');
+          tooltip
+            .append('span')
+            .style('opacity', '0.8')
+            .text(d.categoryName || 'Website');
+          tooltip.append('br');
+          tooltip.append('strong').text(String(d.count));
+          tooltip.append('span').text(' visits');
+          if (badges[d.id]) {
+            tooltip.append('br');
+            tooltip.append('span').text(`🏆 Focus Hero (${badges[d.id].streak} days!)`);
+          }
         } else if (d.group === 'subpath') {
-          content = `
-            <strong>${d.id}</strong><br/>
-            Path on ${d.domain}<br/>
-            <strong>${d.count}</strong> visits
-          `;
+          tooltip.append('strong').text(d.id);
+          tooltip.append('br');
+          tooltip.append('span').text(`Path on ${d.domain}`);
+          tooltip.append('br');
+          tooltip.append('strong').text(String(d.count));
+          tooltip.append('span').text(' visits');
         }
 
-        tooltip.html(content).style('visibility', 'visible');
+        tooltip.style('visibility', 'visible');
       })
       .on('mousemove', (event) => {
         tooltip.style('top', `${event.pageY - 40}px`).style('left', `${event.pageX + 10}px`);
