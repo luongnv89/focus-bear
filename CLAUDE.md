@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**FocusBear** is a Chrome extension (Manifest V3) that helps users track focus-switching habits through an interactive D3.js visualization. The extension is privacy-first and local-only with no external API calls or cloud synchronization.
+**FocusPaw** is a Chrome extension (Manifest V3) that helps users track focus-switching habits through an interactive D3.js visualization. The extension is privacy-first and local-only with no external API calls or cloud synchronization.
 
 **Current Status:** v1.0.0 - First official release. Core features complete, Chrome Web Store live.
 
@@ -212,11 +212,11 @@ This ensures every build is traceable to a specific git commit for debugging and
 ```bash
 # View extension logs
 # 1. Open chrome://extensions/
-# 2. Find "FocusBear"
+# 2. Find "FocusPaw"
 # 3. Click "Inspect views" > "service_worker"
 
 # Debug popup
-# 1. Click extension icon (FocusBear in toolbar)
+# 1. Click extension icon (FocusPaw in toolbar)
 # 2. Right-click popup → "Inspect"
 
 # Check storage

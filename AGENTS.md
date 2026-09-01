@@ -1,4 +1,4 @@
-# AGENTS.md – Coding Instructions for FocusBear AI Agent
+# AGENTS.md – Coding Instructions for FocusPaw AI Agent
 
 - **Code Improvement**
   - Always inspect existing code and modules before adding new functions; prefer refactoring and reuse over duplication.
@@ -49,7 +49,7 @@
     - Keep `docs/dev-setup.md`, `CLAUDE.md`, and `AGENTS.md` in sync on the recorded commands, storage-writer contract, and module layout (`background/popup/dashboard/shared`).
 
 - **Security Considerations**
-  - Respect FocusBear’s **local-only, privacy-first** design:
+  - Respect FocusPaw's **local-only, privacy-first** design:
     - Never introduce external telemetry, tracking, or remote API calls without explicit instruction.
     - Do not store or transmit sensitive data (full URL logs, user identifiers) outside `chrome.storage.local`.
   - Use **least-privilege permissions** in `manifest.json`:
