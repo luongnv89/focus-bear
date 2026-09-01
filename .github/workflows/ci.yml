@@ -97,8 +97,45 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --coverage
 
+      # Upload coverage reports to Codecov. The 60% line-coverage threshold
+      # is enforced by the next step (the authoritative gate), so this
+      # upload step is non-fatal: a missing CODECOV_TOKEN or a transient
+      # upload failure must not break CI. The Codecov dashboard is a
+      # secondary signal; the local 60% gate below is the contract.
       - name: Upload coverage reports
+        if: always()
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN || '' }}
+
+      - name: Enforce line coverage threshold (>=60%)
+        if: always()
+        run: |
+          set -euo pipefail
+          THRESHOLD=60
+          LCOV=./coverage/lcov.info
+          if [ ! -f "$LCOV" ]; then
+            echo "::error::Coverage report $LCOV not found — failing the build."
+            exit 1
+          fi
+          # Aggregate lcov LF (lines found) and LH (lines hit) across all records.
+          read -r LH LF < <(awk -F: '
+            /^LF:/ { lf += $2 }
+            /^LH:/ { lh += $2 }
+            END { printf "%d %d\n", (lh ? lh : 0), (lf ? lf : 0) }
+          ' "$LCOV")
+          if [ "${LF}" -le 0 ]; then
+            echo "::error::No executable lines found in $LCOV — failing the build."
+            exit 1
+          fi
+          PCT=$(awk -v h="$LH" -v f="$LF" 'BEGIN { printf "%.4f", (h * 100.0) / f }')
+          echo "::notice::Line coverage: ${PCT}% (${LH}/${LF}, threshold ${THRESHOLD}%)"
+          if awk -v p="$PCT" -v t="$THRESHOLD" 'BEGIN { exit !(p + 0 >= t + 0) }'; then
+            echo "::notice::Coverage gate passed."
+          else
+            echo "::error::Line coverage ${PCT}% is below the ${THRESHOLD}% threshold."
+            exit 1
+          fi
