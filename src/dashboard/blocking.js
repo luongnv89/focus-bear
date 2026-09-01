@@ -32,16 +32,9 @@ async function renderRulesList() {
 
     const ruleIcon = document.createElement('div');
     ruleIcon.className = 'rule-icon';
-    const favicon = document.createElement('img');
-    favicon.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
-    favicon.alt = '';
-    favicon.style.width = '20px';
-    favicon.style.height = '20px';
-    favicon.style.opacity = '0.8';
-    favicon.onerror = function () {
-      this.style.display = 'none';
-    };
-    ruleIcon.appendChild(favicon);
+    // Favicon removed for privacy — no third-party favicon fetches
+    // (see PRIVACY.md "Third-Party Services" and issue #53 / F-SEC-001).
+    // The icon container is kept so existing layout/CSS still applies.
 
     const ruleDetails = document.createElement('div');
     ruleDetails.className = 'rule-details';
