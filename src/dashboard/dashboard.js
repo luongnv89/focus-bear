@@ -96,31 +96,38 @@ async function showInsightsPopup() {
   // Load and display insights content
   const insightsContent = document.getElementById('insights-content');
   if (insightsContent) {
+    const createInsightCard = (type, title, text) => {
+      const card = document.createElement('div');
+      card.className = `insight-card${type === 'info' ? '' : ` ${type}`}`;
+      const titleEl = document.createElement('div');
+      titleEl.className = 'insight-card-title';
+      titleEl.textContent = title;
+      const textEl = document.createElement('div');
+      textEl.className = 'insight-card-text';
+      textEl.textContent = text;
+      card.append(titleEl, textEl);
+      return card;
+    };
+
     try {
       const weekData = await loadAggregatedStats('week');
       const limits = await getLimits();
       const insights = generateWeeklyInsights(weekData, limits);
 
+      insightsContent.replaceChildren();
       if (insights.length === 0) {
         const msg = 'No insights available for this week yet. Start browsing to see your patterns!';
-        insightsContent.innerHTML = `<div class="insight-card"><div class="insight-card-text">${msg}</div></div>`;
+        insightsContent.appendChild(createInsightCard('info', '', msg));
       } else {
-        insightsContent.innerHTML = insights
-          .map(
-            (insight) => `
-            <div class="insight-card ${insight.type === 'info' ? '' : insight.type}">
-                <div class="insight-card-title">${insight.title}</div>
-                <div class="insight-card-text">${insight.text}</div>
-            </div>
-        `,
-          )
-          .join('');
+        insights.forEach((insight) => {
+          insightsContent.appendChild(createInsightCard(insight.type, insight.title, insight.text));
+        });
       }
     } catch (error) {
       console.error('Error generating weekly insights:', error);
       const errorMsg = 'Unable to load insights at this time.';
-      const errorHtml = `<div class="insight-card warning"><div class="insight-card-text">${errorMsg}</div></div>`;
-      insightsContent.innerHTML = errorHtml;
+      insightsContent.replaceChildren();
+      insightsContent.appendChild(createInsightCard('warning', '', errorMsg));
     }
   }
 
@@ -601,7 +608,7 @@ function renderTable() {
 
     if (!row.limit || !row.limit.enabled) {
       statusBadge.classList.add('no-limit');
-      statusBadge.innerHTML = 'No Limit';
+      statusBadge.textContent = 'No Limit';
       statusBadge.title = 'No limits configured for this domain';
     } else {
       // Evaluate five-hour and daily limits independently using today's data
@@ -617,20 +624,20 @@ function renderTable() {
 
       if (overFiveHour || overDaily) {
         statusBadge.classList.add('over-limit');
-        statusBadge.innerHTML = 'Blocked';
+        statusBadge.textContent = 'Blocked';
         statusBadge.title = 'Limit exceeded';
       } else if (nearFiveHour || nearDaily) {
         statusBadge.classList.add('near-limit');
-        statusBadge.innerHTML = 'Near Limit';
+        statusBadge.textContent = 'Near Limit';
         statusBadge.title = 'Approaching limit';
       } else if (dailyLimit || fiveHourLimit) {
         statusBadge.classList.add('under-limit');
-        statusBadge.innerHTML = 'On Track';
+        statusBadge.textContent = 'On Track';
         statusBadge.title = 'Within limits';
       } else {
         // Limit is enabled but no daily limit configured
         statusBadge.classList.add('no-limit');
-        statusBadge.innerHTML = 'Unlimited';
+        statusBadge.textContent = 'Unlimited';
         statusBadge.title = 'No active limits';
       }
     }
@@ -820,43 +827,54 @@ async function handleDomainDrilldown(event) {
 
   const subpathCount = Object.keys(domainData.subpaths || {}).length;
 
-  let limitBadges = '<span class="limit-status-badge limit-disabled">No limits</span>';
+  panelHeader.replaceChildren();
+  const drilldownHeader = document.createElement('div');
+  drilldownHeader.className = 'drilldown-table-header';
+
+  const drilldownInfo = document.createElement('div');
+  drilldownInfo.className = 'drilldown-info';
+  const drilldownTitle = document.createElement('h3');
+  drilldownTitle.textContent = `Path Statistics for ${domain}`;
+  const subtitle = document.createElement('p');
+  subtitle.className = 'panel-subtitle';
+  subtitle.textContent = `${domainData.count} total visits \u00B7 ${subpathCount} subpaths`;
+  drilldownInfo.append(drilldownTitle, subtitle);
+
+  const drilldownStatus = document.createElement('div');
+  drilldownStatus.className = 'drilldown-status';
   if (limitConfig && limitConfig.enabled) {
-    limitBadges = `<span class="limit-status-badge limit-enabled">✓ Limits Active</span>
-      <span class="limit-details">
-        ${limitConfig.fiveHour?.enabled ? `${limitConfig.fiveHour.limit}/5hr` : ''}
-        ${limitConfig.fiveHour?.enabled && limitConfig.daily?.enabled ? ' • ' : ''}
-        ${limitConfig.daily?.enabled ? `${limitConfig.daily.limit}/day` : ''}
-      </span>`;
+    const activeBadge = document.createElement('span');
+    activeBadge.className = 'limit-status-badge limit-enabled';
+    activeBadge.textContent = '\u2713 Limits Active';
+    drilldownStatus.appendChild(activeBadge);
+    const detailsSpan = document.createElement('span');
+    detailsSpan.className = 'limit-details';
+    const detailsParts = [];
+    if (limitConfig.fiveHour?.enabled) detailsParts.push(`${limitConfig.fiveHour.limit}/5hr`);
+    if (limitConfig.daily?.enabled) detailsParts.push(`${limitConfig.daily.limit}/day`);
+    detailsSpan.textContent = detailsParts.join(' \u00B7 ');
+    drilldownStatus.appendChild(detailsSpan);
+  } else {
+    const disabledBadge = document.createElement('span');
+    disabledBadge.className = 'limit-status-badge limit-disabled';
+    disabledBadge.textContent = 'No limits';
+    drilldownStatus.appendChild(disabledBadge);
   }
+  const editBtn = document.createElement('button');
+  editBtn.className = 'drilldown-edit-btn';
+  editBtn.dataset.domain = domain;
+  editBtn.textContent = 'Edit Limitation Settings';
+  editBtn.addEventListener('click', () => {
+    window.dispatchEvent(
+      new CustomEvent('openDomainSettings', {
+        detail: { domain },
+      }),
+    );
+  });
+  drilldownStatus.appendChild(editBtn);
 
-  // Create header with domain info and limitation status
-  panelHeader.innerHTML = `
-  <div class="drilldown-table-header">
-    <div class="drilldown-info">
-      <h3>Path Statistics for ${domain}</h3>
-      <p class="panel-subtitle">${domainData.count} total visits • ${subpathCount} subpaths</p>
-    </div>
-    <div class="drilldown-status">
-      ${limitBadges}
-      <button class="drilldown-edit-btn" data-domain="${domain}">
-        Edit Limitation Settings
-      </button>
-    </div>
-  </div>
-`;
-
-  // Add click handler for edit button
-  const editBtn = panelHeader.querySelector('.drilldown-edit-btn');
-  if (editBtn) {
-    editBtn.addEventListener('click', () => {
-      window.dispatchEvent(
-        new CustomEvent('openDomainSettings', {
-          detail: { domain },
-        }),
-      );
-    });
-  }
+  drilldownHeader.append(drilldownInfo, drilldownStatus);
+  panelHeader.appendChild(drilldownHeader);
 
   // Render subpath table
   renderSubpathTable(domain, domainData);
@@ -945,20 +963,39 @@ function renderSubpathTable(domain, domainData) {
     const lastVisitDate = new Date(subpath.lastVisit).toLocaleString();
 
     const row = document.createElement('tr');
-    row.innerHTML = `
-      <td class="subpath-cell">
-        <span class="subpath-domain">${domain}</span>
-        <span class="subpath-path">${subpath.subpath}</span>
-      </td>
-      <td class="visits-cell">${subpath.count}</td>
-      <td class="date-cell">${lastVisitDate}</td>
-      <td class="percentage-cell">
-        <div class="percentage-bar-container">
-          <div class="percentage-bar" style="width: ${percentage}%"></div>
-          <span class="percentage-text">${percentage}%</span>
-        </div>
-      </td>
-    `;
+
+    const subpathCell = document.createElement('td');
+    subpathCell.className = 'subpath-cell';
+    const domainSpan = document.createElement('span');
+    domainSpan.className = 'subpath-domain';
+    domainSpan.textContent = domain;
+    const pathSpan = document.createElement('span');
+    pathSpan.className = 'subpath-path';
+    pathSpan.textContent = subpath.subpath;
+    subpathCell.append(domainSpan, pathSpan);
+
+    const visitsCell = document.createElement('td');
+    visitsCell.className = 'visits-cell';
+    visitsCell.textContent = String(subpath.count);
+
+    const dateCell = document.createElement('td');
+    dateCell.className = 'date-cell';
+    dateCell.textContent = lastVisitDate;
+
+    const percentageCell = document.createElement('td');
+    percentageCell.className = 'percentage-cell';
+    const barContainer = document.createElement('div');
+    barContainer.className = 'percentage-bar-container';
+    const bar = document.createElement('div');
+    bar.className = 'percentage-bar';
+    bar.style.width = `${percentage}%`;
+    const percentText = document.createElement('span');
+    percentText.className = 'percentage-text';
+    percentText.textContent = `${percentage}%`;
+    barContainer.append(bar, percentText);
+    percentageCell.appendChild(barContainer);
+
+    row.append(subpathCell, visitsCell, dateCell, percentageCell);
 
     tbody.appendChild(row);
   });

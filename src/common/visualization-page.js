@@ -193,9 +193,7 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
 
   // Top distractions
   if (top3.length > 0) {
-    const topList = top3
-      .map((d) => `<strong class="summary-highlight">${d.domain}</strong> (${d.count} visits)`)
-      .join(', ');
+    const topList = top3.map((d) => `${d.domain} (${d.count} visits)`).join(', ');
     const distractionsLabel = top3.length === 1 ? 'distraction' : 'distractions';
     parts.push(`Your top ${distractionsLabel} ${rangeText}: ${topList}`);
   }
@@ -203,16 +201,12 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
   // Limit status
   if (overLimitCount > 0) {
     const domainLabel = overLimitCount === 1 ? 'domain' : 'domains';
-    parts.push(
-      `<span class="summary-warning">⚠️ You exceeded limits on ${overLimitCount} ${domainLabel}</span>`,
-    );
+    parts.push(`⚠️ You exceeded limits on ${overLimitCount} ${domainLabel}`);
   } else if (nearLimitCount > 0) {
     const domainLabel = nearLimitCount === 1 ? 'domain' : 'domains';
-    parts.push(
-      `<span class="summary-warning">You're approaching limits on ${nearLimitCount} ${domainLabel}</span>`,
-    );
+    parts.push(`You're approaching limits on ${nearLimitCount} ${domainLabel}`);
   } else if (Object.keys(limits).length > 0) {
-    parts.push('<span class="summary-success">✓ All limits under control</span>');
+    parts.push('✓ All limits under control');
   }
 
   // Total domains
@@ -237,22 +231,20 @@ function generateInsightsSummary(aggregatedData, limits, range, previousData = n
         `📈 ${visitChange} more visits (${prefix}${changePercent}%)`,
         'than previous period',
       ].join(' ');
-      parts.push(`<span class="summary-warning">${warningText}</span>`);
+      parts.push(warningText);
     } else if (visitChange < 0) {
       const successText = [
         `📉 ${Math.abs(visitChange)} fewer visits (${changePercent}%)`,
         'than previous period',
       ].join(' ');
-      parts.push(`<span class="summary-success">${successText}</span>`);
+      parts.push(successText);
     } else {
       parts.push('No change from previous period');
     }
   }
 
   const totalDomainLabel = totalDomains === 1 ? 'domain' : 'domains';
-  parts.push(
-    `Tracked <strong>${totalDomains}</strong> ${totalDomainLabel} with <strong>${totalVisits}</strong> total visits`,
-  );
+  parts.push(`Tracked ${totalDomains} ${totalDomainLabel} with ${totalVisits} total visits`);
 
   return `${parts.join('. ')}.`;
 }
@@ -276,10 +268,7 @@ export function generateWeeklyInsights(weekData, limits) {
 
   // Insight 1: Most visited domain
   const topDomain = sorted[0];
-  const mostVisitedText = [
-    `You visited <span class="insight-stat">${topDomain.domain}</span> the most this week`,
-    `with <span class="insight-stat">${topDomain.count} visits</span>.`,
-  ].join(' ');
+  const mostVisitedText = `You visited ${topDomain.domain} the most this week with ${topDomain.count} visits.`;
   insights.push({
     type: 'info',
     title: '🎯 Most Visited',
@@ -295,16 +284,15 @@ export function generateWeeklyInsights(weekData, limits) {
   });
 
   if (overLimitDomains.length > 0) {
+    const domainWord = overLimitDomains.length === 1 ? 'domain' : 'domains';
     const limitTextParts = [
-      `You exceeded daily limits on <span class="insight-stat">${overLimitDomains.length} ${
-        overLimitDomains.length === 1 ? 'domain' : 'domains'
-      }</span> this week.`,
+      `You exceeded daily limits on ${overLimitDomains.length} ${domainWord} this week.`,
       'Consider adjusting your limits or reducing usage.',
-    ];
+    ].join(' ');
     insights.push({
       type: 'warning',
       title: '⚠️ Limits Exceeded',
-      text: limitTextParts.join(' '),
+      text: limitTextParts,
     });
   } else if (Object.keys(limits).length > 0) {
     insights.push({
@@ -317,10 +305,7 @@ export function generateWeeklyInsights(weekData, limits) {
   // Insight 3: Total focus switches
   const totalVisits = sorted.reduce((sum, d) => sum + d.count, 0);
   const avgPerDay = Math.round(totalVisits / 7);
-  const activityText = [
-    `You switched focus <span class="insight-stat">${totalVisits} times</span> this week,`,
-    `averaging <span class="insight-stat">${avgPerDay} switches/day</span>.`,
-  ].join(' ');
+  const activityText = `You switched focus ${totalVisits} times this week, averaging ${avgPerDay} switches/day.`;
   insights.push({
     type: 'info',
     title: '📊 Activity Summary',
@@ -334,8 +319,8 @@ export function generateWeeklyInsights(weekData, limits) {
 
     if (percentageOfTotal > 60) {
       const recommendationText = [
-        `Your top 3 sites account for <span class="insight-stat">${percentageOfTotal}%</span>`,
-        'of your focus switches. Consider setting limits to improve focus distribution.',
+        `Your top 3 sites account for ${percentageOfTotal}% of your focus switches.`,
+        'Consider setting limits to improve focus distribution.',
       ].join(' ');
       insights.push({
         type: 'warning',
@@ -429,9 +414,14 @@ export async function setupVisualizationPage(options = {}) {
       const info = document.createElement('div');
       info.className = 'limit-item-info';
 
-      let limitText = '';
+      const domainStrong = document.createElement('strong');
+      domainStrong.textContent = domain;
+      info.appendChild(domainStrong);
+      info.appendChild(document.createElement('br'));
+      const limitSpan = document.createElement('span');
       if (!normalized.enabled) {
-        limitText = '<span style="color: #999;">Disabled</span>';
+        limitSpan.textContent = 'Disabled';
+        limitSpan.style.color = '#999';
       } else {
         const parts = [];
         if (normalized.fiveHour.enabled) {
@@ -441,13 +431,13 @@ export async function setupVisualizationPage(options = {}) {
           parts.push(`${normalized.daily.limit} per day`);
         }
         if (parts.length === 0) {
-          limitText = '<span style="color: #999;">No limits active</span>';
+          limitSpan.textContent = 'No limits active';
+          limitSpan.style.color = '#999';
         } else {
-          limitText = parts.join(', ');
+          limitSpan.textContent = parts.join(', ');
         }
       }
-
-      info.innerHTML = `<strong>${domain}</strong><br/><span>${limitText}</span>`;
+      info.appendChild(limitSpan);
 
       // Quick toggle switch
       const toggleWrapper = document.createElement('label');
@@ -580,15 +570,24 @@ export async function setupVisualizationPage(options = {}) {
       const info = document.createElement('div');
       info.className = 'quick-limit-info';
 
-      let statusText = '';
+      const domainDiv = document.createElement('div');
+      domainDiv.className = 'quick-limit-domain';
+      domainDiv.textContent = domain;
+
+      const statsDiv = document.createElement('div');
+      statsDiv.className = 'quick-limit-stats';
+      const visitSpan = document.createElement('span');
+      visitSpan.className = 'visit-count';
+      visitSpan.textContent = `${visitCount} visits`;
+      statsDiv.appendChild(visitSpan);
+
+      const statusSpan = document.createElement('span');
       if (!hasLimit) {
-        statusText = `
-          <span class="limit-status no-limit">
-            Default ${defaultConfig.fiveHour.limit}/5h · ${defaultConfig.daily.limit}/day
-          </span>
-        `.trim();
+        statusSpan.className = 'limit-status no-limit';
+        statusSpan.textContent = `Default ${defaultConfig.fiveHour.limit}/5h \u00B7 ${defaultConfig.daily.limit}/day`;
       } else if (!isEnabled) {
-        statusText = '<span class="limit-status disabled">Disabled</span>';
+        statusSpan.className = 'limit-status disabled';
+        statusSpan.textContent = 'Disabled';
       } else {
         const parts = [];
         if (limitConfig.fiveHour.enabled) {
@@ -597,16 +596,13 @@ export async function setupVisualizationPage(options = {}) {
         if (limitConfig.daily.enabled) {
           parts.push(`${limitConfig.daily.limit}/day`);
         }
-        statusText = `<span class="limit-status active">${parts.join(', ')}</span>`;
+        statusSpan.className = 'limit-status active';
+        statusSpan.textContent = parts.join(', ');
       }
+      statsDiv.appendChild(document.createTextNode(' '));
+      statsDiv.appendChild(statusSpan);
 
-      info.innerHTML = `
-        <div class="quick-limit-domain">${domain}</div>
-        <div class="quick-limit-stats">
-          <span class="visit-count">${visitCount} visits</span>
-          ${statusText}
-        </div>
-      `;
+      info.append(domainDiv, statsDiv);
 
       const actions = document.createElement('div');
       actions.className = 'quick-limit-actions';
@@ -717,7 +713,7 @@ export async function setupVisualizationPage(options = {}) {
             previousData,
           );
           summaryElement.classList.add('updating');
-          summaryElement.innerHTML = summaryText;
+          summaryElement.textContent = summaryText;
           // Remove animation class after animation completes
           setTimeout(() => {
             summaryElement.classList.remove('updating');
@@ -736,13 +732,17 @@ export async function setupVisualizationPage(options = {}) {
       console.error('Error rendering visualization:', error);
       console.error('Error stack:', error.stack);
       if (graphContainer) {
-        const errorHtml = `
-          <div class="graph-error">
-            Error loading visualization<br/>
-            <small style="font-size: 11px; opacity: 0.7;">${error.message}</small>
-          </div>
-        `;
-        graphContainer.innerHTML = errorHtml;
+        graphContainer.replaceChildren();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'graph-error';
+        errorDiv.appendChild(document.createTextNode('Error loading visualization'));
+        errorDiv.appendChild(document.createElement('br'));
+        const small = document.createElement('small');
+        small.style.fontSize = '11px';
+        small.style.opacity = '0.7';
+        small.textContent = error.message;
+        errorDiv.appendChild(small);
+        graphContainer.appendChild(errorDiv);
       }
     }
   };
