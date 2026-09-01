@@ -33,6 +33,9 @@ function getStatusColor(percent) {
   if (percent > 80) return 'var(--color-warning)';
   return 'var(--color-success)';
 }
+// "Near limit" threshold: 80% of a configured limit triggers the near-limit warning.
+const NEAR_LIMIT_THRESHOLD = 0.8;
+
 const tableFilters = {
   query: '',
   sortField: 'count',
@@ -632,8 +635,8 @@ function renderTable() {
 
       const overFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit;
       const overDaily = dailyLimit && todayCount >= dailyLimit;
-      const nearFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit * 0.8;
-      const nearDaily = dailyLimit && todayCount >= dailyLimit * 0.8;
+      const nearFiveHour = fiveHourLimit && fiveHourCount >= fiveHourLimit * NEAR_LIMIT_THRESHOLD;
+      const nearDaily = dailyLimit && todayCount >= dailyLimit * NEAR_LIMIT_THRESHOLD;
 
       if (overFiveHour || overDaily) {
         statusBadge.classList.add('over-limit');
@@ -1075,9 +1078,6 @@ async function updateStreakDisplay() {
   }
 }
 
-/**
- * Update focus score display in header
- */
 /**
  * Update focus score display in header
  */

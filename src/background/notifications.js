@@ -226,9 +226,9 @@ export async function clearNotificationHistory() {
  * Initialize notification system
  */
 export async function initializeNotifications() {
-  // Ensure preferences exist
+  // Ensure preferences exist (seed defaults if `enabled` was never set)
   const preferences = await getNotificationPreferences();
-  if (!preferences.enabled && preferences.enabled !== false) {
+  if (preferences.enabled === undefined) {
     await setNotificationPreferences(DEFAULT_PREFERENCES);
   }
 

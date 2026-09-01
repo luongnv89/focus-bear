@@ -35,7 +35,7 @@ export function renderRadialGraph(container, data, options = {}) {
     return;
   }
 
-  // Import D3 from CDN (loaded in popup.html/dashboard.html)
+  // D3 is vendored locally (loaded via vendor/d3.min.js in popup.html / dashboard.html)
   const { d3 } = window;
   if (!d3) {
     console.error('D3.js not loaded');
