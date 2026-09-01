@@ -471,16 +471,8 @@ function renderTable() {
     domainContent.style.alignItems = 'center';
     domainContent.style.gap = '12px';
 
-    const favicon = document.createElement('img');
-    favicon.src = `https://www.google.com/s2/favicons?domain=${row.domain}&sz=32`;
-    favicon.width = 20;
-    favicon.height = 20;
-    favicon.style.borderRadius = '4px';
-    favicon.onerror = () => {
-      favicon.style.display = 'none';
-    };
-    domainContent.appendChild(favicon);
-
+    // Favicon column removed for privacy — no third-party favicon fetches
+    // (see PRIVACY.md "Third-Party Services" and issue #53 / F-SEC-001).
     const domainBtn = document.createElement('button');
     domainBtn.type = 'button';
     domainBtn.className = 'domain-link';

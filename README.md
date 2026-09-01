@@ -80,7 +80,7 @@ FocusBear helps you understand and improve your browsing habits by tracking how 
 
 - ✅ All data stored locally in Chrome's storage
 - ✅ No external servers or API calls
-- ✅ No analytics or tracking
+- ✅ No analytics, telemetry, or third-party favicons, fonts, or images
 - ✅ No account required
 - ✅ Open source — verify yourself
 

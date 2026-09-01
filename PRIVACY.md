@@ -1,6 +1,6 @@
 # Privacy Policy for FocusBear
 
-**Last Updated:** November 29, 2024
+**Last Updated:** November 29, 2024 (updated to reflect removal of the Google S2 favicon fetch — see issue #53)
 
 ## Overview
 
@@ -74,6 +74,8 @@ FocusBear requests the following Chrome permissions:
 
 FocusBear does not use any third-party services, analytics, or tracking. The extension operates entirely offline once installed.
 
+Specifically, no page in the extension (popup, dashboard, blocking pages, options) makes any request to a non-`chrome-extension://` origin. Earlier versions rendered a per-domain favicon image fetched from Google's public S2 favicon service; that fetch was removed so the privacy claims below hold against a fresh network capture. There is no remote logo, font, analytics, telemetry, error reporter, or favicon service used anywhere in the extension.
+
 ## Children's Privacy
 
 FocusBear does not knowingly collect information from children under 13. The extension is intended for general audiences who want to improve their browsing habits.
@@ -101,6 +103,7 @@ If you have questions about this privacy policy or FocusBear's data practices:
 | Do you collect personal data? | No |
 | Do you send data to servers? | No |
 | Do you use analytics? | No |
+| Do you use third-party favicons, fonts, or images? | No |
 | Do you sell data? | No |
 | Can I delete my data? | Yes, anytime |
 | Can I export my data? | Yes, JSON or CSV |
