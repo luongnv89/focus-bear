@@ -9,7 +9,7 @@ if (!window.focusBearToastInjected) {
 
   // Create and inject toast container
   const toastContainer = document.createElement('div');
-  toastContainer.id = 'focusbear-toast-container';
+  toastContainer.id = 'focuspaw-toast-container';
   toastContainer.setAttribute('role', 'status');
   toastContainer.setAttribute('aria-live', 'polite');
   toastContainer.setAttribute('aria-atomic', 'true');
@@ -40,7 +40,7 @@ if (!window.focusBearToastInjected) {
   const showToast = (domain, remaining, limit, limitType = 'daily') => {
     // Create toast element
     const toast = document.createElement('div');
-    toast.className = 'focusbear-toast';
+    toast.className = 'focuspaw-toast';
     toast.setAttribute('role', 'alert');
 
     // Determine severity
@@ -52,7 +52,7 @@ if (!window.focusBearToastInjected) {
       severity = 'warning';
     }
 
-    toast.classList.add(`focusbear-toast-${severity}`);
+    toast.classList.add(`focuspaw-toast-${severity}`);
 
     // Build message text
     const limitLabel = limitType === 'fiveHour' ? '5-hour window' : 'day';
@@ -75,11 +75,11 @@ if (!window.focusBearToastInjected) {
     }
 
     const iconEl = document.createElement('div');
-    iconEl.className = 'focusbear-toast-icon';
+    iconEl.className = 'focuspaw-toast-icon';
     iconEl.textContent = icon;
 
     const contentEl = document.createElement('div');
-    contentEl.className = 'focusbear-toast-content';
+    contentEl.className = 'focuspaw-toast-content';
     const domainStrong = document.createElement('strong');
     domainStrong.textContent = domain;
     contentEl.appendChild(domainStrong);
@@ -93,12 +93,12 @@ if (!window.focusBearToastInjected) {
 
     // Trigger animation
     setTimeout(() => {
-      toast.classList.add('focusbear-toast-visible');
+      toast.classList.add('focuspaw-toast-visible');
     }, 10);
 
     // Auto-hide after 3.5 seconds
     setTimeout(() => {
-      toast.classList.remove('focusbear-toast-visible');
+      toast.classList.remove('focuspaw-toast-visible');
       // Remove from DOM after fade out
       setTimeout(() => {
         if (toast.parentNode) {

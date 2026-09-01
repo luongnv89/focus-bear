@@ -1,5 +1,5 @@
 /**
- * FocusBear Help & FAQ Page JavaScript
+ * FocusPaw Help & FAQ Page JavaScript
  * Handles FAQ accordion functionality, theme sync, and accessibility
  */
 

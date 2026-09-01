@@ -1,5 +1,5 @@
 /**
- * FocusBear D3.js Bubble Graph
+ * FocusPaw D3.js Bubble Graph
  * Interactive visualization of focus visit data
  */
 
@@ -416,7 +416,7 @@ export function renderRadialGraph(container, data, options = {}) {
   // Log performance metrics
   const graphPerfEnd = performance.now();
   const graphRenderTime = Math.round(graphPerfEnd - graphPerfStart);
-  console.log(`[FocusBear Performance] Graph init time: ${graphRenderTime}ms`);
+  console.log(`[FocusPaw Performance] Graph init time: ${graphRenderTime}ms`);
 
   // Return cleanup function
   return () => {

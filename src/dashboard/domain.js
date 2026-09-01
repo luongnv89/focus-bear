@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  document.title = `FocusBear • ${currentDomain}`;
+  document.title = `FocusPaw • ${currentDomain}`;
   const titleEl = document.getElementById('domain-title');
   if (titleEl) {
     titleEl.textContent = currentDomain;

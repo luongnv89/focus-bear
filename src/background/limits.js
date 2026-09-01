@@ -1,5 +1,5 @@
 /**
- * FocusBear Limits Enforcement Module
+ * FocusPaw Limits Enforcement Module
  * Handles per-site time-based limits (5-hour and daily) and blocking
  */
 

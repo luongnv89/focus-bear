@@ -1,5 +1,5 @@
 /**
- * FocusBear Data Storage Module
+ * FocusPaw Data Storage Module
  * Handles all interactions with chrome.storage.local
  *
  * Data Schema:

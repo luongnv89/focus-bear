@@ -1,5 +1,5 @@
 /**
- * FocusBear Focus-Switch Tracking Module
+ * FocusPaw Focus-Switch Tracking Module
  * Monitors tab activation and updates to track focus switches
  */
 

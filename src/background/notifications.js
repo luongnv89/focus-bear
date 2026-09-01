@@ -1,5 +1,5 @@
 /**
- * Notification System for FocusBear
+ * Notification System for FocusPaw
  * Handles motivational notifications, limit warnings, and achievement celebrations
  */
 
@@ -194,7 +194,7 @@ export async function showEncouragement() {
   ];
 
   const message = encouragements[Math.floor(Math.random() * encouragements.length)];
-  const title = 'FocusBear';
+  const title = 'FocusPaw';
 
   await showChromeNotification(title, message, NOTIFICATION_TYPES.ENCOURAGEMENT);
 }

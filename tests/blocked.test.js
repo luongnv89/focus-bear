@@ -63,8 +63,11 @@ describe('blocked page', () => {
       runtime: { getURL: (p) => `chrome-extension://id/${p}` },
     };
     // Provide URLSearchParams via jsdom window
-    delete window.location;
-    window.location = new URL('http://test/src/blocked/blocked.html?domain=example.com&count=10&limit=5&limitType=daily');
+    window.history.replaceState(
+      null,
+      '',
+      '/src/blocked/blocked.html?domain=example.com&count=10&limit=5&limitType=daily',
+    );
 
     // Import blocked.js side-effects – it will run loadBlockedPageData and timers
     // Use dynamic import to avoid top-level blocked evaluation pollution across tests

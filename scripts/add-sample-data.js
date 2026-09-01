@@ -1,5 +1,5 @@
 /**
- * Add sample data to test FocusBear drilldown feature
+ * Add sample data to test FocusPaw drilldown feature
  * Run this from the browser console on the extension's background page
  */
 
@@ -158,7 +158,7 @@ async function addSampleData() {
 
 // Auto-run when loaded in browser console
 if (typeof chrome !== 'undefined' && chrome.storage) {
-  console.log('🐻 FocusBear Sample Data Generator');
+  console.log('🐾 FocusPaw Sample Data Generator');
   console.log('Run: addSampleData()');
 } else {
   console.error('This script must be run in the Chrome extension context');

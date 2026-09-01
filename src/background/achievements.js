@@ -1,5 +1,5 @@
 /**
- * Achievement System for FocusBear
+ * Achievement System for FocusPaw
  * Tracks and unlocks achievements based on user behavior
  */
 
@@ -182,7 +182,7 @@ export const ACHIEVEMENTS = {
   'week-warrior': {
     id: 'week-warrior',
     name: 'Week Warrior',
-    description: 'Use FocusBear for 7 consecutive days',
+    description: 'Use FocusPaw for 7 consecutive days',
     icon: '🗓️',
     category: 'milestone',
     check: async () => {

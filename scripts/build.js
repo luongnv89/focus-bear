@@ -1,5 +1,5 @@
 /**
- * Build script for FocusBear extension
+ * Build script for FocusPaw extension
  * Creates a production-ready build
  */
 
@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-console.log('Building FocusBear extension...');
+console.log('Building FocusPaw extension...');
 
 // Create dist directory
 const distDir = path.join(rootDir, 'dist');

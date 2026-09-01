@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Generate PNG icons for the FocusBear extension
+ * Generate PNG icons for the FocusPaw extension
  * Converts the SVG icon to PNG files at multiple resolutions
  */
 
@@ -18,7 +18,7 @@ const svgPath = path.join(__dirname, '..', 'assets', 'icon.svg');
 const assetsDir = path.join(__dirname, '..', 'assets');
 
 async function generateIcons() {
-  console.log('🐻 Generating FocusBear icons from SVG...\n');
+  console.log('🐾 Generating FocusPaw icons from SVG...\n');
 
   // Create assets directory if it doesn't exist
   if (!fs.existsSync(assetsDir)) {

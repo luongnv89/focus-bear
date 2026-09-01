@@ -970,7 +970,7 @@ async function wireVisualizationActions(ctx, _options) {
         const jsonString = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const filename = `focusbear-data-${getTodayKey()}.json`;
+        const filename = `focuspaw-data-${getTodayKey()}.json`;
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -1011,7 +1011,7 @@ async function wireVisualizationActions(ctx, _options) {
         });
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
-        const filename = `focusbear-data-${getTodayKey()}.csv`;
+        const filename = `focuspaw-data-${getTodayKey()}.csv`;
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -1052,13 +1052,13 @@ async function wireVisualizationActions(ctx, _options) {
     await ctx.renderVisualization(ctx.currentRange);
     if (dom.loading) dom.loading.style.display = 'none';
     const loadTime = Math.round(performance.now() - perfStart);
-    console.log(`[FocusBear Performance] Page load time: ${loadTime}ms`);
+    console.log(`[FocusPaw Performance] Page load time: ${loadTime}ms`);
     if (loadTime > 300) {
-      console.warn('[FocusBear Performance] Load time exceeds target of 300ms');
+      console.warn('[FocusPaw Performance] Load time exceeds target of 300ms');
     }
   } catch (error) {
     console.error('Error initializing visualization page:', error);
-    if (dom.loading) dom.loading.textContent = 'Error loading FocusBear';
+    if (dom.loading) dom.loading.textContent = 'Error loading FocusPaw';
   }
 }
 

@@ -1,5 +1,5 @@
 /**
- * Watch script for FocusBear extension development
+ * Watch script for FocusPaw extension development
  * Simple file watcher for development
  */
 

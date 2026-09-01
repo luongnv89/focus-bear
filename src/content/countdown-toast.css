@@ -1,9 +1,9 @@
 /**
  * Countdown toast notification styles
- * Brand-aligned with FocusBear design system
+ * Brand-aligned with FocusPaw design system
  */
 
-#focusbear-toast-container {
+#focuspaw-toast-container {
   position: fixed;
   top: 20px;
   right: 20px;
@@ -21,7 +21,7 @@
     sans-serif;
 }
 
-.focusbear-toast {
+.focuspaw-toast {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -40,67 +40,67 @@
   border-left: 4px solid #1bff6e;
 }
 
-.focusbear-toast-visible {
+.focuspaw-toast-visible {
   opacity: 1;
   transform: translateX(0);
 }
 
-.focusbear-toast-icon {
+.focuspaw-toast-icon {
   font-size: 24px;
   line-height: 1;
   flex-shrink: 0;
 }
 
-.focusbear-toast-content {
+.focuspaw-toast-content {
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
   color: #1a1a1a;
 }
 
-.focusbear-toast-content strong {
+.focuspaw-toast-content strong {
   font-weight: 600;
   color: #0f9f46;
 }
 
 /* Severity variants */
-.focusbear-toast-info {
+.focuspaw-toast-info {
   border-left-color: #1bff6e;
 }
 
-.focusbear-toast-warning {
+.focuspaw-toast-warning {
   border-left-color: #5f5f5f;
   background: #1a1a1a;
 }
 
-.focusbear-toast-warning .focusbear-toast-content strong {
+.focuspaw-toast-warning .focuspaw-toast-content strong {
   color: #3a3a3a;
 }
 
-.focusbear-toast-danger {
+.focuspaw-toast-danger {
   border-left-color: #2a2a2a;
   background: #141414;
 }
 
-.focusbear-toast-danger .focusbear-toast-content strong {
+.focuspaw-toast-danger .focuspaw-toast-content strong {
   color: #2a2a2a;
 }
 
 /* Accessibility: Reduce motion */
 @media (prefers-reduced-motion: reduce) {
-  .focusbear-toast {
+  .focuspaw-toast {
     transition: opacity 0.15s ease;
     transform: none;
   }
 
-  .focusbear-toast-visible {
+  .focuspaw-toast-visible {
     transform: none;
   }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .focusbear-toast {
+  .focuspaw-toast {
     border: 2px solid currentColor;
   }
 }

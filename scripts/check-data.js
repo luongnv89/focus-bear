@@ -1,10 +1,10 @@
 /**
- * Check FocusBear Data
+ * Check FocusPaw Data
  * Run this in the browser console to see what data exists
  */
 
 async function checkData() {
-  console.log('🔍 Checking FocusBear data...\n');
+  console.log('🔍 Checking FocusPaw data...\n');
 
   const data = await chrome.storage.local.get(['visits', 'limits']);
   const visits = data.visits || {};
@@ -63,7 +63,7 @@ async function checkData() {
 
   console.log('\n✅ Data check complete!');
   console.log('\nTo view in dashboard:');
-  console.log('1. Open the FocusBear dashboard (click extension icon)');
+  console.log('1. Open the FocusPaw dashboard (click extension icon)');
   console.log('2. You should see domains in the radial graph');
   console.log('3. Double-click on a domain to see the drilldown view');
 
@@ -72,6 +72,6 @@ async function checkData() {
 
 // Auto-run
 if (typeof chrome !== 'undefined' && chrome.storage) {
-  console.log('🐻 FocusBear Data Checker\n');
+  console.log('🐾 FocusPaw Data Checker\n');
   checkData();
 }

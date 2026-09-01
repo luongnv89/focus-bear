@@ -1,5 +1,5 @@
 /**
- * Shared limit-form validation controller for FocusBear.
+ * Shared limit-form validation controller for FocusPaw.
  * Single source of truth for all three limit forms.
  */
 

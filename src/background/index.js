@@ -1,5 +1,5 @@
 /**
- * FocusBear Background Service Worker
+ * FocusPaw Background Service Worker
  * Entry point for the MV3 service worker
  */
 
@@ -19,16 +19,16 @@ async function openDashboardTab() {
     }
     await chrome.tabs.create({ url: dashboardUrl });
   } catch (error) {
-    console.error('Error opening FocusBear dashboard:', error);
+    console.error('Error opening FocusPaw dashboard:', error);
   }
 }
 
-console.log('FocusBear service worker initialized');
+console.log('FocusPaw service worker initialized');
 
 // Listen for extension installation — seed first-run data only; listeners are registered top-level
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
-    console.log('FocusBear installed - welcome!');
+    console.log('FocusPaw installed - welcome!');
 
     // Initialize storage with empty data (first-run seeding only)
     await chrome.storage.local.set({
@@ -42,7 +42,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
     console.log('Initial data structure created');
   } else if (details.reason === 'update') {
-    console.log('FocusBear updated to version', chrome.runtime.getManifest().version);
+    console.log('FocusPaw updated to version', chrome.runtime.getManifest().version);
   }
 });
 
@@ -82,4 +82,4 @@ chrome.action.onClicked.addListener(() => {
   openDashboardTab();
 });
 
-console.log('FocusBear background service worker ready');
+console.log('FocusPaw background service worker ready');

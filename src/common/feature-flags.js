@@ -1,5 +1,5 @@
 /**
- * Feature Flags for FocusBear
+ * Feature Flags for FocusPaw
  * Controls which features are enabled/disabled
  * Only flags actually consulted by source are listed here.
  * Consumer map:

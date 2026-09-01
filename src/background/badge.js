@@ -1,5 +1,5 @@
 /**
- * FocusBear Badge Module
+ * FocusPaw Badge Module
  * Updates extension badge with visit count
  */
 

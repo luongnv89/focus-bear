@@ -1,5 +1,5 @@
 /**
- * Single local-timezone-aware date utility for FocusBear.
+ * Single local-timezone-aware date utility for FocusPaw.
  * Replaces all inline date-key usages.
  */
 

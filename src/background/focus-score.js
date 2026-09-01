@@ -1,5 +1,5 @@
 /**
- * Focus Score Algorithm for FocusBear
+ * Focus Score Algorithm for FocusPaw
  * Calculates a daily/weekly focus score based on user behavior
  * Optimized for single-pass history (3.2): one storage read + memoized streak
  */

@@ -4,7 +4,7 @@
  */
 
 async function debugVisualization() {
-  console.log('🔍 Debugging FocusBear Visualization\n');
+  console.log('🔍 Debugging FocusPaw Visualization\n');
 
   const data = await chrome.storage.local.get(['visits']);
   const visits = data.visits || {};

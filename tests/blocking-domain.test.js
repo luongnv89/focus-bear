@@ -100,9 +100,7 @@ describe('blocking/domain pages', () => {
   test('domain stats calculation not throwing for missing domain param', async () => {
     makeChrome({}, {});
     // Simulate domain.js without domain param – should show toast and disable forms without throw
-    delete window.location;
-    window.location = new URL('http://test/src/dashboard/domain.html');
-    window.location.href = 'http://test/src/dashboard/domain.html';
+    window.history.replaceState(null, '', '/src/dashboard/domain.html');
     // Import should not throw (it registers DOMContentLoaded)
     expect(() => import('../src/dashboard/domain.js')).not.toThrow();
   });

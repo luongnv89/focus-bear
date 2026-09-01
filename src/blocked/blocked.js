@@ -2,7 +2,7 @@ import { getTodayKey, normalizeLimitConfig } from '../background/storage.js';
 import { getNextMidnight } from '../common/date-utils.js';
 
 /**
- * FocusBear Blocked Page Script
+ * FocusPaw Blocked Page Script
  */
 
 // Playful message variations - brand-aligned (supportive, not shameful)
@@ -232,7 +232,7 @@ helpTitle.textContent = 'To adjust limits:';
 
 const instructionsList = document.createElement('ol');
 [
-  'Click the FocusBear icon in your toolbar',
+  'Click the FocusPaw icon in your toolbar',
   'Click the ⚙️ settings button',
   'Configure your limits',
 ].forEach((instruction) => {
@@ -243,7 +243,7 @@ const instructionsList = document.createElement('ol');
 
 const alternateInstruction = document.createElement('p');
 alternateInstruction.className = 'settings-help-alt';
-alternateInstruction.textContent = 'Or right-click the FocusBear icon and select "Options".';
+alternateInstruction.textContent = 'Or right-click the FocusPaw icon and select "Options".';
 
 settingsHelp.append(helpTitle, instructionsList, alternateInstruction);
 container.appendChild(settingsHelp);
