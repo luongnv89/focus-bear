@@ -16,6 +16,7 @@ import {
 import { updateBlockingRules } from '../background/limits.js';
 import { getTodayKey, aggregateVisitsInRange } from './date-utils.js';
 import { validateLimitConfig, validateDomain } from './limit-validation.js';
+import { csvRow } from './csv-escape.js';
 
 // "Near limit" threshold: 80% of a configured limit triggers the near-limit warning.
 const NEAR_LIMIT_THRESHOLD = 0.8;
@@ -990,15 +991,20 @@ async function wireVisualizationActions(ctx, _options) {
         const data = await chrome.storage.local.get(['visits', 'limits']);
         const visits = data.visits || {};
         const limits = data.limits || {};
-        let csv = 'Date,Domain,Path,Visit Count,Daily Limit\n';
+        // csvRow() escapes each cell for RFC 4180 and prefixes formula-injection
+        // starters (= + - @ \t \r) with an apostrophe so spreadsheet apps open
+        // the value as text. The visit count and limit are emitted as strings —
+        // csvRow's structural escaping still applies if the limit string
+        // contains a comma.
+        let csv = csvRow(['Date', 'Domain', 'Path', 'Visit Count', 'Daily Limit']);
         Object.entries(visits).forEach(([date, dateVisits]) => {
           Object.entries(dateVisits).forEach(([domainName, domainData]) => {
             const limit = limits[domainName] || 'No limit';
             const count = domainData.count || 0;
-            csv += `"${date}","${domainName}","/",${count},"${limit}"\n`;
+            csv += csvRow([date, domainName, '/', count, limit]);
             if (domainData.subpaths) {
               Object.entries(domainData.subpaths).forEach(([subpath, subpathData]) => {
-                csv += `"${date}","${domainName}","${subpath}",${subpathData.count},"${limit}"\n`;
+                csv += csvRow([date, domainName, subpath, subpathData.count, limit]);
               });
             }
           });
