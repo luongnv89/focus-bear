@@ -5,14 +5,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // FocusBear dark theme
+        // FocusPaw dark theme
         dark: {
           bg: '#060606',
           card: '#0d0d0d',
           border: '#1a1a1a',
         },
         // Brand colors
-        primary: '#0E75B6', // Bear Blue
+        primary: '#0E75B6', // Paw Blue
         secondary: '#6C5CE7', // Focus Purple
         accent: '#1bff6e', // Bright Green (main accent)
         success: '#55EFC4', // Success Green

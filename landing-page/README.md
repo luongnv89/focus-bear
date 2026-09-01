@@ -1,6 +1,6 @@
-# FocusBear Landing Page
+# FocusPaw Landing Page
 
-Marketing landing page for the FocusBear Chrome extension.
+Marketing landing page for the FocusPaw Chrome extension.
 
 ## Tech Stack
 
@@ -135,7 +135,7 @@ Any static hosting service works. Build the project and deploy the `dist/` direc
 ## Features
 
 - **Responsive Design** - Works on all screen sizes (320px to 2560px)
-- **Dark Theme** - FocusBear brand colors with bright green accent
+- **Dark Theme** - FocusPaw brand colors with bright green accent
 - **Accessibility** - WCAG 2.1 AA compliant, keyboard navigation
 - **Performance** - Code splitting, lazy loading, optimized assets
 - **SEO** - Open Graph and Twitter Card meta tags
