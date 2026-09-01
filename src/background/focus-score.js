@@ -1,9 +1,10 @@
 /**
  * Focus Score Algorithm for FocusBear
  * Calculates a daily/weekly focus score based on user behavior
+ * Optimized for single-pass history (3.2): one storage read + memoized streak
  */
 
-import { calculateOverallStreak, normalizeLimitConfig } from './storage.js';
+import { computeOverallStreakFromData, normalizeLimitConfig } from './storage.js';
 
 function getDayTotalVisits(dayData = {}) {
   return Object.values(dayData).reduce((sum, visitData) => sum + (visitData.count || 0), 0);
@@ -28,6 +29,104 @@ function getCompliantDomainCount(enabledLimits, dayVisits) {
 }
 
 /**
+ * Pure helper: compute daily focus score from preloaded data
+ * @param {string} date - YYYY-MM-DD
+ * @param {Object} visits - all visits keyed by date
+ * @param {Object} limits - normalized limits keyed by domain
+ * @param {number} streakDays - current streak length
+ * @returns {number} score 0-100
+ */
+export function calculateDailyFocusScoreWithData(date, visits, limits, streakDays) {
+  const dayVisits = visits[date] || {};
+  const enabledLimits = Object.entries(limits).filter(([, config]) => config.enabled);
+
+  // Factor 1: Limits Compliance (40 points)
+  let complianceScore = 0;
+  if (enabledLimits.length > 0) {
+    const compliantDomains = getCompliantDomainCount(enabledLimits, dayVisits);
+    complianceScore = (compliantDomains / enabledLimits.length) * 40;
+  } else {
+    complianceScore = Object.keys(dayVisits).length > 0 ? 20 : 0;
+  }
+
+  // Factor 2: Total Visits Reduction (30 points)
+  const previousDates = getPreviousDates(date, 7);
+  const previousAverage = getAverageVisitsForDates(visits, previousDates);
+  const todayTotal = getDayTotalVisits(dayVisits);
+
+  let reductionScore = 0;
+  if (previousAverage > 0) {
+    const reduction = (previousAverage - todayTotal) / previousAverage;
+    const cappedReduction = Math.max(-0.5, Math.min(0.5, reduction));
+    reductionScore = (cappedReduction + 0.5) * 30;
+  } else {
+    reductionScore = 15;
+  }
+
+  // Factor 3: Streak Length (20 points)
+  let streakScore = 0;
+  if (streakDays > 0) {
+    streakScore = Math.min(20, Math.log(streakDays + 1) * 8);
+  }
+
+  // Factor 4: Focus (Fewer Domains = Better) (10 points)
+  const domainsVisited = Object.keys(dayVisits).length;
+  let focusScore = 0;
+  if (domainsVisited === 0) {
+    focusScore = 0;
+  } else if (domainsVisited <= 5) {
+    focusScore = 10;
+  } else if (domainsVisited <= 10) {
+    focusScore = 7;
+  } else if (domainsVisited <= 20) {
+    focusScore = 5;
+  } else {
+    focusScore = 2;
+  }
+
+  const totalScore = Math.round(complianceScore + reductionScore + streakScore + focusScore);
+  return Math.max(0, Math.min(100, totalScore));
+}
+
+/**
+ * Internal: fetch visits/limits/overallStreak once and compute memoized streak.
+ * Returns { visits, limits, streakDays, computedStreak, existingStreak }
+ */
+async function getStorageSnapshot() {
+  /* eslint-disable implicit-arrow-linebreak, function-paren-newline */
+  const data = await new Promise((resolve) => {
+    chrome.storage.local.get(['visits', 'limits', 'overallStreak'], (result) =>
+      resolve(result || {}),
+    );
+  });
+  /* eslint-enable implicit-arrow-linebreak, function-paren-newline */
+  const visits = data.visits || {};
+  const rawLimits = data.limits || {};
+  const limits = Object.fromEntries(
+    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+  );
+  const existingStreak = data.overallStreak || { current: 0, best: 0 };
+  const computedStreak = computeOverallStreakFromData(visits, rawLimits, existingStreak);
+  const streakDays = computedStreak.current || 0;
+
+  // Memoized write: only persist when current/best actually changed
+  // prettier-ignore
+  if (computedStreak.current !== existingStreak.current || computedStreak.best !== existingStreak.best) {
+    await new Promise((resolve) => {
+      chrome.storage.local.set({ overallStreak: computedStreak }, () => resolve());
+    });
+  }
+
+  return {
+    visits,
+    limits,
+    streakDays,
+    computedStreak,
+    existingStreak,
+  };
+}
+
+/**
  * Calculate focus score for a specific date
  * Score is 0-100 based on multiple factors:
  * - Limits compliance (40%)
@@ -39,99 +138,35 @@ function getCompliantDomainCount(enabledLimits, dayVisits) {
  * @returns {Promise<number>} Focus score (0-100)
  */
 export async function calculateDailyFocusScore(date) {
-  const { visits = {}, limits: rawLimits = {} } = await chrome.storage.local.get([
-    'visits',
-    'limits',
-  ]);
-  const dayVisits = visits[date] || {};
-  // Normalize legacy numeric limits at the boundary
-  const limits = Object.fromEntries(
-    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
-  );
-
-  // Factor 1: Limits Compliance (40 points)
-  let complianceScore = 0;
-  const enabledLimits = Object.entries(limits).filter(([_, config]) => config.enabled);
-
-  if (enabledLimits.length > 0) {
-    const compliantDomains = getCompliantDomainCount(enabledLimits, dayVisits);
-    complianceScore = (compliantDomains / enabledLimits.length) * 40;
-  } else {
-    // If no limits set, give partial credit for having data
-    complianceScore = Object.keys(dayVisits).length > 0 ? 20 : 0;
-  }
-
-  // Factor 2: Total Visits Reduction (30 points)
-  // Compare against average of previous 7 days
-  const previousDates = getPreviousDates(date, 7);
-  const previousAverage = getAverageVisitsForDates(visits, previousDates);
-
-  const todayTotal = getDayTotalVisits(dayVisits);
-
-  let reductionScore = 0;
-  if (previousAverage > 0) {
-    const reduction = (previousAverage - todayTotal) / previousAverage;
-    // Score increases if visits decreased, decreases if increased
-    // Cap at -50% to +50% change for scoring
-    const cappedReduction = Math.max(-0.5, Math.min(0.5, reduction));
-    reductionScore = (cappedReduction + 0.5) * 30; // Map -0.5:0.5 to 0:30
-  } else {
-    // First week of use, give neutral score
-    reductionScore = 15;
-  }
-
-  // Factor 3: Streak Length (20 points)
-  const overallStreak = await calculateOverallStreak();
-  const streakDays = overallStreak.current || 0;
-
-  // Logarithmic scaling: 1 day = 5 pts, 7 days = 15 pts, 30 days = 20 pts
-  let streakScore = 0;
-  if (streakDays > 0) {
-    streakScore = Math.min(20, Math.log(streakDays + 1) * 8);
-  }
-
-  // Factor 4: Focus (Fewer Domains = Better) (10 points)
-  const domainsVisited = Object.keys(dayVisits).length;
-  let focusScore = 0;
-
-  if (domainsVisited === 0) {
-    focusScore = 0; // No activity
-  } else if (domainsVisited <= 5) {
-    focusScore = 10; // Excellent focus
-  } else if (domainsVisited <= 10) {
-    focusScore = 7; // Good focus
-  } else if (domainsVisited <= 20) {
-    focusScore = 5; // Moderate focus
-  } else {
-    focusScore = 2; // Poor focus
-  }
-
-  // Calculate total score
-  const totalScore = Math.round(complianceScore + reductionScore + streakScore + focusScore);
-
-  return Math.max(0, Math.min(100, totalScore));
+  const { visits, limits, streakDays } = await getStorageSnapshot();
+  return calculateDailyFocusScoreWithData(date, visits, limits, streakDays);
 }
 
 /**
- * Calculate average focus score over a date range
+ * Calculate average focus score over a date range — single-pass
  * @param {string} startDate - Start date (YYYY-MM-DD)
  * @param {string} endDate - End date (YYYY-MM-DD)
  * @returns {Promise<number>} Average focus score
  */
 export async function calculateAverageFocusScore(startDate, endDate) {
   const dates = getDateRange(startDate, endDate);
-  const scores = await Promise.all(dates.map((date) => calculateDailyFocusScore(date)));
-  const totalScore = scores.reduce((sum, score) => sum + score, 0);
-  return dates.length > 0 ? Math.round(totalScore / dates.length) : 0;
+  if (dates.length === 0) return 0;
+  const { visits, limits, streakDays } = await getStorageSnapshot();
+  const totalScore = dates.reduce(
+    (sum, date) => sum + calculateDailyFocusScoreWithData(date, visits, limits, streakDays),
+    0,
+  );
+  return Math.round(totalScore / dates.length);
 }
 
 /**
- * Get focus score for today
+ * Get focus score for today — single storage read
  * @returns {Promise<number>}
  */
 export async function getTodayFocusScore() {
   const today = new Date().toISOString().split('T')[0];
-  return calculateDailyFocusScore(today);
+  const { visits, limits, streakDays } = await getStorageSnapshot();
+  return calculateDailyFocusScoreWithData(today, visits, limits, streakDays);
 }
 
 /**
@@ -145,13 +180,12 @@ export async function getWeeklyFocusScore() {
 }
 
 /**
- * Get focus score history for a date range
+ * Get focus score history for a date range — single storage read
  * @param {number} days - Number of days to look back
  * @returns {Promise<Array>} Array of {date, score} objects
  */
 export async function getFocusScoreHistory(days = 30) {
   const today = new Date();
-
   const dateStrings = Array.from({ length: days }, (_, index) => {
     const daysAgo = days - 1 - index;
     const date = new Date(today);
@@ -159,30 +193,25 @@ export async function getFocusScoreHistory(days = 30) {
     return date.toISOString().split('T')[0];
   });
 
-  const scores = await Promise.all(dateStrings.map((date) => calculateDailyFocusScore(date)));
+  const { visits, limits, streakDays } = await getStorageSnapshot();
 
-  return dateStrings.map((date, index) => ({ date, score: scores[index] }));
+  return dateStrings.map((date) => ({
+    date,
+    score: calculateDailyFocusScoreWithData(date, visits, limits, streakDays),
+  }));
 }
 
 /**
- * Get focus score breakdown showing contribution of each factor
+ * Get focus score breakdown showing contribution of each factor — single storage read
  * @param {string} date - Date in YYYY-MM-DD format
  * @returns {Promise<Object>} Breakdown of score components
  */
 export async function getFocusScoreBreakdown(date) {
-  const { visits = {}, limits: rawLimits = {} } = await chrome.storage.local.get([
-    'visits',
-    'limits',
-  ]);
+  const { visits, limits, streakDays } = await getStorageSnapshot();
   const dayVisits = visits[date] || {};
-  const limits = Object.fromEntries(
-    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
-  );
+  const enabledLimits = Object.entries(limits).filter(([, config]) => config.enabled);
 
-  // Calculate each component
   let complianceScore = 0;
-  const enabledLimits = Object.entries(limits).filter(([_, config]) => config.enabled);
-
   if (enabledLimits.length > 0) {
     const compliantDomains = getCompliantDomainCount(enabledLimits, dayVisits);
     complianceScore = (compliantDomains / enabledLimits.length) * 40;
@@ -190,10 +219,8 @@ export async function getFocusScoreBreakdown(date) {
     complianceScore = Object.keys(dayVisits).length > 0 ? 20 : 0;
   }
 
-  // Visits reduction
   const previousDates = getPreviousDates(date, 7);
   const previousAverage = getAverageVisitsForDates(visits, previousDates);
-
   const todayTotal = getDayTotalVisits(dayVisits);
   let reductionScore = 15;
   if (previousAverage > 0) {
@@ -202,15 +229,11 @@ export async function getFocusScoreBreakdown(date) {
     reductionScore = (cappedReduction + 0.5) * 30;
   }
 
-  // Streak
-  const overallStreak = await calculateOverallStreak();
-  const streakDays = overallStreak.current || 0;
   let streakScore = 0;
   if (streakDays > 0) {
     streakScore = Math.min(20, Math.log(streakDays + 1) * 8);
   }
 
-  // Focus
   const domainsVisited = Object.keys(dayVisits).length;
   let focusScore = 0;
   if (domainsVisited === 0) {

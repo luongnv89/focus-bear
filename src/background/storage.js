@@ -632,17 +632,18 @@ export async function getAllStreaks() {
 }
 
 /**
- * Calculate overall focus streak (days staying under ALL limits)
- * @returns {Promise<Object>} - Overall streak {current: number, best: number}
+ * Pure helper: compute overall streak from in-memory data without touching storage.
+ * Normalizes legacy limits internally so callers may pass raw limits.
+ * @param {Object} visits - Visits object keyed by date
+ * @param {Object} rawLimits - Limits object (raw or normalized)
+ * @param {Object} existingStreak - Existing {current, best} for best comparison
+ * @returns {Object} - Computed streak {current, best, lastCheckDate}
  */
-export async function calculateOverallStreak() {
-  const data = await chrome.storage.local.get(['visits', 'limits', 'overallStreak']);
-  const visits = data.visits || {};
-  const rawLimits = data.limits || {};
-  const limits = Object.fromEntries(
-    Object.entries(rawLimits).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
+export function computeOverallStreakFromData(visits = {}, rawLimits = {}, existingStreak = {}) {
+  const normalizedLimits = Object.fromEntries(
+    Object.entries(rawLimits || {}).map(([d, cfg]) => [d, normalizeLimitConfig(cfg)]),
   );
-  const existingStreak = data.overallStreak || { current: 0, best: 0 };
+  const existing = existingStreak || { current: 0, best: 0 };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -650,8 +651,7 @@ export async function calculateOverallStreak() {
   let currentStreak = 0;
   const checkDate = new Date(today);
 
-  // Check if all limits were respected on each day
-  const limitEntries = Object.entries(limits).filter(
+  const limitEntries = Object.entries(normalizedLimits).filter(
     ([, limitConfig]) => limitConfig?.enabled && limitConfig.daily?.enabled,
   );
 
@@ -672,15 +672,42 @@ export async function calculateOverallStreak() {
     }
   }
 
-  const bestStreak = Math.max(currentStreak, existingStreak.best);
+  const bestStreak = Math.max(currentStreak, existing.best || 0);
 
-  const overallStreak = {
+  return {
     current: currentStreak,
     best: bestStreak,
     lastCheckDate: today.toISOString().split('T')[0],
   };
+}
 
-  await chrome.storage.local.set({ overallStreak });
+// Alias required by 3.2 acceptance — same pure helper under canonical name
+export const computeOverallStreak = computeOverallStreakFromData;
 
-  return overallStreak;
+/**
+ * Calculate overall focus streak (days staying under ALL limits)
+ * Memoized: only writes to storage when current/best actually changed.
+ * @returns {Promise<Object>} - Overall streak {current: number, best: number, lastCheckDate: string}
+ */
+export async function calculateOverallStreak() {
+  /* eslint-disable implicit-arrow-linebreak, function-paren-newline */
+  const data = await new Promise((resolve) => {
+    chrome.storage.local.get(['visits', 'limits', 'overallStreak'], (result) =>
+      resolve(result || {}),
+    );
+  });
+  /* eslint-enable implicit-arrow-linebreak, function-paren-newline */
+  const visits = data.visits || {};
+  const rawLimits = data.limits || {};
+  const existingStreak = data.overallStreak || { current: 0, best: 0 };
+
+  const computed = computeOverallStreakFromData(visits, rawLimits, existingStreak);
+
+  if (computed.current !== existingStreak.current || computed.best !== existingStreak.best) {
+    await new Promise((resolve) => {
+      chrome.storage.local.set({ overallStreak: computed }, () => resolve());
+    });
+  }
+
+  return computed;
 }
