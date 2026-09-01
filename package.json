@@ -1,7 +1,7 @@
 {
-  "name": "focus-bear",
+  "name": "focus-paw",
   "version": "1.0.0",
-  "description": "FocusBear - Privacy-first Chrome extension for tracking focus-switching habits",
+  "description": "FocusPaw - Privacy-first Chrome extension for tracking focus-switching habits",
   "type": "module",
   "scripts": {
     "lint": "npm run format:check && eslint \"src/**/*.js\"",

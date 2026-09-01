@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "FocusBear - Focus Tracker",
+  "name": "FocusPaw - Focus Tracker",
   "version": "1.0.0",
   "version_name": "1.0.0-<git-sha>",
-  "description": "Track focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity.",
-  "author": "FocusBear Team",
+  "description": "FocusPaw tracks focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity. All data stays on your device.",
+  "author": "FocusPaw Team",
   "homepage_url": "https://github.com/luongnv89/focus-bear",
   "permissions": [
     "tabs",
@@ -27,7 +27,7 @@
       "48": "assets/icon-48.png",
       "128": "assets/icon-128.png"
     },
-    "default_title": "FocusBear - Track Your Focus"
+    "default_title": "FocusPaw - Track Your Focus"
   },
   "icons": {
     "16": "assets/icon-16.png",
