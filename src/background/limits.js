@@ -205,11 +205,32 @@ export function getBlockedPageUrl(
 }
 
 /**
+ * Check whether the user has granted the optional <all_urls> host permission.
+ * Without it, DNR redirect rules that touch arbitrary origins cannot be installed.
+ * @returns {Promise<boolean>}
+ */
+export async function hasHostAccess() {
+  if (!chrome.permissions || !chrome.permissions.contains) return true;
+  try {
+    return await chrome.permissions.contains({ origins: ['<all_urls>'] });
+  } catch (error) {
+    console.debug('[Limits] permissions.contains failed; assuming granted', error);
+    return true;
+  }
+}
+
+/**
  * Update declarativeNetRequest rules based on current limits and visit counts
  * This replaces the blocking webRequest API which is deprecated in MV3
  */
 export async function updateBlockingRules() {
   try {
+    // DNR redirect rules need host access; bail out cleanly if the user has not
+    // granted the optional <all_urls> permission yet. Tracking & toasts still work.
+    if (!(await hasHostAccess())) {
+      console.debug('[Limits] host permission not granted; skipping DNR rule install');
+      return;
+    }
     const data = await chrome.storage.local.get(['visits', 'limits']);
     const visits = data.visits || {};
     const limits = data.limits || {};
