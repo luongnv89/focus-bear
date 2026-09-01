@@ -1,35 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Dark mode version: light panda on dark background -->
+  <!-- Dark mode version: light paw print on dark background -->
 
   <!-- Background circle (dark) -->
   <circle cx="64" cy="64" r="64" fill="#1a1a1a"/>
 
-  <!-- Left ear (white) -->
-  <circle cx="42" cy="38" r="16" fill="#F5F5F5"/>
+  <!-- Paw toe pads -->
+  <ellipse cx="52" cy="58" rx="11" ry="13" fill="#F5F5F5"/>
+  <ellipse cx="76" cy="58" rx="11" ry="13" fill="#F5F5F5"/>
+  <ellipse cx="40" cy="76" rx="10.5" ry="13" fill="#F5F5F5"/>
+  <ellipse cx="88" cy="76" rx="10.5" ry="13" fill="#F5F5F5"/>
 
-  <!-- Right ear (white) -->
-  <circle cx="86" cy="38" r="16" fill="#F5F5F5"/>
+  <!-- Main paw pad -->
+  <path d="M 64 79
+           C 78 79 88 86 88 96
+           C 88 106 77 112 64 112
+           C 51 112 40 106 40 96
+           C 40 86 50 79 64 79 Z"
+        fill="#F5F5F5"/>
 
-  <!-- Head (white) -->
-  <circle cx="64" cy="68" r="36" fill="#F5F5F5"/>
-
-  <!-- Left eye patch (dark) -->
-  <ellipse cx="50" cy="64" rx="10" ry="14" fill="#1a1a1a"/>
-
-  <!-- Right eye patch (dark) -->
-  <ellipse cx="78" cy="64" rx="10" ry="14" fill="#1a1a1a"/>
-
-  <!-- Left eye (white) -->
-  <circle cx="50" cy="64" r="4" fill="#F5F5F5"/>
-
-  <!-- Right eye (white) -->
-  <circle cx="78" cy="64" r="4" fill="#F5F5F5"/>
-
-  <!-- Nose (dark) -->
-  <ellipse cx="64" cy="80" rx="6" ry="5" fill="#1a1a1a"/>
-
-  <!-- Smile (dark) -->
-  <path d="M 54 86 Q 64 92 74 86" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Focus highlight in the main pad -->
+  <circle cx="64" cy="98" r="5" fill="#1BFF6E"/>
 
   <!-- Subtle border for contrast on dark backgrounds -->
   <circle cx="64" cy="64" r="63" fill="none" stroke="#333333" stroke-width="1"/>
