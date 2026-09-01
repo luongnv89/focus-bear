@@ -230,7 +230,7 @@ npm run build
 ### ZIP Creation
 ```bash
 cd dist
-zip -r ../focusbear-v1.0.0.zip .
+zip -r ../focuspaw-v1.0.0.zip .
 ```
 
 ---
