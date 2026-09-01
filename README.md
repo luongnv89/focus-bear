@@ -104,7 +104,7 @@ Consecutive days where you stayed within ALL your configured limits. Exceed any 
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 22+ (LTS) and npm — see `engines.node` in `package.json` and `.nvmrc`
 - Chrome browser (version 100+)
 
 ### Setup

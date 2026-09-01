@@ -13,7 +13,7 @@ Marketing landing page for the FocusBear Chrome extension.
 
 ## Prerequisites
 
-- Node.js 18+ (LTS recommended)
+- Node.js 22+ (LTS recommended) — see `engines.node` in `package.json`
 - npm 9+
 
 ## Getting Started
