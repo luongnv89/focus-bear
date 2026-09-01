@@ -1,3 +1,5 @@
+import { getDateKey, getTodayKey } from '../common/date-utils.js';
+
 /**
  * Daily Goal Setting for FocusBear
  * Allows users to set and track daily focus goals
@@ -60,13 +62,6 @@ const GOAL_TEMPLATES = [
     icon: '🔥',
   },
 ];
-
-/**
- * Get today's date key
- */
-function getTodayKey() {
-  return new Date().toISOString().split('T')[0];
-}
 
 /**
  * Get all available goal templates
@@ -286,7 +281,7 @@ export async function getGoalStats(days = 7) {
   const dateKeys = Array.from({ length: days }, (_, index) => {
     const date = new Date(today);
     date.setDate(date.getDate() - index);
-    return date.toISOString().split('T')[0];
+    return getDateKey(date);
   });
 
   const { totalGoals, completedGoals, goalTypeStats } = dateKeys.reduce(
@@ -352,7 +347,7 @@ export async function suggestGoals() {
   const last7Days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (index + 1));
-    return date.toISOString().split('T')[0];
+    return getDateKey(date);
   });
 
   const totals = last7Days.reduce(

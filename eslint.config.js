@@ -37,6 +37,7 @@ export default [
       'func-names': 'off',
       'no-alert': 'warn',
       'consistent-return': 'off',
+      'object-curly-newline': 'off',
       'max-len': ['error', { code: 120 }],
     },
   },
