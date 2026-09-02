@@ -145,6 +145,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [landing]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
     defaults:
       run:
         working-directory: landing-page
@@ -165,9 +168,10 @@ jobs:
       - name: Build landing page
         run: npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./landing-page/dist
-          keep_files: true
+          path: ./landing-page/dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
