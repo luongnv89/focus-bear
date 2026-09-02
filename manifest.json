@@ -6,6 +6,7 @@
   "description": "FocusPaw tracks focus-switching habits with privacy-first visualizations. Set limits, build streaks, improve productivity. All data stays on your device.",
   "author": "FocusPaw Team",
   "homepage_url": "https://github.com/luongnv89/focus-paw",
+  "privacy_policy_url": "https://raw.githubusercontent.com/luongnv89/focus-paw/main/PRIVACY.md",
   "permissions": [
     "tabs",
     "storage",
