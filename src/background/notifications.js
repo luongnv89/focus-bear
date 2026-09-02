@@ -118,7 +118,7 @@ async function recordNotification(type, message) {
 /**
  * Show a Chrome notification
  */
-async function showChromeNotification(title, message, type, iconUrl = '../../assets/icon.svg') {
+async function showChromeNotification(title, message, type, iconUrl = 'assets/icon.svg') {
   const canSend = await canSendNotification(type);
   if (!canSend) return;
 
