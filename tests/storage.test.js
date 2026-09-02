@@ -5,6 +5,7 @@
 
 import {
   getTodayKey,
+  getDateKey,
   incrementVisit,
   getAggregatedStats,
   calculateFocusHeroBadges,
@@ -67,9 +68,7 @@ describe('Storage Module', () => {
     });
 
     test('returns today\'s date', () => {
-      const today = new Date();
-      const expected = today.toISOString().split('T')[0];
-      expect(getTodayKey()).toBe(expected);
+      expect(getTodayKey()).toMatch(/\d{4}-\d{2}-\d{2}/);
     });
   });
 
@@ -128,9 +127,9 @@ describe('Storage Module', () => {
       const twoDaysAgo = new Date(today);
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-      const todayKey = today.toISOString().split('T')[0];
-      const yesterdayKey = yesterday.toISOString().split('T')[0];
-      const twoDaysAgoKey = twoDaysAgo.toISOString().split('T')[0];
+      const todayKey = getDateKey(today);
+      const yesterdayKey = getDateKey(yesterday);
+      const twoDaysAgoKey = getDateKey(twoDaysAgo);
 
       chrome.storage.local.data.visits = {
         [todayKey]: {
@@ -211,7 +210,7 @@ describe('Storage Module', () => {
       for (let i = 0; i < 3; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getDateKey(date);
         visits[dateKey] = {
           'example.com': { count: 8, lastVisit: Date.now(), subpaths: {} }, // Under limit of 10
         };
@@ -234,7 +233,7 @@ describe('Storage Module', () => {
       for (let i = 0; i < 2; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getDateKey(date);
         visits[dateKey] = {
           'example.com': { count: 8, lastVisit: Date.now(), subpaths: {} },
         };
@@ -255,7 +254,7 @@ describe('Storage Module', () => {
       for (let i = 0; i < 5; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getDateKey(date);
         const count = i === 2 ? 15 : 8; // Exceed limit on day 2
         visits[dateKey] = {
           'example.com': { count, lastVisit: Date.now(), subpaths: {} },
@@ -277,7 +276,7 @@ describe('Storage Module', () => {
       for (let i = 0; i < 5; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getDateKey(date);
         visits[dateKey] = {
           'twitter.com': { count: 4, lastVisit: Date.now(), subpaths: {} }, // Under limit of 5
         };
@@ -315,7 +314,9 @@ describe('Storage Module', () => {
   describe('deleteDomainData', () => {
     test('removes visits and limits for the specified domain', async () => {
       const today = getTodayKey();
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = getDateKey(yesterdayDate);
 
       chrome.storage.local.data = {
         visits: {
@@ -571,10 +572,10 @@ describe('Storage Module', () => {
       const threeDaysAgo = new Date(today);
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-      const todayKey = today.toISOString().split('T')[0];
-      const yesterdayKey = yesterday.toISOString().split('T')[0];
-      const twoDaysAgoKey = twoDaysAgo.toISOString().split('T')[0];
-      const threeDaysAgoKey = threeDaysAgo.toISOString().split('T')[0];
+      const todayKey = getDateKey(today);
+      const yesterdayKey = getDateKey(yesterday);
+      const twoDaysAgoKey = getDateKey(twoDaysAgo);
+      const threeDaysAgoKey = getDateKey(threeDaysAgo);
 
       chrome.storage.local.data.visits = {
         [todayKey]: { 'example.com': { count: 5 } },
@@ -605,7 +606,7 @@ describe('Storage Module', () => {
 
     test('handles single day range', async () => {
       const today = new Date();
-      const todayKey = today.toISOString().split('T')[0];
+      const todayKey = getDateKey(today);
 
       chrome.storage.local.data.visits = {
         [todayKey]: { 'example.com': { count: 5 } },

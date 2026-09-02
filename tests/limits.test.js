@@ -5,6 +5,7 @@
 
 import { checkLimit, getBlockedPageUrl, updateBlockingRules } from '../src/background/limits.js';
 import { createDefaultLimitConfig } from '../src/background/storage.js';
+import { getTodayKey, getDateKey } from '../src/common/date-utils.js';
 
 // Mock chrome APIs
 global.chrome = {
@@ -42,7 +43,7 @@ global.chrome = {
   },
   declarativeNetRequest: {
     dynamicRules: [],
-    async updateDynamicRules(options, callback) {
+    async updateDynamicRules(options) {
       // Remove old rules first
       if (options.removeRuleIds && options.removeRuleIds.length > 0) {
         this.dynamicRules = this.dynamicRules.filter(
@@ -53,12 +54,14 @@ global.chrome = {
       if (options.addRules && options.addRules.length > 0) {
         this.dynamicRules.push(...options.addRules);
       }
-      if (callback) callback();
       return Promise.resolve();
     },
-    getDynamicRules() {
-      return Promise.resolve([...this.dynamicRules]);
+    async getDynamicRules() {
+      return [...this.dynamicRules];
     },
+  },
+  permissions: {
+    contains: async () => true,
   },
   runtime: {
     getURL(path) {
@@ -68,7 +71,7 @@ global.chrome = {
   },
 };
 
-const todayKey = () => new Date().toISOString().split('T')[0];
+const todayKey = getTodayKey;
 
 const buildDailyLimit = (limit = 10) =>
   createDefaultLimitConfig({
@@ -177,7 +180,9 @@ describe('Limits Module', () => {
     });
 
     test('handles domain not visited today', async () => {
-      const yesterdayKey = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayKey = getDateKey(yesterdayDate);
       chrome.storage.local.data = {
         visits: {
           [yesterdayKey]: {
