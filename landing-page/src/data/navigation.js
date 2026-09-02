@@ -17,7 +17,7 @@ export const navigationContent = {
     text: 'Add to Chrome',
     url:
       import.meta.env.VITE_CHROME_STORE_URL ||
-      'https://chrome.google.com/webstore',
+      'https://chromewebstore.google.com/detail/focusbear-focus-tracker/hlhhifmjlgekgchkaemeldfhcgcajcoe?authuser=0&hl=en',
     ariaLabel: 'Install FocusPaw extension from Chrome Web Store',
   },
 };
