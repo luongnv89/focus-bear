@@ -203,7 +203,11 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 The FocusPaw landing page is hosted on GitHub Pages at:
 
-**https://focus-paw.luongnv.com**
+**https://luongnv89.github.io/focus-paw**
+
+The Privacy Policy is available at:
+
+**https://luongnv89.github.io/focus-paw/policy/policy.html**
 
 To rebuild and deploy:
 
