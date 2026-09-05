@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "FocusPaw - Focus Tracker",
-  "version": "1.0.0",
-  "version_name": "1.0.0-<git-sha>",
+  "version": "1.0.1",
+  "version_name": "1.0.1-<git-sha>",
   "description": "Privacy-first focus tracker. Visualize browsing habits, set visit limits, build streaks. All data stays on your device.",
   "author": "FocusPaw Team",
   "homepage_url": "https://github.com/luongnv89/focus-paw",
-  "privacy_policy_url": "https://focus-paw.luongnv.com/policy/policy.html",
+  "privacy_policy_url": "https://focus-paw.luongnv.com/privacy",
   "permissions": [
     "tabs",
     "storage",

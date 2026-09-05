@@ -16,7 +16,7 @@
 | **Full description** (max 4000 chars) | See below |
 | **Category** | Productivity |
 | **Homepage URL** | https://github.com/luongnv89/focus-paw |
-| **Privacy Policy URL** | https://luongnv89.github.io/focus-paw/policy/policy.html |
+| **Privacy Policy URL** | https://focus-paw.luongnv.com/privacy |
 | **Author** | FocusPaw Team |
 | **Minimum Chrome version** | 100 |
 

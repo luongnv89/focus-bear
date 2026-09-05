@@ -1,6 +1,6 @@
 {
   "name": "focus-paw",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "FocusPaw - Privacy-first Chrome extension for tracking focus-switching habits",
   "type": "module",
   "scripts": {

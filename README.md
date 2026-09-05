@@ -207,7 +207,7 @@ The FocusPaw landing page is hosted on GitHub Pages at:
 
 The Privacy Policy is available at:
 
-**https://focus-paw.luongnv.com/policy/policy.html**
+**https://focus-paw.luongnv.com/privacy**
 
 To rebuild and deploy:
 
