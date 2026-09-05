@@ -145,7 +145,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [landing]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    continue-on-error: true
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: landing-page
@@ -171,5 +172,5 @@ jobs:
         with:
           github_token: ${{ secrets.GH_PAGES_TOKEN || github.token }}
           publish_dir: ./landing-page/dist
-          keep_files: true
           force_orphan: true
+          cname: focus-paw.luongnv.com
