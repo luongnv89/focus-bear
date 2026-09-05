@@ -6,7 +6,6 @@
   "description": "Privacy-first focus tracker. Visualize browsing habits, set visit limits, build streaks. All data stays on your device.",
   "author": "FocusPaw Team",
   "homepage_url": "https://github.com/luongnv89/focus-paw",
-  "privacy_policy_url": "https://focus-paw.luongnv.com/privacy",
   "permissions": [
     "tabs",
     "storage",
