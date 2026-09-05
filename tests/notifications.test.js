@@ -58,7 +58,7 @@ function makeChrome(data = {}) {
         return Promise.resolve('id');
       }),
     },
-    runtime: {},
+    runtime: { getURL: (p) => `chrome-extension://test/${p}` },
   };
 }
 
@@ -80,14 +80,23 @@ describe('notifications', () => {
 
   test('set and get preferences round-trip', async () => {
     makeChrome({});
-    const prefs = { enabled: false, types: {}, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 };
+    const prefs = {
+      enabled: false,
+      types: {},
+      quietHours: { enabled: false, start: 22, end: 8 },
+      maxPerDay: 5,
+    };
     await setNotificationPreferences(prefs);
     const got = await getNotificationPreferences();
     expect(got.enabled).toBe(false);
   });
 
   test('clearNotificationHistory empties history', async () => {
-    makeChrome({ notificationHistory: [{ type: 'x', message: 'hi', date: getTodayKey(), timestamp: new Date().toISOString() }] });
+    makeChrome({
+      notificationHistory: [
+        { type: 'x', message: 'hi', date: getTodayKey(), timestamp: new Date().toISOString() },
+      ],
+    });
     await clearNotificationHistory();
     const h = await getNotificationHistory();
     expect(h).toHaveLength(0);
@@ -107,7 +116,21 @@ describe('notifications', () => {
   });
 
   test('showLimitWarning and showLimitExceeded do not throw when disabled globally', async () => {
-    makeChrome({ notificationPreferences: { enabled: false, types: { [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 } });
+    makeChrome({
+      notificationPreferences: {
+        enabled: false,
+        types: {
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
+    });
     await expect(showLimitWarning('example.com', 2, 10)).resolves.toBeUndefined();
     await expect(showLimitExceeded('example.com', 12, 10)).resolves.toBeUndefined();
   });
@@ -118,21 +141,67 @@ describe('notifications', () => {
   });
 
   test('showAchievementUnlocked shows notification for known id when allowed', async () => {
-    makeChrome({ notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 } });
+    makeChrome({
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
+    });
     // Ensure visits not blocking daily limit check
     await showAchievementUnlocked('first-step');
     expect(global.chrome.notifications.create).toHaveBeenCalled();
+    // chrome.notifications cannot decode SVG and resolves relative URLs against
+    // the service worker directory, so the icon must be an absolute PNG URL.
+    const [opts] = global.chrome.notifications.create.mock.calls[0];
+    expect(opts.iconUrl).toBe('chrome-extension://test/assets/icon-128.png');
   });
 
   test('showStreakMilestone and showInsight route through notifications', async () => {
-    makeChrome({ notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.STREAK_MILESTONE]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.ENCOURAGEMENT]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 } });
+    makeChrome({
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
+    });
     await showStreakMilestone(7);
     await showInsight('You focus better in the morning');
     expect(global.chrome.notifications.create).toHaveBeenCalledTimes(2);
   });
 
   test('showEncouragement picks a message and notifies', async () => {
-    makeChrome({ notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 } });
+    makeChrome({
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
+    });
     await showEncouragement();
     expect(global.chrome.notifications.create).toHaveBeenCalled();
   });
@@ -140,7 +209,19 @@ describe('notifications', () => {
   test('checkLimitWarnings triggers at remaining 2', async () => {
     makeChrome({
       limits: { 'example.com': createDefaultLimitConfig({ daily: { enabled: true, limit: 10 } }) },
-      notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 },
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
     });
     await checkLimitWarnings('example.com', 8); // 10-8=2
     expect(global.chrome.notifications.create).toHaveBeenCalled();
@@ -149,7 +230,19 @@ describe('notifications', () => {
   test('checkLimitWarnings does not trigger when remaining !=2', async () => {
     makeChrome({
       limits: { 'example.com': createDefaultLimitConfig({ daily: { enabled: true, limit: 10 } }) },
-      notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 },
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
     });
     await checkLimitWarnings('example.com', 5);
     expect(global.chrome.notifications.create).not.toHaveBeenCalled();
@@ -161,7 +254,19 @@ describe('notifications', () => {
       lastEncouragementDate: today,
       visits: { [today]: {} },
       limits: {},
-      notificationPreferences: { enabled: true, types: { [NOTIFICATION_TYPES.ENCOURAGEMENT]: true, [NOTIFICATION_TYPES.LIMIT_WARNING]: true, [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true, [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true, [NOTIFICATION_TYPES.INSIGHT]: true, [NOTIFICATION_TYPES.STREAK_MILESTONE]: true }, quietHours: { enabled: false, start: 22, end: 8 }, maxPerDay: 5 },
+      notificationPreferences: {
+        enabled: true,
+        types: {
+          [NOTIFICATION_TYPES.ENCOURAGEMENT]: true,
+          [NOTIFICATION_TYPES.LIMIT_WARNING]: true,
+          [NOTIFICATION_TYPES.LIMIT_EXCEEDED]: true,
+          [NOTIFICATION_TYPES.ACHIEVEMENT_UNLOCKED]: true,
+          [NOTIFICATION_TYPES.INSIGHT]: true,
+          [NOTIFICATION_TYPES.STREAK_MILESTONE]: true,
+        },
+        quietHours: { enabled: false, start: 22, end: 8 },
+        maxPerDay: 5,
+      },
     });
     await showDailyEncouragement();
     expect(global.chrome.notifications.create).not.toHaveBeenCalled();
