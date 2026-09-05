@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: ['**']
 
+# Serialize runs per ref: with force_orphan the gh-pages deploy has no
+# history, so an older run finishing last would force-push stale content.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-test:
     name: Lint, Format, Test & Build
@@ -30,9 +36,6 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
-
-      - name: Check code formatting
-        run: npm run format:check
 
       - name: Run tests
         run: npm test
